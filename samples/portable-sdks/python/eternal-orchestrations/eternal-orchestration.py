@@ -14,7 +14,7 @@ def cleanup_task(ctx, _) -> str:
     print('Performing cleanup...')
 
     # Simulate cleanup process
-    time.sleep(random.random() * 2)
+    time.sleep(5)
 
     return 'Cleanup completed'
 
@@ -23,8 +23,8 @@ def periodic_cleanup(ctx, _):
     # Perform the cleanup task
     yield ctx.call_activity(cleanup_task)
 
-    # Wait for 25 seconds and continue as new
-    yield ctx.create_timer(timedelta(seconds=3))
+    # Wait for 3 seconds and continue as new
+    yield ctx.create_timer(timedelta(seconds=10))
     ctx.continue_as_new(None)
 
 # Read the environment variable
@@ -68,10 +68,5 @@ with DurableTaskSchedulerWorker(host_address=endpoint, secure_channel=True,
 
      instance_id = c.schedule_new_orchestration(periodic_cleanup)
 
-     state = c.wait_for_orchestration_completion(instance_id)
-
-     if state and state.runtime_status == client.OrchestrationStatus.COMPLETED:
-         print(f'Orchestration completed! Result: {state.serialized_output}')
-     elif state:
-         print(f'Orchestration failed: {state.failure_details}')
-     exit()
+     while True:
+        time.sleep(1)
