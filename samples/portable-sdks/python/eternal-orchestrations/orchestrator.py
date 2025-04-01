@@ -32,4 +32,6 @@ credential = DefaultAzureCredential()
 c = DurableTaskSchedulerClient(host_address=endpoint, secure_channel=True,
                                taskhub=taskhub_name, token_credential=credential)
 
-instance_id = c.schedule_new_orchestration("periodic_cleanup")
+counter = 1
+instance_id = c.schedule_new_orchestration("periodic_cleanup", input=counter)
+

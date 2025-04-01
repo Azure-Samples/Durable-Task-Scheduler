@@ -14,13 +14,12 @@ def cleanup_task(ctx, _) -> str:
 
     return 'Cleanup completed'
 
-def periodic_cleanup(ctx, _):
-    """Orchestration function that schedules periodic cleanup 5x every 15 seconds."""
-    # Perform the cleanup task
-    for _ in range(5):
-        yield ctx.call_activity(cleanup_task)
-        # Wait for 15 seconds before the next cleanup
-        yield ctx.create_timer(timedelta(seconds=15))
+def periodic_cleanup(ctx, counter):
+    yield ctx.call_activity(cleanup_task)
+    yield ctx.create_timer(timedelta(seconds=15))
+
+    if counter < 5:
+        ctx.continue_as_new(counter + 1)
 
 # Read the environment variable
 taskhub_name = os.getenv("TASKHUB")
