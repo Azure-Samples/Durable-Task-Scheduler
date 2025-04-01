@@ -39,7 +39,7 @@ This repo contains samples in different directories for all orchestration framew
 ## API reference docs
 Durable Task SDKs
 - [.NET](https://learn.microsoft.com/en-us/dotnet/api/microsoft.durabletask?view=durabletask-dotnet-1.x)
-- Python (coming soon)
+- [Python](https://github.com/microsoft/durabletask-python)
 - [Java](https://learn.microsoft.com/en-us/java/api/com.microsoft.durabletask?view=durabletask-java-1.x)
 - JavaScript (coming soon)
 
