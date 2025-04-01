@@ -56,7 +56,7 @@ docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 
 3. Run the Emulator: Wait a few seconds for the container to be ready.
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
+docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
 3. Set the Environment Variables:
