@@ -2,13 +2,13 @@ name: durable-task-fanoutfanin-sample
 metadata:
   template: durable-task-fanoutfanin-sample@1.0.0
 services:
-  orchestration-service:
-    project: ./OrchestrationService
+  client-service:
+    project: ./ClientService
     language: dotnet
     host: containerapp
     docker:
       context: .
-      dockerfile: ./OrchestrationService/Dockerfile
+      dockerfile: ./ClientService/Dockerfile
   worker-service:
     project: ./WorkerService
     language: dotnet

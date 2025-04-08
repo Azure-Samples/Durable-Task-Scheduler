@@ -1,0 +1,26 @@
+# Ignore development and version control files
+.git/
+.vs/
+.vscode/
+
+# Ignore build outputs but not necessary project files
+**/bin/Debug/
+**/bin/Release/
+**/obj/Debug/
+**/obj/Release/
+
+# No need to copy over infra or documentation
+infra/
+*.md
+
+# Ensure project files are included
+!**/*.csproj
+!**/*.sln
+
+# Include source code and configuration files
+!**/*.cs
+!**/appsettings*.json
+!**/Properties/launchSettings.json
+!**/Models/*.cs
+!**/Activities/*.cs
+!**/Orchestrations/*.cs

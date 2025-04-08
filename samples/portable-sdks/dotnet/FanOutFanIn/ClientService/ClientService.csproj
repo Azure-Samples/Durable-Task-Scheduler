@@ -4,14 +4,20 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UserSecretsId>20ddfc30-c23a-44b7-a95d-4a6f7527d7ca</UserSecretsId>
+    <UserSecretsId>89e416c8-4a74-4c25-a97f-7f6f1832bc50</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.8" />
+    <PackageReference Include="Microsoft.DurableTask.Client" Version="1.9.1" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.9.1-preview.1" />
     <PackageReference Include="Microsoft.DurableTask.Worker" Version="1.9.1" />
     <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.9.1-preview.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WorkerService\WorkerService.csproj" />
   </ItemGroup>
 
 </Project>
