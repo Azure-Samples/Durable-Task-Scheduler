@@ -14,7 +14,7 @@ public class ActivityResult
     public string Output { get; set; } = string.Empty;
 }
 
-public class FanOutFanInTestResult
+public class HelloWorldResult
 {
     public int TotalActivities { get; set; }
     public long ElapsedTimeMs { get; set; }

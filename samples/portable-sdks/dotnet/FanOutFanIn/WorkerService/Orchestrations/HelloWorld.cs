@@ -15,7 +15,7 @@ public class HelloWorld
         _logger = logger;
     }
 
-    public async Task<FanOutFanInTestResult> RunAsync(TaskOrchestrationContext context, FanOutFanInOrchestrationInput input)
+    public async Task<HelloWorldResult> RunAsync(TaskOrchestrationContext context, HelloWorldInput input)
     {
         var stopwatch = Stopwatch.StartNew();
         var results = new List<ActivityResult>();
@@ -61,7 +61,7 @@ public class HelloWorld
         stopwatch.Stop();
         
         // Return fan-out/fan-in results
-        var finalResult = new FanOutFanInTestResult
+        var finalResult = new HelloWorldResult
         {
             TotalActivities = input.Iterations * input.ParallelActivities,
             ElapsedTimeMs = stopwatch.ElapsedMilliseconds,

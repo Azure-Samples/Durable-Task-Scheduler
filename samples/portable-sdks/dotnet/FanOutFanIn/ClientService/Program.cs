@@ -83,7 +83,7 @@ app.MapControllers();
 app.MapPost("/api/orchestrations", async (
     [FromServices] DurableTaskClient client,
     [FromServices] ILogger<Program> endpointLogger,
-    [FromBody] FanOutFanInRequest request) =>
+    [FromBody] HelloWorldRequest request) =>
 {
     endpointLogger.LogInformation("Starting {Count} orchestration(s) with {Iterations} iterations and {ParallelActivities} parallel activities per iteration", 
         request.ParallelOrchestrations, 
@@ -102,7 +102,7 @@ app.MapPost("/api/orchestrations", async (
             
             tasks.Add(client.ScheduleNewOrchestrationInstanceAsync(
                 "HelloWorld", 
-                new FanOutFanInOrchestrationInput
+                new HelloWorldInput
                 {
                     Iterations = request.Iterations,
                     ParallelActivities = request.ParallelActivities

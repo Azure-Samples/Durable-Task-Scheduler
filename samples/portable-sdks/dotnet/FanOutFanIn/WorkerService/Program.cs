@@ -67,7 +67,7 @@ builder.Services.AddDurableTaskWorker(workerBuilder =>
     {
         // Register the HelloWorld orchestration
         logger.LogInformation("Registering HelloWorld");
-        registry.AddOrchestratorFunc<FanOutFanInOrchestrationInput, FanOutFanInTestResult>(
+        registry.AddOrchestratorFunc<HelloWorldInput, HelloWorldResult>(
             "HelloWorld", 
             async (ctx, input) =>
             {
