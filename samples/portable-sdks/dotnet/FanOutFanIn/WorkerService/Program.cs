@@ -1,7 +1,8 @@
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Worker;
 using Microsoft.DurableTask.Worker.AzureManaged;
-using System.Diagnostics;
+using WorkerService.Models;
+using WorkerService.Activities;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,16 +24,9 @@ builder.Services.AddDurableTaskWorker(workerBuilder =>
     // Configure the worker to use the Durable Task Scheduler backend
     workerBuilder.UseDurableTaskScheduler(connectionString);
     
-    // Register orchestrations and activities
+    // Register activity only (orchestration moved to OrchestrationService)
     workerBuilder.AddTasks(registry =>
-    {
-        registry.AddOrchestratorFunc<FanOutFanInOrchestrationInput, FanOutFanInTestResult>("FanOutFanInOrchestration", 
-            async (ctx, input) =>
-            {
-                var orchestration = new FanOutFanInOrchestration();
-                return await orchestration.RunAsync(ctx, input);
-            });
-            
+    {            
         registry.AddActivityFunc<ActivityInput, ActivityResult>("FanOutFanInActivity", 
             async (ctx, input) =>
             {
@@ -69,105 +63,3 @@ app.MapGet("/status", () =>
 });
 
 app.Run();
-
-// Orchestration for fan-out/fan-in pattern testing with Durable Task
-public class FanOutFanInOrchestration
-{
-    public async Task<FanOutFanInTestResult> RunAsync(TaskOrchestrationContext context, FanOutFanInOrchestrationInput input)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        var results = new List<ActivityResult>();
-        
-        // Run multiple iterations of parallel activities
-        for (int i = 0; i < input.Iterations; i++)
-        {
-            var tasks = new List<Task<ActivityResult>>();
-            
-            // Create multiple parallel activities
-            for (int j = 0; j < input.ParallelActivities; j++)
-            {
-                var task = context.CallActivityAsync<ActivityResult>(
-                    "FanOutFanInActivity",
-                    new ActivityInput 
-                    { 
-                        IterationNumber = i, 
-                        ActivityNumber = j 
-                    });
-                tasks.Add(task);
-            }
-            
-            // Wait for all parallel activities to complete
-            await Task.WhenAll(tasks);
-            
-            // Collect results
-            results.AddRange(tasks.Select(t => t.Result));
-        }
-        
-        stopwatch.Stop();
-        
-        // Return fan-out/fan-in results
-        return new FanOutFanInTestResult
-        {
-            TotalActivities = input.Iterations * input.ParallelActivities,
-            ElapsedTimeMs = stopwatch.ElapsedMilliseconds,
-            AverageActivityTimeMs = results.Average(r => r.ProcessingTimeMs),
-            Results = results
-        };
-    }
-}
-
-// Activity for fan-out/fan-in testing
-public class FanOutFanInActivity
-{
-    public Task<ActivityResult> RunAsync(TaskActivityContext context, ActivityInput input)
-    {
-        var stopwatch = Stopwatch.StartNew();
-        
-        // Output "Hello World" instead of delaying
-        string output = "Hello World";
-        Console.WriteLine(output);
-        
-        stopwatch.Stop();
-        
-        var result = new ActivityResult
-        {
-            IterationNumber = input.IterationNumber,
-            ActivityNumber = input.ActivityNumber,
-            ProcessingTimeMs = stopwatch.ElapsedMilliseconds,
-            Output = output
-        };
-        
-        return Task.FromResult(result);
-    }
-}
-
-// Input and output classes
-
-// Same as defined in the orchestration service
-public class FanOutFanInOrchestrationInput
-{
-    public int Iterations { get; set; }
-    public int ParallelActivities { get; set; }
-}
-
-public class ActivityInput
-{
-    public int IterationNumber { get; set; }
-    public int ActivityNumber { get; set; }
-}
-
-public class ActivityResult
-{
-    public int IterationNumber { get; set; }
-    public int ActivityNumber { get; set; }
-    public long ProcessingTimeMs { get; set; }
-    public string Output { get; set; } = string.Empty;
-}
-
-public class FanOutFanInTestResult
-{
-    public int TotalActivities { get; set; }
-    public long ElapsedTimeMs { get; set; }
-    public double AverageActivityTimeMs { get; set; }
-    public List<ActivityResult> Results { get; set; } = new List<ActivityResult>();
-}

@@ -1,7 +1,12 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.AzureManaged;
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Worker;
+using Microsoft.DurableTask.Worker.AzureManaged;
 using System.Text.Json.Serialization;
+using OrchestrationService.Models;
+using OrchestrationService.Orchestrations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +27,24 @@ if (string.IsNullOrEmpty(connectionString))
 builder.Services.AddDurableTaskClient("FanOutFanInClient", options =>
 {
     options.UseDurableTaskScheduler(connectionString);
+});
+
+// Add Durable Task Worker for orchestrations (moved from WorkerService)
+builder.Services.AddDurableTaskWorker(workerBuilder =>
+{
+    // Configure the worker to use the Durable Task Scheduler backend
+    workerBuilder.UseDurableTaskScheduler(connectionString);
+    
+    // Register orchestrations
+    workerBuilder.AddTasks(registry =>
+    {
+        registry.AddOrchestratorFunc<FanOutFanInOrchestrationInput, FanOutFanInTestResult>("FanOutFanInOrchestration", 
+            async (ctx, input) =>
+            {
+                var orchestration = new FanOutFanInOrchestration();
+                return await orchestration.RunAsync(ctx, input);
+            });
+    });
 });
 
 // Add controllers with JSON options
@@ -148,18 +171,3 @@ app.MapGet("/status", () =>
 });
 
 app.Run();
-
-// Input model for the fan-out/fan-in test
-public class FanOutFanInRequest
-{
-    public int Iterations { get; set; } = 10;
-    public int ParallelActivities { get; set; } = 5;
-    public int ParallelOrchestrations { get; set; } = 1;
-}
-
-// The input for the orchestration
-public class FanOutFanInOrchestrationInput
-{
-    public int Iterations { get; set; }
-    public int ParallelActivities { get; set; }
-}

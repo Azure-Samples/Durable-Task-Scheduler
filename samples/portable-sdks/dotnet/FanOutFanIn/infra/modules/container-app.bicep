@@ -6,9 +6,6 @@ param containerImage string
 param containerPort int
 param environmentId string
 param containerRegistry string = ''
-param containerRegistryUsername string = ''
-@secure()
-param containerRegistryPassword string = ''
 param env array = []
 param external bool = true
 param userAssignedIdentityId string = ''
@@ -31,17 +28,10 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         targetPort: containerPort
         transport: 'auto'
       }
-      registries: !empty(containerRegistry) ? [
+      registries: !empty(containerRegistry) && !empty(userAssignedIdentityId) ? [
         {
           server: containerRegistry
-          username: containerRegistryUsername
-          passwordSecretRef: 'registry-password'
-        }
-      ] : []
-      secrets: !empty(containerRegistryPassword) ? [
-        {
-          name: 'registry-password'
-          value: containerRegistryPassword
+          identity: userAssignedIdentityId
         }
       ] : []
     }
@@ -54,7 +44,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-05-01' = {
         }
       ]
       scale: {
-        minReplicas: 0
+        minReplicas: 1
         maxReplicas: 10
       }
     }
