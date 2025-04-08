@@ -1,7 +1,7 @@
 namespace ClientService.Models;
 
-// Input model for the fan-out/fan-in test
-public class FanOutFanInRequest
+// Input model for the HelloWorld test
+public class HelloWorldRequest
 {
     public int Iterations { get; set; } = 10;
     public int ParallelActivities { get; set; } = 5;
@@ -9,7 +9,7 @@ public class FanOutFanInRequest
 }
 
 // The input for the orchestration
-public class FanOutFanInOrchestrationInput
+public class HelloWorldInput
 {
     public int Iterations { get; set; }
     public int ParallelActivities { get; set; }
