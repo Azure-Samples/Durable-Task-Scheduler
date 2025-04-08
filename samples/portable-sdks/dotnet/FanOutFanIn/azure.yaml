@@ -9,6 +9,7 @@ services:
     docker:
       context: .
       dockerfile: ./ClientService/Dockerfile
+      image: durable-task-fanoutfanin-sample/client-service:latest
   worker-service:
     project: ./WorkerService
     language: dotnet
@@ -16,3 +17,4 @@ services:
     docker:
       context: .
       dockerfile: ./WorkerService/Dockerfile
+      image: durable-task-fanoutfanin-sample/worker-service:latest
