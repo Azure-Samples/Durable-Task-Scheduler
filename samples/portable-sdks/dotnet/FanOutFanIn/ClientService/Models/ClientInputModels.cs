@@ -1,4 +1,4 @@
-namespace OrchestrationService.Models;
+namespace ClientService.Models;
 
 // Input model for the fan-out/fan-in test
 public class FanOutFanInRequest

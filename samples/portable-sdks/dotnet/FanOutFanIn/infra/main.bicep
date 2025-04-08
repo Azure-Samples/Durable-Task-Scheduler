@@ -75,11 +75,11 @@ module durableTaskScheduler 'modules/durable-task-scheduler.bicep' = {
 }
 
 // User assigned managed identities for services
-module orchestrationServiceIdentity 'modules/managed-identity.bicep' = {
-  name: 'orchestration-service-identity-module'
+module clientServiceIdentity 'modules/managed-identity.bicep' = {
+  name: 'client-service-identity-module'
   scope: resourceGroup
   params: {
-    name: '${environmentName}-orchestration-identity'
+    name: '${environmentName}-client-identity'
     location: location
     tags: tags
   }
@@ -96,13 +96,13 @@ module workerServiceIdentity 'modules/managed-identity.bicep' = {
 }
 
 // Role assignments for Durable Task Scheduler
-// Orchestration Service
-module orchestrationServiceDtsAccess 'modules/dts-access.bicep' = {
-  name: 'orchestration-service-dts-access'
+// Client Service
+module clientServiceDtsAccess 'modules/dts-access.bicep' = {
+  name: 'client-service-dts-access'
   scope: resourceGroup
   params: {
     roleDefinitionID: durableTaskDataContributorRoleId
-    principalID: orchestrationServiceIdentity.outputs.principalId
+    principalID: clientServiceIdentity.outputs.principalId
     principalType: 'ServicePrincipal'
     dtsName: durableTaskScheduler.outputs.dts_NAME
   }
@@ -144,12 +144,12 @@ module userAcrPushAccess 'modules/role-assignment.bicep' = if (!empty(principalI
   }
 }
 
-// ACR Pull access for orchestration service
-module orchestrationServiceAcrPullAccess 'modules/role-assignment.bicep' = {
-  name: 'orchestration-service-acr-pull'
+// ACR Pull access for client service
+module clientServiceAcrPullAccess 'modules/role-assignment.bicep' = {
+  name: 'client-service-acr-pull'
   scope: resourceGroup
   params: {
-    principalId: orchestrationServiceIdentity.outputs.principalId
+    principalId: clientServiceIdentity.outputs.principalId
     roleDefinitionId: acrPullRoleId
     principalType: 'ServicePrincipal'
     resourceId: containerRegistry.outputs.id
@@ -168,19 +168,19 @@ module workerServiceAcrPullAccess 'modules/role-assignment.bicep' = {
   }
 }
 
-// Application services - Orchestration Service
-module orchestrationService 'modules/container-app.bicep' = {
-  name: 'orchestration-service'
+// Application services - Client Service
+module clientService 'modules/container-app.bicep' = {
+  name: 'client-service'
   scope: resourceGroup
   params: {
-    name: '${environmentName}-orchestration-service'
+    name: '${environmentName}-client-service'
     location: location
     tags: tags
     environmentId: containerAppsEnvironment.outputs.id
-    containerImage: '${containerRegistry.outputs.loginServer}/orchestration-service:latest'
+    containerImage: '${containerRegistry.outputs.loginServer}/client-service:latest'
     containerPort: 8080
     containerRegistry: containerRegistry.outputs.loginServer
-    userAssignedIdentityId: orchestrationServiceIdentity.outputs.id
+    userAssignedIdentityId: clientServiceIdentity.outputs.id
     env: [
       {
         name: 'ASPNETCORE_ENVIRONMENT'
@@ -222,7 +222,7 @@ module workerService 'modules/container-app.bicep' = {
   }
 }
 
-output ORCHESTRATION_SERVICE_URI string = orchestrationService.outputs.uri
+output CLIENT_SERVICE_URI string = clientService.outputs.uri
 output WORKER_SERVICE_URI string = workerService.outputs.uri
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
