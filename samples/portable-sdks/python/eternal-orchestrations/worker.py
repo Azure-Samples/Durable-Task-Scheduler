@@ -1,12 +1,8 @@
 import os
-import random
-from datetime import datetime, timedelta
+from datetime import timedelta
 import time  
 
 from azure.identity import DefaultAzureCredential
-
-from durabletask import client, task
-from durabletask.azuremanaged.client import DurableTaskSchedulerClient
 from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
 
 def cleanup_task(ctx, _) -> str:
@@ -19,13 +15,12 @@ def cleanup_task(ctx, _) -> str:
     return 'Cleanup completed'
 
 def periodic_cleanup(ctx, _):
-    """Orchestration function that schedules periodic cleanup up to 5 times every 25 seconds."""
+    """Orchestration function that schedules periodic cleanup 5x every 15 seconds."""
     # Perform the cleanup task
-    yield ctx.call_activity(cleanup_task)
-
-    # Wait for 3 seconds and continue as new
-    yield ctx.create_timer(timedelta(seconds=10))
-    ctx.continue_as_new(None)
+    for _ in range(5):
+        yield ctx.call_activity(cleanup_task)
+        # Wait for 15 seconds before the next cleanup
+        yield ctx.create_timer(timedelta(seconds=15))
 
 # Read the environment variable
 taskhub_name = os.getenv("TASKHUB")
@@ -57,16 +52,10 @@ credential = DefaultAzureCredential()
 with DurableTaskSchedulerWorker(host_address=endpoint, secure_channel=True,
                                 taskhub=taskhub_name, token_credential=credential) as w:
     
-     w.add_orchestrator(periodic_cleanup)
-     w.add_activity(cleanup_task)
+    w.add_orchestrator(periodic_cleanup)
+    w.add_activity(cleanup_task)
 
-     w.start()
+    w.start()
 
-     # Create a client, start an orchestration, and wait for it to finish
-     c = DurableTaskSchedulerClient(host_address=endpoint, secure_channel=True,
-                                    taskhub=taskhub_name, token_credential=credential)
-
-     instance_id = c.schedule_new_orchestration(periodic_cleanup)
-
-     while True:
+    while True:
         time.sleep(1)
