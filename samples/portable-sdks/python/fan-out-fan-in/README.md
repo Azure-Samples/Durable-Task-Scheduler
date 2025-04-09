@@ -139,20 +139,22 @@ When you run the sample:
 
 3. The client waits for the orchestration to complete and displays the final combined result.
 
-This sample demonstrates how to process multiple items in parallel for improved throughput and then combine their results, which is essential for data processing, aggregation operations, and other scenarios requiring concurrent execution.
+### Viewing Orchestration Details in the Durable Task Dashboard
 
-## Sample Explanation
+After running the sample, you can use the Durable Task Dashboard to view details about your orchestration execution:
 
-The fan out/fan in pattern is ideal for workloads that can be parallelized into independent tasks, with results combined afterward. Common use cases include:
+1. Access the dashboard using the appropriate URL: `https://dashboard.durabletask.io`
 
-- Data processing (map-reduce pattern)
-- Batch processing of independent items
-- Parallel API calls or data retrieval
-- High-performance computation
+2. When using an Azure deployed scheduler, you'll need to authenticate with an account that has been granted the "Durable Task Data Contributor" role.
 
-This pattern enables efficient processing by:
-1. Distributing work across multiple parallel executions
-2. Processing items concurrently to reduce total execution time
-3. Combining the results into a single aggregated output
+3. In the dashboard, you'll see a list of all orchestration instances. Find your fan-out-fan-in orchestration and click on it to see details.
 
-In this sample, each work item is processed independently in parallel, and the results are aggregated into summary statistics.
+4. The dashboard provides several views of your orchestration:
+   - **Timeline View**: Shows the parallel execution of your multiple activities, making it easy to visualize how tasks run concurrently
+   - **History View**: Provides detailed event sequence with timestamps for all parallel activities
+   - **Sequence View**: Visualizes the event sequence, clearly showing the fan-out and fan-in phases
+   - **Input/Output View**: Shows the inputs and outputs of each parallel activity
+
+5. You can also see the status (Running, Completed, Failed) and manage orchestrations using the dashboard controls.
+
+The dashboard is particularly useful for fan-out-fan-in patterns as it visually shows how activities run in parallel and how their results are aggregated, helping you identify performance bottlenecks or failures in any of the parallel branches.

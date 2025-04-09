@@ -152,26 +152,19 @@ When you run the sample:
 
 This sample demonstrates how to create sequential workflows where the output of one step serves as the input to the next step. This pattern is useful for creating multi-step processes where each step depends on the result of the previous step.
 
-## Sample Explanation
+## Viewing Orchestration Details in the Durable Task Dashboard
 
-The function chaining pattern is useful for workflows where steps must be executed in a specific order, and each step depends on the output of the previous step. Examples include:
+After running the sample, you can use the Durable Task Dashboard to view details about your function chaining orchestration:
 
-- Processing pipelines
-- Approval workflows with multiple steps
-- Data transformation chains
+1. Access the dashboard using the appropriate URL: `https://dashboard.durabletask.io`
 
-In this sample, the pattern is demonstrated through a simple series of greeting transformations, where each activity builds upon the output of the previous activity.
+2. When using an Azure deployed scheduler, you'll need to authenticate with an account that has been granted the "Durable Task Data Contributor" role.
 
-Function chaining is a fundamental pattern for orchestrating sequential workflows where:
+3. In the dashboard, you'll see a list of all orchestration instances. Find your function chaining orchestration and click on it to see details.
 
-1. Operations must be performed in a specific order
-2. Each operation depends on the result of the previous one
-3. The entire sequence represents a single coherent workflow
+4. The dashboard provides several views that are particularly useful for function chaining patterns:
+   - **Sequence View**: Visualizes the sequential flow of functions in the chain
+   - **History View**: Shows each function execution in the chain with timestamps and status
+   - **Timeline View**: Illustrates the duration and sequence of each function in the chain
 
-Common use cases include:
-- Multi-step data processing pipelines
-- Document approval workflows
-- Sequential validation processes
-- ETL (Extract, Transform, Load) operations
-
-In this sample, the orchestration chains three simple text processing activities together, with each one building upon the result of the previous activity to produce a final message.
+The dashboard provides valuable insights into how your chained functions execute, helping you optimize performance and identify issues.

@@ -153,18 +153,19 @@ When you run the sample:
 
 This sample demonstrates a pattern for monitoring long-running processes without maintaining a continuous connection, which is useful for tracking asynchronous operations in external systems.
 
-## Sample Explanation
+## Viewing Orchestration Details in the Durable Task Dashboard
 
-The monitoring pattern is useful for scenarios where you need to track the progress of an external process or system that may take a while to complete. Instead of blocking resources with a continuous connection, this pattern:
+After running the sample, you can use the Durable Task Dashboard to view details about your monitoring orchestration:
 
-1. Checks the status of the external system periodically
-2. Sleeps between checks to conserve resources
-3. Completes when either the desired condition is met or a timeout occurs
+1. Access the dashboard using the appropriate URL: `https://dashboard.durabletask.io`
 
-Common use cases include:
-- Monitoring asynchronous job status
-- Waiting for resource provisioning to complete
-- Polling for file creation or changes
-- Checking for availability of services or data
+2. When using an Azure deployed scheduler, you'll need to authenticate with an account that has been granted the "Durable Task Data Contributor" role.
 
-In this sample, the orchestration simulates monitoring an external job by periodically checking its status until it completes successfully or reaches the specified timeout.
+3. In the dashboard, you'll see a list of all orchestration instances. Find your monitoring orchestration and click on it to see details.
+
+4. The dashboard provides several views that are particularly useful for monitoring patterns:
+   - **Timeline View**: Shows the recurring pattern of checks over time
+   - **History View**: Details each monitoring iteration, including timestamps and status
+   - **Sequence View**: Visualizes the workflow including continuous monitoring loops
+
+The dashboard is particularly valuable for monitoring scenarios as it provides visibility into recurring orchestrations and helps identify trends or issues over extended periods of time.

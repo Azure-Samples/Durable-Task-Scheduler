@@ -152,3 +152,30 @@ These patterns are useful in real-world scenarios such as:
 - Complex approval workflows with multiple stages
 
 The sample simulates an order processing system where orders are batched for efficient processing. Each order goes through its own processing flow in parallel, and the results are aggregated to provide an overall status report.
+
+### Viewing Orchestration Details in the Durable Task Dashboard
+
+After running the sample, you can use the Durable Task Dashboard to view details about your orchestration execution:
+
+1. Access the dashboard using the appropriate URL:
+   - **For local emulator**: Navigate to `https://dashboard.durabletask.io/http://localhost:8080`
+   - **For Azure deployed scheduler**: Navigate to `https://dashboard.durabletask.io/<your-taskhub-endpoint>`
+
+2. When using an Azure deployed scheduler, you'll need to authenticate with an account that has been granted the "Durable Task Data Contributor" role.
+
+3. In the dashboard, you'll see a list of all orchestration instances. Find your main orchestration and click on it to see details.
+
+4. The dashboard provides several views of your orchestration:
+   - **Timeline View**: Shows the execution flow including all sub-orchestrations, making it easy to visualize the parent-child relationships
+   - **History View**: Provides detailed event sequence with timestamps for both the main orchestration and sub-orchestrations
+   - **Sequence View**: Visualizes the entire hierarchy of your orchestration, showing the parent-child relationships between orchestrations
+   - **Input/Output View**: Shows the inputs and outputs of the main orchestration and each sub-orchestration
+
+5. You can also see the status (Running, Completed, Failed) and manage orchestrations using the dashboard controls.
+
+6. For sub-orchestrations specifically, you can:
+   - Click on any sub-orchestration ID to navigate to its dedicated detail view
+   - See how data flows between parent and child orchestrations
+   - Understand the execution hierarchy and dependencies between orchestrations
+
+The dashboard is especially valuable for complex nested orchestration patterns as it helps you visualize the entire execution tree and identify any issues in your orchestration hierarchy.

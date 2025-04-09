@@ -169,19 +169,19 @@ When you run the sample:
 
 This sample demonstrates how to incorporate human decision points into automated workflows, which is crucial for approval processes, review workflows, and other scenarios requiring human judgment.
 
-## Sample Explanation
+## Viewing Orchestration Details in the Durable Task Dashboard
 
-The human interaction pattern is essential for workflows that require human approval or input before proceeding. Key aspects of this pattern include:
+After running the sample, you can use the Durable Task Dashboard to view details about your human interaction orchestration:
 
-1. Submitting a request for human review
-2. Suspending execution while waiting for a response
-3. Handling responses (approval/rejection) when received
-4. Managing timeouts if no response is received within a designated period
+1. Access the dashboard using the appropriate URL: `https://dashboard.durabletask.io`
 
-Common use cases include:
-- Expense approval workflows
-- Content moderation systems
-- Change management processes
-- Access request approvals
+2. When using an Azure deployed scheduler, you'll need to authenticate with an account that has been granted the "Durable Task Data Contributor" role.
 
-In this sample, the orchestration submits an approval request and then waits for either a human response (approve/reject) or a timeout. The FastAPI application provides endpoints for creating requests and responding to them, simulating a real-world approval system.
+3. In the dashboard, you'll see a list of all orchestration instances. Find your human interaction orchestration and click on it to see details.
+
+4. The dashboard provides several views that are particularly useful for human interaction patterns:
+   - **Timeline View**: Shows when the approval request was sent and when the human response was received
+   - **History View**: Details the waiting period and response events
+   - **Sequence View**: Visualizes the workflow steps including the human interaction point
+
+The dashboard is particularly valuable for scenarios involving human interaction as it helps identify bottlenecks in approval processes and monitor overall workflow efficiency.

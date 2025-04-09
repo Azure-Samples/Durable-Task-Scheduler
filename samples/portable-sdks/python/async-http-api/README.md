@@ -173,19 +173,23 @@ When you run the sample:
 
 This sample demonstrates how to implement RESTful APIs for long-running operations using the Durable Task Scheduler, providing a better user experience by not requiring clients to maintain open connections while processing completes.
 
-## Sample Explanation
+### Viewing Orchestration Details in the Durable Task Dashboard
 
-The async HTTP API pattern is useful for implementing RESTful services with long-running operations. Instead of keeping an HTTP connection open for the entire operation, this pattern:
+After running the sample, you can use the Durable Task Dashboard to view details about your orchestration execution:
 
-1. Returns an immediate response with a status URL
-2. Processes the request asynchronously in the background
-3. Allows the client to check the status via the provided URL
-4. Returns the final result when the operation completes
+1. Access the dashboard using the appropriate URL: `https://dashboard.durabletask.io`
 
-This pattern is common in many real-world scenarios:
-- File processing services
-- Data import/export operations
-- Complex calculations or analysis
-- Resource provisioning
+2. When using an Azure deployed scheduler, you'll need to authenticate with an account that has been granted the "Durable Task Data Contributor" role.
 
-In this sample, the FastAPI application demonstrates how to use durable tasks to manage the lifecycle of asynchronous operations while providing a responsive HTTP API.
+3. In the dashboard, you'll see a list of all orchestration instances. Find your async HTTP API orchestration and click on it to see details.
+
+4. The dashboard provides several views of your orchestration:
+   - **Timeline View**: Shows the execution timeline with HTTP-triggered activities
+   - **History View**: Provides detailed event sequence with timestamps
+   - **Sequence View**: Visualizes the event sequence in a graphical format
+   - **Input/Output View**: Shows the inputs to your orchestration and the final output
+
+5. You can also see the status (Running, Completed, Failed) and manage orchestrations using the dashboard controls.
+
+The dashboard is particularly useful for async HTTP patterns as it provides visibility into the progression of orchestrations triggered by HTTP requests and helps diagnose any issues with external API calls.
+
