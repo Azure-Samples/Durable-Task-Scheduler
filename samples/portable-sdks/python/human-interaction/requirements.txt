@@ -1,0 +1,4 @@
+durabletask-azuremanaged
+azure-identity
+fastapi
+uvicorn

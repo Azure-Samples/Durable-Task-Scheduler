@@ -1,6 +1,6 @@
 # Portable SDK Sample for Sub Orchestrations and Fan-out / Fan-in
 
-This sample demonstrates how to use the Durable Task SDK, also known as the Portable SDK, with the Durable Task Scheduler to create orchestrations. These orchestrations not only spin off child orchestrations but also perform parallel processing by leveraging the fan-out/fan-in application pattern.
+This sample demonstrates how to use the Durable Task SDK, also known as the Portable SDK, with the Durable Task Scheduler to create orchestrations that spin off child orchestrations but also perform parallel processing by leveraging the fan-out/fan-in application pattern.
 
 The scenario showcases an order processing system where orders are processed in batches. 
 
