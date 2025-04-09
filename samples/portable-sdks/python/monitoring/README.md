@@ -18,7 +18,7 @@ In this sample, the orchestration demonstrates the monitoring pattern by:
 
 This pattern is useful for scenarios where you need to track the progress of an external system or process without blocking resources with a continuous connection.
 
-## Running the Examples
+## Configuring the Sample
 
 There are two separate ways to run an example:
 
@@ -97,6 +97,61 @@ $env:ENDPOINT = "http://localhost:8080"
 ```
 
 5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
+
+## Running the Sample
+
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+
+1. First, activate your Python virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+2. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
+
+3. Start the worker in a terminal:
+```bash
+python worker.py
+```
+You should see output indicating the worker has started and registered the orchestration and activities.
+
+4. In a new terminal (with the virtual environment activated), run the client:
+```bash
+python client.py [job_id] [polling_interval] [timeout]
+```
+
+For example:
+```bash
+python client.py job-123 5 30
+```
+
+Where:
+- `job_id` is an optional identifier for the job (defaults to a generated UUID)
+- `polling_interval` is the number of seconds between status checks (defaults to 5)
+- `timeout` is the maximum number of seconds to monitor before timing out (defaults to 30)
+
+### What Happens When You Run the Sample
+
+When you run the sample:
+
+1. The client creates an orchestration instance to monitor a job with the provided parameters.
+
+2. The worker executes the `monitor_job` orchestration function, which:
+   - Sets up initial monitoring parameters (job ID, polling interval, deadline)
+   - Enters a loop that periodically checks the job status
+   - Each iteration calls the `check_job_status` activity to simulate checking an external system
+   - If the job completes or the deadline is reached, the orchestration completes
+   - Otherwise, it schedules itself to wake up after the polling interval using `context.create_timer()`
+
+3. The `check_job_status` activity simulates an external job that takes time to complete, with the completion percentage increasing on each check.
+
+4. The client displays the status updates as the orchestration monitors the job until completion or timeout.
+
+This sample demonstrates a pattern for monitoring long-running processes without maintaining a continuous connection, which is useful for tracking asynchronous operations in external systems.
 
 ## Sample Explanation
 

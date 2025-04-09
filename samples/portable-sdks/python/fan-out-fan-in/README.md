@@ -18,7 +18,7 @@ In this sample, the orchestration demonstrates the fan out/fan in pattern by:
 
 This pattern is useful for parallel processing scenarios where you need to combine results.
 
-## Running the Examples
+## Configuring the Sample
 
 There are two separate ways to run an example:
 
@@ -97,72 +97,49 @@ $env:ENDPOINT = "http://localhost:8080"
 ```
 
 5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
-$env:TASKHUB="your-taskhub-name"
-$env:ENDPOINT="your-scheduler-endpoint"
-```
 
 ## Running the Sample
 
-1. First, start the worker that registers the activities and orchestrations:
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-```bash
-python worker.py
-```
-
-2. In a new terminal (with the virtual environment activated), run the client to start the orchestration:
-
-```bash
-python client.py 20  # Optionally specify the number of work items (default is 10)
-```rates the fan out/fan in pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, the orchestrator executes multiple functions in parallel and then waits for all of them to finish before aggregating the results.
-
-## Prerequisites
-
-1. [Python 3.8+](https://www.python.org/downloads/)
-2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
-4. Appropriate Azure role assignments (Owner or Contributor)
-
-## Setup
-
-1. Create a virtual environment and activate it:
-
+1. First, activate your Python virtual environment:
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
 2. Install the required packages:
-
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Make sure you're logged in to Azure:
-
-```bash
-az login
-```
-
-## Running the Sample
-
-1. First, start the worker that registers the activities and orchestrations:
-
+3. Start the worker in a terminal:
 ```bash
 python worker.py
 ```
+You should see output indicating the worker has started and registered the orchestration and activities.
 
-2. In a new terminal (with the virtual environment activated), run the client to start the orchestration:
-
+4. In a new terminal (with the virtual environment activated), run the client:
 ```bash
-python client.py 10
+python client.py
 ```
 
-The parameter `10` specifies the number of work items to process in parallel. You can adjust this value as needed.
+### What Happens When You Run the Sample
 
-The client will schedule a new orchestration instance and wait for it to complete. The worker will:
-1. Fan out: Process multiple work items in parallel 
-2. Fan in: Wait for all parallel executions to complete
-3. Aggregate the results of all work items
+When you run the sample:
+
+1. The client creates an instance of `DurableTaskClient` and starts a new orchestration instance.
+
+2. The worker executes the `fan_out_fan_in` orchestration function, which:
+   - Generates a list of work items to process
+   - Creates tasks for each work item and executes them in parallel (fan out phase)
+   - Uses `Task.all_settled()` to wait for all parallel tasks to complete
+   - Aggregates the results from all completed activities (fan in phase)
+   - Returns the final aggregated result
+
+3. The client waits for the orchestration to complete and displays the final combined result.
+
+This sample demonstrates how to process multiple items in parallel for improved throughput and then combine their results, which is essential for data processing, aggregation operations, and other scenarios requiring concurrent execution.
 
 ## Sample Explanation
 
