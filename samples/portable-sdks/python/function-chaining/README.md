@@ -6,41 +6,97 @@ This sample demonstrates the function chaining pattern with the Azure Durable Ta
 
 1. [Python 3.8+](https://www.python.org/downloads/)
 2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
-4. Appropriate Azure role assignments (Owner or Contributor)
+3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
 
-## Setup
+## Sample Overview
 
-1. Create a virtual environment and activate it:
+In this sample, the orchestration chains three activities together in sequence:
+
+1. The first activity creates a greeting with your name
+2. The second activity processes that greeting
+3. The third activity finalizes the response
+
+Each activity's output serves as the input to the next activity. The final result is returned to the client.
+
+## Running the Examples
+
+There are two separate ways to run an example:
+
+- Using the Emulator
+- Using a deployed Scheduler and Taskhub
+
+### Running with a Deployed Scheduler and Taskhub Resource
+
+1. To create a taskhub, follow these steps using the Azure CLI commands:
+
+Create a Scheduler:
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
 ```
 
-2. Install the required packages:
+Create Your Taskhub:
 
+```bash
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
+
+2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
+
+3. Set the Environment Variables:
+
+Bash:
+```bash
+export TASKHUB=<taskhubname>
+export ENDPOINT=<taskhubEndpoint>
+```
+
+Powershell:
+```powershell
+$env:TASKHUB = "<taskhubname>"
+$env:ENDPOINT = "<taskhubEndpoint>"
+```
+
+4. Install the Correct Packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Make sure you're logged in to Azure:
+5. Grant your developer credentials the Durable Task Data Contributor Role.
+
+### Running with the Emulator
+
+The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
+
+1. Install Docker: If it is not already installed.
+
+2. Pull the Docker Image for the Emulator:
 
 ```bash
-az login
+docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-4. Set up the required environment variables:
+3. Run the Emulator: Wait a few seconds for the container to be ready.
 
 ```bash
-# For bash/zsh
-export TASKHUB="your-taskhub-name"
-export ENDPOINT="your-scheduler-endpoint"
-
-# For Windows PowerShell
-$env:TASKHUB="your-taskhub-name"
-$env:ENDPOINT="your-scheduler-endpoint"
+docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
 ```
+
+4. Set the Environment Variables:
+
+Bash:
+```bash
+export TASKHUB=<taskhubname>
+export ENDPOINT=http://localhost:8080
+```
+
+Powershell:
+```powershell
+$env:TASKHUB = "<taskhubname>"
+$env:ENDPOINT = "http://localhost:8080"
+```
+
+5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
 
 ## Running the Sample
 
@@ -56,13 +112,7 @@ python worker.py
 python client.py "YourName"
 ```
 
-The client will schedule a new orchestration instance and wait for it to complete. The worker will execute the orchestration, which chains three activities together in sequence:
-
-1. The first activity creates a greeting with your name
-2. The second activity processes that greeting
-3. The third activity finalizes the response
-
-Each activity's output serves as the input to the next activity. The final result is returned to the client.
+The client will schedule a new orchestration instance and wait for it to complete.
 
 ## Sample Explanation
 

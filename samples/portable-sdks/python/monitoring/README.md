@@ -1,90 +1,102 @@
-# Monitoring Pattern
+# Monitoring Pattern with Azure Durable Task Scheduler
 
-This3. Make sure you're logged in to Azure:
-
-```bash
-az login
-```
-
-4. Set up the required environment variables:
-
-```bash
-# For bash/zsh
-export TASKHUB="your-taskhub-name"
-export ENDPOINT="your-scheduler-endpoint"
-
-# For Windows PowerShell
-$env:TASKHUB="your-taskhub-name"
-$env:ENDPOINT="your-scheduler-endpoint"
-```
-
-## Running the Sample
-
-1. First, start the worker that registers the activities and orchestrations:
-
-```bash
-python worker.py
-```
-
-2. In a new terminal (with the virtual environment activated), run the client to start the orchestration:
-
-```bash
-python client.py
-```s the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern enables periodic checking of an external system or process until a certain condition is met or a timeout occurs.
+This sample demonstrates the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern enables periodic checking of an external system or process until a certain condition is met or a timeout occurs.
 
 ## Prerequisites
 
 1. [Python 3.8+](https://www.python.org/downloads/)
 2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
-4. Appropriate Azure role assignments (Owner or Contributor)
+3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
 
-## Setup
+## Sample Overview
 
-1. Create a virtual environment and activate it:
+In this sample, the orchestration demonstrates the monitoring pattern by:
+
+1. Periodically checking the status of a simulated external job
+2. Updating the orchestration state with the latest status
+3. Either completing when the job is done or timing out after a specified period
+
+This pattern is useful for scenarios where you need to track the progress of an external system or process without blocking resources with a continuous connection.
+
+## Running the Examples
+
+There are two separate ways to run an example:
+
+- Using the Emulator
+- Using a deployed Scheduler and Taskhub
+
+### Running with a Deployed Scheduler and Taskhub Resource
+
+1. To create a taskhub, follow these steps using the Azure CLI commands:
+
+Create a Scheduler:
 
 ```bash
-python -m venv venv
-source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
 ```
 
-2. Install the required packages:
+Create Your Taskhub:
 
+```bash
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
+
+2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
+
+3. Set the Environment Variables:
+
+Bash:
+```bash
+export TASKHUB=<taskhubname>
+export ENDPOINT=<taskhubEndpoint>
+```
+
+Powershell:
+```powershell
+$env:TASKHUB = "<taskhubname>"
+$env:ENDPOINT = "<taskhubEndpoint>"
+```
+
+4. Install the Correct Packages:
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Make sure you're logged in to Azure:
+5. Grant your developer credentials the Durable Task Data Contributor Role.
+
+### Running with the Emulator
+
+The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
+
+1. Install Docker: If it is not already installed.
+
+2. Pull the Docker Image for the Emulator:
 
 ```bash
-az login
+docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-## Running the Sample
-
-1. First, start the worker that registers the activities and orchestrations:
+3. Run the Emulator: Wait a few seconds for the container to be ready.
 
 ```bash
-python worker.py
+docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
 ```
 
-2. In a new terminal (with the virtual environment activated), run the client to start the monitoring orchestration:
+4. Set the Environment Variables:
 
+Bash:
 ```bash
-python client.py [job_id] [polling_interval] [timeout]
+export TASKHUB=<taskhubname>
+export ENDPOINT=http://localhost:8080
 ```
 
-For example:
-```bash
-python client.py job-123 5 30
+Powershell:
+```powershell
+$env:TASKHUB = "<taskhubname>"
+$env:ENDPOINT = "http://localhost:8080"
 ```
 
-Where:
-- `job_id` is an optional identifier for the job (defaults to a generated UUID)
-- `polling_interval` is the number of seconds between status checks (defaults to 5)
-- `timeout` is the maximum number of seconds to monitor before timing out (defaults to 30)
-
-The orchestration will periodically check the job status until it completes or times out.
+5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
 
 ## Sample Explanation
 

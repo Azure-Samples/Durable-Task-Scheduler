@@ -13,7 +13,7 @@ There are two separate ways to run an example:
 - Using the Emulator
 - Using a deployed Scheduler and Taskhub
 
-### Running with a Deployed Scheduler and Taskhub rResource
+### Running with a Deployed Scheduler and Taskhub Resource
 1. To create a taskhub, follow these steps using the Azure CLI commands:
 
 Create a Scheduler:
