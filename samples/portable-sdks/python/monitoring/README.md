@@ -140,6 +140,7 @@ $env:ENDPOINT = "http://localhost:8080"
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
 1. First, activate your Python virtual environment:
+<<<<<<< HEAD
 =======
 3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
 4. Appropriate Azure role assignments (Owner or Contributor)
@@ -149,6 +150,8 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 1. Create a virtual environment and activate it:
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -156,14 +159,20 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 2. Install the required packages:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 pip install -r requirements.txt
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 3. Start the worker in a terminal:
 ```bash
 python worker.py
@@ -171,6 +180,7 @@ python worker.py
 You should see output indicating the worker has started and registered the orchestration and activities.
 
 4. In a new terminal (with the virtual environment activated), run the client:
+<<<<<<< HEAD
 =======
 3. Make sure you're logged in to Azure:
 
@@ -189,6 +199,8 @@ python worker.py
 2. In a new terminal (with the virtual environment activated), run the client to start the monitoring orchestration:
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 python client.py [job_id] [polling_interval] [timeout]
 ```
@@ -204,6 +216,9 @@ Where:
 - `timeout` is the maximum number of seconds to monitor before timing out (defaults to 30)
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ### What Happens When You Run the Sample
 
 When you run the sample:
@@ -223,6 +238,7 @@ When you run the sample:
 
 This sample demonstrates a pattern for monitoring long-running processes without maintaining a continuous connection, which is useful for tracking asynchronous operations in external systems.
 
+<<<<<<< HEAD
 ## Viewing Orchestration Details in the Durable Task Dashboard
 
 After running the sample, you can use the Durable Task Dashboard to view details about your monitoring orchestration:
@@ -242,6 +258,8 @@ The dashboard is particularly valuable for monitoring scenarios as it provides v
 =======
 The orchestration will periodically check the job status until it completes or times out.
 
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ## Sample Explanation
 
 The monitoring pattern is useful for scenarios where you need to track the progress of an external process or system that may take a while to complete. Instead of blocking resources with a continuous connection, this pattern:

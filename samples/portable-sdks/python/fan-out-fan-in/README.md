@@ -136,6 +136,7 @@ $env:ENDPOINT = "http://localhost:8080"
 ## Running the Sample
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+<<<<<<< HEAD
 
 1. First, activate your Python virtual environment:
 =======
@@ -147,6 +148,10 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 1. Create a virtual environment and activate it:
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+
+1. First, activate your Python virtual environment:
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -154,13 +159,17 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 2. Install the required packages:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 pip install -r requirements.txt
 ```
 
+<<<<<<< HEAD
 <<<<<<< HEAD
 3. Start the worker in a terminal:
 ```bash
@@ -218,22 +227,35 @@ az login
 
 1. First, start the worker that registers the activities and orchestrations:
 
+=======
+3. Start the worker in a terminal:
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 python worker.py
 ```
+You should see output indicating the worker has started and registered the orchestration and activities.
 
-2. In a new terminal (with the virtual environment activated), run the client to start the orchestration:
-
+4. In a new terminal (with the virtual environment activated), run the client:
 ```bash
-python client.py 10
+python client.py
 ```
 
-The parameter `10` specifies the number of work items to process in parallel. You can adjust this value as needed.
+### What Happens When You Run the Sample
 
-The client will schedule a new orchestration instance and wait for it to complete. The worker will:
-1. Fan out: Process multiple work items in parallel 
-2. Fan in: Wait for all parallel executions to complete
-3. Aggregate the results of all work items
+When you run the sample:
+
+1. The client creates an instance of `DurableTaskClient` and starts a new orchestration instance.
+
+2. The worker executes the `fan_out_fan_in` orchestration function, which:
+   - Generates a list of work items to process
+   - Creates tasks for each work item and executes them in parallel (fan out phase)
+   - Uses `Task.all_settled()` to wait for all parallel tasks to complete
+   - Aggregates the results from all completed activities (fan in phase)
+   - Returns the final aggregated result
+
+3. The client waits for the orchestration to complete and displays the final combined result.
+
+This sample demonstrates how to process multiple items in parallel for improved throughput and then combine their results, which is essential for data processing, aggregation operations, and other scenarios requiring concurrent execution.
 
 ## Sample Explanation
 

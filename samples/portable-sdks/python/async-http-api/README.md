@@ -105,6 +105,7 @@ $env:ENDPOINT = "http://localhost:8080"
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
 1. First, activate your Python virtual environment:
+<<<<<<< HEAD
 =======
 3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
 4. Appropriate Azure role assignments (Owner or Contributor)
@@ -114,6 +115,8 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 1. Create a virtual environment and activate it:
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -121,14 +124,20 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 2. Install the required packages:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 pip install -r requirements.txt
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 3. Start the worker in a terminal:
 ```bash
 python worker.py
@@ -188,6 +197,7 @@ When you run the sample:
 
 This sample demonstrates how to implement RESTful APIs for long-running operations using the Durable Task Scheduler, providing a better user experience by not requiring clients to maintain open connections while processing completes.
 
+<<<<<<< HEAD
 ### Viewing Orchestration Details in the Durable Task Dashboard
 
 After running the sample, you can use the Durable Task Dashboard to view details about your orchestration execution:
@@ -257,6 +267,8 @@ python client.py
      ```
      Replace `{operation_id}` with the ID returned from the previous call.
 
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ## Sample Explanation
 
 The async HTTP API pattern is useful for implementing RESTful services with long-running operations. Instead of keeping an HTTP connection open for the entire operation, this pattern:

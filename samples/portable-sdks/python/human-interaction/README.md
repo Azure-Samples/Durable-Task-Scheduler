@@ -104,6 +104,7 @@ $env:ENDPOINT = "http://localhost:8080"
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
 1. First, activate your Python virtual environment:
+<<<<<<< HEAD
 =======
 3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
 4. Appropriate Azure role assignments (Owner or Contributor)
@@ -113,6 +114,8 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 1. Create a virtual environment and activate it:
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -120,14 +123,20 @@ source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 
 2. Install the required packages:
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ```bash
 pip install -r requirements.txt
 ```
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 3. Start the worker in a terminal:
 ```bash
 python worker.py
@@ -141,6 +150,7 @@ python client.py
 The FastAPI application will start on http://localhost:8000.
 
 5. Interact with the API using curl or a web browser:
+<<<<<<< HEAD
 =======
 3. Make sure you're logged in to Azure:
 
@@ -176,6 +186,8 @@ python client.py
 
 3. The FastAPI application will start on http://localhost:8000. You can interact with it using:
 >>>>>>> 8b26beb (Add python samples for the durable app patterns)
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 
    - **Create an approval request:**
      ```
@@ -200,6 +212,9 @@ python client.py
      Replace `{request_id}` with the appropriate request ID and set `is_approved` to `true` or `false`.
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ### What Happens When You Run the Sample
 
 When you run the sample:
@@ -220,6 +235,7 @@ When you run the sample:
 
 This sample demonstrates how to incorporate human decision points into automated workflows, which is crucial for approval processes, review workflows, and other scenarios requiring human judgment.
 
+<<<<<<< HEAD
 ## Viewing Orchestration Details in the Durable Task Dashboard
 
 After running the sample, you can use the Durable Task Dashboard to view details about your human interaction orchestration:
@@ -237,6 +253,8 @@ After running the sample, you can use the Durable Task Dashboard to view details
 
 The dashboard is particularly valuable for scenarios involving human interaction as it helps identify bottlenecks in approval processes and monitor overall workflow efficiency.
 =======
+=======
+>>>>>>> e8c58d1 (Continue improving READMEs)
 ## Sample Explanation
 
 The human interaction pattern is essential for workflows that require human approval or input before proceeding. Key aspects of this pattern include:
