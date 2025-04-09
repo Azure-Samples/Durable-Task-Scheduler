@@ -1,19 +1,102 @@
 # Fan Out/Fan In Pattern
 
-3. Make sure you're logged in to Azure:
+This sample demonstrates the fan out/fan in pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern allows you to execute multiple tasks in parallel and then aggregate their results.
+
+## Prerequisites
+
+1. [Python 3.8+](https://www.python.org/downloads/)
+2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
+3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
+
+## Sample Overview
+
+In this sample, the orchestration demonstrates the fan out/fan in pattern by:
+
+1. Spawning multiple parallel activity tasks (fan out)
+2. Waiting for all activities to complete
+3. Aggregating the results of all activities (fan in)
+
+This pattern is useful for parallel processing scenarios where you need to combine results.
+
+## Running the Examples
+
+There are two separate ways to run an example:
+
+- Using the Emulator
+- Using a deployed Scheduler and Taskhub
+
+### Running with a Deployed Scheduler and Taskhub Resource
+
+1. To create a taskhub, follow these steps using the Azure CLI commands:
+
+Create a Scheduler:
 
 ```bash
-az login
+az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
 ```
 
-4. Set up the required environment variables:
+Create Your Taskhub:
 
 ```bash
-# For bash/zsh
-export TASKHUB="your-taskhub-name"
-export ENDPOINT="your-scheduler-endpoint"
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
 
-# For Windows PowerShell
+2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
+
+3. Set the Environment Variables:
+
+Bash:
+```bash
+export TASKHUB=<taskhubname>
+export ENDPOINT=<taskhubEndpoint>
+```
+
+Powershell:
+```powershell
+$env:TASKHUB = "<taskhubname>"
+$env:ENDPOINT = "<taskhubEndpoint>"
+```
+
+4. Install the Correct Packages:
+```bash
+pip install -r requirements.txt
+```
+
+5. Grant your developer credentials the Durable Task Data Contributor Role.
+
+### Running with the Emulator
+
+The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
+
+1. Install Docker: If it is not already installed.
+
+2. Pull the Docker Image for the Emulator:
+
+```bash
+docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
+```
+
+3. Run the Emulator: Wait a few seconds for the container to be ready.
+
+```bash
+docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
+```
+
+4. Set the Environment Variables:
+
+Bash:
+```bash
+export TASKHUB=<taskhubname>
+export ENDPOINT=http://localhost:8080
+```
+
+Powershell:
+```powershell
+$env:TASKHUB = "<taskhubname>"
+$env:ENDPOINT = "http://localhost:8080"
+```
+
+5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
 $env:TASKHUB="your-taskhub-name"
 $env:ENDPOINT="your-scheduler-endpoint"
 ```
