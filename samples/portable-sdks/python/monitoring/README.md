@@ -1,11 +1,48 @@
+<<<<<<< HEAD
 # Monitoring Pattern with Azure Durable Task Scheduler
 
 This sample demonstrates the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern enables periodic checking of an external system or process until a certain condition is met or a timeout occurs.
+=======
+# Monitoring Pattern
+
+This3. Make sure you're logged in to Azure:
+
+```bash
+az login
+```
+
+4. Set up the required environment variables:
+
+```bash
+# For bash/zsh
+export TASKHUB="your-taskhub-name"
+export ENDPOINT="your-scheduler-endpoint"
+
+# For Windows PowerShell
+$env:TASKHUB="your-taskhub-name"
+$env:ENDPOINT="your-scheduler-endpoint"
+```
+
+## Running the Sample
+
+1. First, start the worker that registers the activities and orchestrations:
+
+```bash
+python worker.py
+```
+
+2. In a new terminal (with the virtual environment activated), run the client to start the orchestration:
+
+```bash
+python client.py
+```s the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern enables periodic checking of an external system or process until a certain condition is met or a timeout occurs.
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)
 
 ## Prerequisites
 
 1. [Python 3.8+](https://www.python.org/downloads/)
 2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
+<<<<<<< HEAD
 3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
 
 ## Sample Overview
@@ -103,16 +140,30 @@ $env:ENDPOINT = "http://localhost:8080"
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
 1. First, activate your Python virtual environment:
+=======
+3. [Durable Task Scheduler resource](https://learn.microsoft.com/azure/durable-functions/durable-task-scheduler)
+4. Appropriate Azure role assignments (Owner or Contributor)
+
+## Setup
+
+1. Create a virtual environment and activate it:
+
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
 2. Install the required packages:
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)
 ```bash
 pip install -r requirements.txt
 ```
 
+<<<<<<< HEAD
 3. Start the worker in a terminal:
 ```bash
 python worker.py
@@ -120,6 +171,24 @@ python worker.py
 You should see output indicating the worker has started and registered the orchestration and activities.
 
 4. In a new terminal (with the virtual environment activated), run the client:
+=======
+3. Make sure you're logged in to Azure:
+
+```bash
+az login
+```
+
+## Running the Sample
+
+1. First, start the worker that registers the activities and orchestrations:
+
+```bash
+python worker.py
+```
+
+2. In a new terminal (with the virtual environment activated), run the client to start the monitoring orchestration:
+
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)
 ```bash
 python client.py [job_id] [polling_interval] [timeout]
 ```
@@ -134,6 +203,7 @@ Where:
 - `polling_interval` is the number of seconds between status checks (defaults to 5)
 - `timeout` is the maximum number of seconds to monitor before timing out (defaults to 30)
 
+<<<<<<< HEAD
 ### What Happens When You Run the Sample
 
 When you run the sample:
@@ -169,3 +239,22 @@ After running the sample, you can use the Durable Task Dashboard to view details
    - **Sequence View**: Visualizes the workflow including continuous monitoring loops
 
 The dashboard is particularly valuable for monitoring scenarios as it provides visibility into recurring orchestrations and helps identify trends or issues over extended periods of time.
+=======
+The orchestration will periodically check the job status until it completes or times out.
+
+## Sample Explanation
+
+The monitoring pattern is useful for scenarios where you need to track the progress of an external process or system that may take a while to complete. Instead of blocking resources with a continuous connection, this pattern:
+
+1. Checks the status of the external system periodically
+2. Sleeps between checks to conserve resources
+3. Completes when either the desired condition is met or a timeout occurs
+
+Common use cases include:
+- Monitoring asynchronous job status
+- Waiting for resource provisioning to complete
+- Polling for file creation or changes
+- Checking for availability of services or data
+
+In this sample, the orchestration simulates monitoring an external job by periodically checking its status until it completes successfully or reaches the specified timeout.
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)

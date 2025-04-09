@@ -18,6 +18,11 @@ async def main():
     taskhub_name = os.getenv("TASKHUB")
     if not taskhub_name:
         logger.error("TASKHUB is not set. Please set the TASKHUB environment variable.")
+<<<<<<< HEAD
+=======
+        logger.info("If you are using windows powershell, run: $env:TASKHUB=\"<taskhubname>\"")
+        logger.info("If you are using bash, run: export TASKHUB=\"<taskhubname>\"")
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)
         return
     
     # Read the environment variable
@@ -28,6 +33,11 @@ async def main():
         print(f"The value of ENDPOINT is: {endpoint}")
     else:
         print("ENDPOINT is not set. Please set the ENDPOINT environment variable to the endpoint of the scheduler")
+<<<<<<< HEAD
+=======
+        print("If you are using windows powershell, run the following: $env:ENDPOINT=\"<schedulerEndpoint>\"")
+        print("If you are using bash, run the following: export ENDPOINT=\"<schedulerEndpoint>\"")
+>>>>>>> 8b26beb (Add python samples for the durable app patterns)
         exit()
     
     credential = DefaultAzureCredential()
