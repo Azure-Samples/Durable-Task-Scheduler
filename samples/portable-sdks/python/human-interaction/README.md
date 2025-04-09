@@ -18,7 +18,7 @@ In this sample, the orchestration demonstrates the human interaction pattern by:
 
 This pattern is useful for scenarios where a workflow requires human input before proceeding.
 
-## Running the Examples
+## Configuring the Sample
 
 There are two separate ways to run an example:
 
@@ -97,6 +97,77 @@ $env:ENDPOINT = "http://localhost:8080"
 ```
 
 5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
+
+## Running the Sample
+
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+
+1. First, activate your Python virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+2. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
+
+3. Start the worker in a terminal:
+```bash
+python worker.py
+```
+You should see output indicating the worker has started and registered the orchestration and activities.
+
+4. In a new terminal (with the virtual environment activated), run the FastAPI client:
+```bash
+python client.py
+```
+The FastAPI application will start on http://localhost:8000.
+
+5. Interact with the API using curl or a web browser:
+
+   - **Create an approval request:**
+     ```
+     curl -X POST http://localhost:8000/api/requests \
+          -H "Content-Type: application/json" \
+          -d '{"requester": "Alice", "item": "Vacation Request", "timeout_hours": 1}'
+     ```
+     This will return a request ID and approval URL.
+
+   - **Check request status:**
+     ```
+     curl http://localhost:8000/api/requests/{request_id}
+     ```
+     Replace `{request_id}` with the ID returned from the previous call.
+
+   - **Approve or reject the request:**
+     ```
+     curl -X POST http://localhost:8000/api/approvals/{request_id} \
+          -H "Content-Type: application/json" \
+          -d '{"is_approved": true, "approver": "Manager", "comments": "Approved!"}'
+     ```
+     Replace `{request_id}` with the appropriate request ID and set `is_approved` to `true` or `false`.
+
+### What Happens When You Run the Sample
+
+When you run the sample:
+
+1. The client creates a FastAPI web application that can start orchestrations and process approval responses.
+
+2. When you create a new request, the client schedules a new orchestration instance with parameters including the requester, item, and timeout.
+
+3. The worker executes the `approval_workflow` orchestration function, which:
+   - Records the initial request details
+   - Creates an external event name unique to this request
+   - Waits for either an approval event or a timeout (using `wait_for_external_event` and `create_timer`)
+   - Processes the approval decision or timeout and returns the final result
+
+4. When you submit an approval or rejection via the API, the client raises an external event to the waiting orchestration with the approval details.
+
+5. The orchestration processes the event and completes with the approval result.
+
+This sample demonstrates how to incorporate human decision points into automated workflows, which is crucial for approval processes, review workflows, and other scenarios requiring human judgment.
 
 ## Sample Explanation
 

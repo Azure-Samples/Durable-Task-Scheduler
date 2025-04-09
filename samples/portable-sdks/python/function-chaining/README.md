@@ -18,7 +18,7 @@ In this sample, the orchestration chains three activities together in sequence:
 
 Each activity's output serves as the input to the next activity. The final result is returned to the client.
 
-## Running the Examples
+## Configuring the Sample
 
 There are two separate ways to run an example:
 
@@ -100,19 +100,57 @@ $env:ENDPOINT = "http://localhost:8080"
 
 ## Running the Sample
 
-1. First, start the worker that registers the activities and orchestrations:
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
+1. First, activate your Python virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+2. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
+
+3. Start the worker in a terminal:
 ```bash
 python worker.py
 ```
+You should see output indicating the worker has started and registered the orchestration and activities.
 
-2. In a new terminal (with the virtual environment activated), run the client to start the orchestration:
-
+4. In a new terminal (with the virtual environment activated), run the client:
 ```bash
-python client.py "YourName"
+python client.py [your-name]
 ```
 
-The client will schedule a new orchestration instance and wait for it to complete.
+For example:
+```bash
+python client.py Alice
+```
+
+If you don't provide a name, the script will use a default name.
+
+### What Happens When You Run the Sample
+
+When you run the sample:
+
+1. The client creates an orchestration instance with your provided name as input.
+
+2. The worker executes the `function_chain` orchestration function, which:
+   - Calls the `create_greeting` activity with your name
+   - Takes that greeting and passes it to the `process_greeting` activity
+   - Takes the processed greeting and passes it to the `finalize_greeting` activity
+   - Returns the final result to the client
+
+3. Each activity in the chain:
+   - `create_greeting`: Generates a simple greeting string with your name
+   - `process_greeting`: Transforms the greeting by adding additional text
+   - `finalize_greeting`: Formats the final result with additional styling
+
+4. The client displays the final result from the completed orchestration.
+
+This sample demonstrates how to create sequential workflows where the output of one step serves as the input to the next step. This pattern is useful for creating multi-step processes where each step depends on the result of the previous step.
 
 ## Sample Explanation
 
@@ -123,3 +161,17 @@ The function chaining pattern is useful for workflows where steps must be execut
 - Data transformation chains
 
 In this sample, the pattern is demonstrated through a simple series of greeting transformations, where each activity builds upon the output of the previous activity.
+
+Function chaining is a fundamental pattern for orchestrating sequential workflows where:
+
+1. Operations must be performed in a specific order
+2. Each operation depends on the result of the previous one
+3. The entire sequence represents a single coherent workflow
+
+Common use cases include:
+- Multi-step data processing pipelines
+- Document approval workflows
+- Sequential validation processes
+- ETL (Extract, Transform, Load) operations
+
+In this sample, the orchestration chains three simple text processing activities together, with each one building upon the result of the previous activity to produce a final message.

@@ -19,7 +19,7 @@ In this sample, the orchestration demonstrates the async HTTP API pattern by:
 
 This pattern is ideal for implementing RESTful services with long-running operations, avoiding the need to keep HTTP connections open for extended periods.
 
-## Running the Examples
+## Configuring the Sample
 
 There are two separate ways to run an example:
 
@@ -98,6 +98,80 @@ $env:ENDPOINT = "http://localhost:8080"
 ```
 
 5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
+
+## Running the Sample
+
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+
+1. First, activate your Python virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+2. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
+
+3. Start the worker in a terminal:
+```bash
+python worker.py
+```
+You should see output indicating the worker has started and registered the orchestration and activities.
+
+4. In a new terminal (with the virtual environment activated), run the FastAPI client:
+```bash
+python client.py
+```
+The FastAPI application will start on http://localhost:8000.
+
+5. Interact with the API using curl or a web browser:
+
+   - **Start a long-running operation:**
+     ```
+     curl -X POST http://localhost:8000/api/process \
+          -H "Content-Type: application/json" \
+          -d '{"name": "Your Name", "delay_seconds": 10}'
+     ```
+     This will return links for checking status and retrieving the result.
+
+   - **Check operation status:**
+     ```
+     curl http://localhost:8000/api/status/{operation_id}
+     ```
+     Replace `{operation_id}` with the ID returned from the previous call.
+
+   - **Get operation result (when completed):**
+     ```
+     curl http://localhost:8000/api/result/{operation_id}
+     ```
+     Replace `{operation_id}` with the appropriate operation ID.
+
+### What Happens When You Run the Sample
+
+When you run the sample:
+
+1. The client creates a FastAPI web application that provides REST endpoints for starting operations and checking their status.
+
+2. When you submit a processing request:
+   - The client initiates a new orchestration instance
+   - It immediately returns a response with status code 202 (Accepted)
+   - The response includes URLs for checking status and retrieving results
+
+3. The worker executes the `process_request` orchestration function, which:
+   - Receives the processing request parameters
+   - Calls the `simulate_long_running_activity` activity, which simulates work by sleeping
+   - Completes and returns the final result
+
+4. When you check the status, the API queries the current orchestration state and returns:
+   - Whether the operation is running, completed, or failed
+   - The current timestamp
+   - Links to status and result endpoints
+
+5. When you request the result (after completion), the API retrieves and returns the final output of the orchestration.
+
+This sample demonstrates how to implement RESTful APIs for long-running operations using the Durable Task Scheduler, providing a better user experience by not requiring clients to maintain open connections while processing completes.
 
 ## Sample Explanation
 

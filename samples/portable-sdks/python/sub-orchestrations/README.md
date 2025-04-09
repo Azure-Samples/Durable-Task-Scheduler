@@ -62,38 +62,93 @@ docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
 ```
 
-3. Set the Environment Variables:
+4. Set the Environment Variables:
 Bash:
 ```bash
 export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
+export ENDPOINT=http://localhost:8080
 ```
 Powershell:
 ```powershell
 $env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
+$env:ENDPOINT = "http://localhost:8080"
 ```
 
-4. Edit the Examples: Change the token_credential input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
+5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
 
-### Running the Examples
-You can now execute the sample using Python:
+## Running the Sample
 
-Start the worker and ensure the TASKHUB and ENDPOINT environment variables are set in your shell:
-```bash 
-python3 ./worker.py
-```
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-Next, start the orchestrator and make sure the TASKHUB and ENDPOINT environment variables are set in your shell:
+1. First, activate your Python virtual environment:
 ```bash
-python3 ./orchestrator.py
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
 ```
 
-You should start seeing logs for processing orders in both shell outputs.
+2. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
 
-### Review Orchestration History and Status in the Durable Task Scheduler Dashboard
-To access the Durable Task Scheduler Dashboard, follow these steps:
+3. Start the worker in a terminal:
+```bash
+python worker.py
+```
+You should see output indicating the worker has started and registered the orchestration and activities.
 
-- **Using the Emulator**: By default, the dashboard runs on portal 8082. Navigate to http://localhost:8082 and click on the default task hub.
+4. In a new terminal (with the virtual environment activated), run the orchestrator:
+```bash
+python orchestrator.py
+```
 
-- **Using a Deployed Scheduler**: Navigate to the Scheduler resource. Then, go to the Task Hub subresource that you are using and click on the dashboard URL in the top right corner.
+The orchestrator will create a main orchestration that processes orders in batches with child orchestrations.
+
+### What Happens When You Run the Sample
+
+When you run the sample:
+
+1. The orchestrator creates a new main orchestration instance with a batch of simulated order data.
+
+2. The worker executes the `main_orchestration` function, which:
+   - Splits the orders into batches
+   - Creates child orchestrations (sub-orchestrations) for each batch
+   - Waits for all child orchestrations to complete using Task.all()
+   - Aggregates the results from all child orchestrations
+   - Returns the summary of processed orders
+
+3. Each child `process_order_batch` orchestration:
+   - Receives a batch of orders
+   - Processes each order in parallel using Task.all()
+   - Collects the results
+   - Returns a summary of the processed batch
+
+4. The `process_order` activity is called for each individual order and simulates order processing.
+
+5. The client displays the final results showing the total number of orders processed and their status.
+
+This sample demonstrates two important patterns:
+- **Sub-orchestrations**: Breaking down complex workflows into smaller, manageable orchestrations
+- **Fan-out/Fan-in**: Processing items in parallel and then collecting results
+
+## Sample Explanation
+
+This sample demonstrates two important patterns in durable task orchestrations:
+
+1. **Sub-orchestrations**: The main orchestration delegates work to child orchestrations, which helps:
+   - Break down complex workflows into manageable pieces
+   - Improve monitoring and debugging by isolating failures
+   - Enable reuse of orchestration logic
+
+2. **Fan-out/Fan-in**: Both the main orchestration and the child orchestrations use parallel processing:
+   - The main orchestration fans out by creating multiple child orchestrations
+   - Each child orchestration fans out by processing multiple orders in parallel
+   - Results are aggregated (fan-in) at both levels
+
+These patterns are useful in real-world scenarios such as:
+- Order processing systems
+- Batch data processing
+- Distributed workloads
+- Complex approval workflows with multiple stages
+
+The sample simulates an order processing system where orders are batched for efficient processing. Each order goes through its own processing flow in parallel, and the results are aggregated to provide an overall status report.
