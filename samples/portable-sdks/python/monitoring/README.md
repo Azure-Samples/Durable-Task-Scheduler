@@ -1,108 +1,87 @@
-# Monitoring Pattern with Azure Durable Task Scheduler
+# Monitoring Pattern
 
-This sample demonstrates the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern enables periodic checking of an external system or process until a certain condition is met or a timeout occurs.
+## Description of the Sample
+
+This sample demonstrates the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. The monitoring pattern is used for periodically checking the status of a long-running operation until it completes or times out.
+
+In this sample:
+1. The orchestrator starts monitoring a job with a specified ID
+2. It periodically calls the `check_job_status` activity at defined intervals
+3. The current job status is exposed via custom status, making it available to clients
+4. Monitoring continues until either:
+   - The job completes successfully
+   - The specified timeout period is reached
+
+This pattern is useful for:
+- Polling external services or APIs that don't support callbacks
+- Checking the status of long-running operations
+- Implementing timeout mechanisms for operations with unpredictable durations
+- Maintaining state about progress of a workflow
 
 ## Prerequisites
 
 1. [Python 3.8+](https://www.python.org/downloads/)
-2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
-## Sample Overview
+## Configuring Durable Task Scheduler
 
-In this sample, the orchestration demonstrates the monitoring pattern by:
+There are two ways to run this sample:
 
-1. Periodically checking the status of a simulated external job
-2. Updating the orchestration state with the latest status
-3. Either completing when the job is done or timing out after a specified period
+### Using the Emulator (Recommended)
 
-This pattern is useful for scenarios where you need to track the progress of an external system or process without blocking resources with a continuous connection.
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-## Configuring the Sample
-
-There are two separate ways to run an example:
-
-- Using the Emulator
-- Using a deployed Scheduler and Taskhub
-
-### Running with a Deployed Scheduler and Taskhub Resource
-
-1. To create a taskhub, follow these steps using the Azure CLI commands:
-
-Create a Scheduler:
-
-```bash
-az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
-
-Create Your Taskhub:
-
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
-
-2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
-
-3. Set the Environment Variables:
-
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
-```
-
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
-```
-
-4. Install the Correct Packages:
-```bash
-pip install -r requirements.txt
-```
-
-5. Grant your developer credentials the Durable Task Data Contributor Role.
-
-### Running with the Emulator
-
-The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
-
-1. Install Docker: If it is not already installed.
+1. Install Docker if it's not already installed.
 
 2. Pull the Docker Image for the Emulator:
-
 ```bash
 docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-3. Run the Emulator: Wait a few seconds for the container to be ready.
-
+3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
+Wait a few seconds for the container to be ready.
+
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+
+### Using a Deployed Scheduler and Taskhub in Azure
+
+For production scenarios or when you're ready to deploy to Azure:
+
+1. Create a Scheduler using the Azure CLI:
+```bash
+az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
+```
+
+2. Create Your Taskhub:
+```bash
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
+
+3. Retrieve the Endpoint for the Scheduler from the Azure portal.
 
 4. Set the Environment Variables:
 
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=http://localhost:8080
-```
+   Bash:
+   ```bash
+   export TASKHUB=<taskhubname>
+   export ENDPOINT=<taskhubEndpoint>
+   ```
 
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "http://localhost:8080"
-```
+   PowerShell:
+   ```powershell
+   $env:TASKHUB = "<taskhubname>"
+   $env:ENDPOINT = "<taskhubEndpoint>"
+   ```
 
-5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
-
-## Running the Sample
+## How to Run the Sample
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, activate your Python virtual environment:
+1. First, activate your Python virtual environment (if you're using one):
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -119,52 +98,59 @@ python worker.py
 ```
 You should see output indicating the worker has started and registered the orchestration and activities.
 
-4. In a new terminal (with the virtual environment activated), run the client:
+4. In a new terminal (with the virtual environment activated if applicable), run the client:
 ```bash
 python client.py [job_id] [polling_interval] [timeout]
 ```
+You can optionally provide:
+- `job_id`: A unique identifier for the job (defaults to a random UUID)
+- `polling_interval`: How often to check job status in seconds (defaults to 5)
+- `timeout`: Maximum monitoring duration in seconds (defaults to 30)
 
-For example:
-```bash
-python client.py job-123 5 30
-```
+## Understanding the Output
 
-Where:
-- `job_id` is an optional identifier for the job (defaults to a generated UUID)
-- `polling_interval` is the number of seconds between status checks (defaults to 5)
-- `timeout` is the maximum number of seconds to monitor before timing out (defaults to 30)
+When you run the sample, you'll see output from both the worker and client processes:
 
-### What Happens When You Run the Sample
+### Worker Output
+The worker shows:
+- Registration of the orchestrator and activities
+- Starting the monitoring orchestration with the specified parameters
+- Periodic log entries when the `check_job_status` activity is called
+- Status updates as the check count increases
+- A message when monitoring completes or times out
 
-When you run the sample:
+### Client Output
+The client shows:
+- Starting the monitoring orchestration for the specified job
+- Real-time status updates as they occur (via custom status)
+- Status changes from "Unknown" to "Running" and finally to "Completed"
+- The final result, including:
+  - Job ID
+  - Final status
+  - Number of status checks performed
+  - Total monitoring duration
 
-1. The client creates an orchestration instance to monitor a job with the provided parameters.
+The sample demonstrates a job that completes after 3 status checks, but in a real application, the `check_job_status` activity would typically call an external service to determine the actual status.
 
-2. The worker executes the `monitor_job` orchestration function, which:
-   - Sets up initial monitoring parameters (job ID, polling interval, deadline)
-   - Enters a loop that periodically checks the job status
-   - Each iteration calls the `check_job_status` activity to simulate checking an external system
-   - If the job completes or the deadline is reached, the orchestration completes
-   - Otherwise, it schedules itself to wake up after the polling interval using `context.create_timer()`
+## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
-3. The `check_job_status` activity simulates an external job that takes time to complete, with the completion percentage increasing on each check.
+To access the Durable Task Scheduler Dashboard and review your orchestration:
 
-4. The client displays the status updates as the orchestration monitors the job until completion or timeout.
+### Using the Emulator
+1. Navigate to http://localhost:8082 in your web browser
+2. Click on the "default" task hub
+3. You'll see the orchestration instance in the list
+4. Click on the instance ID to view the execution details, which will show:
+   - The periodic calls to the `check_job_status` activity
+   - The timers created between checks
+   - The custom status updates at each step
+   - The final result when monitoring completes
 
-This sample demonstrates a pattern for monitoring long-running processes without maintaining a continuous connection, which is useful for tracking asynchronous operations in external systems.
+### Using a Deployed Scheduler
+1. Navigate to the Scheduler resource in the Azure portal
+2. Go to the Task Hub subresource that you're using
+3. Click on the dashboard URL in the top right corner
+4. Search for your orchestration instance ID
+5. Review the execution details
 
-## Sample Explanation
-
-The monitoring pattern is useful for scenarios where you need to track the progress of an external process or system that may take a while to complete. Instead of blocking resources with a continuous connection, this pattern:
-
-1. Checks the status of the external system periodically
-2. Sleeps between checks to conserve resources
-3. Completes when either the desired condition is met or a timeout occurs
-
-Common use cases include:
-- Monitoring asynchronous job status
-- Waiting for resource provisioning to complete
-- Polling for file creation or changes
-- Checking for availability of services or data
-
-In this sample, the orchestration simulates monitoring an external job by periodically checking its status until it completes successfully or reaches the specified timeout.
+The dashboard visualizes the polling pattern, showing how the orchestrator alternates between checking status and waiting, and how it uses timers to implement the polling interval.

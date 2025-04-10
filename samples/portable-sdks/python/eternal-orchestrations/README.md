@@ -1,96 +1,146 @@
-# Portable SDK Sample for Eternal Orchestrations
+# Eternal Orchestrations Pattern
 
-This sample demonstrates how to use the Durable Task SDK, also known as the Portable SDK, with the Durable Task Scheduler to create eternal orchestrations - orhcestrations that run in a loop.
+## Description of the Sample
 
-The scenario demonstrates a periodic cleanup orchestration that needs to be executed repeatedly. The cleanup activity itself takes 5 seconds to complete. After the cleanup task finishes, a timer is set to schedule the next orchestration 15 seconds from the current time by calling the continue_as_new method. For demonstration purposes, we limit the number of times the orchestration is repeated to 5.
+This sample demonstrates the eternal orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, an orchestration function runs continuously by recreating itself at the end of its execution using the `continue_as_new` method.
 
-## Running the Examples
-There are two separate ways to run an example:
+In this sample:
+1. The `periodic_cleanup` orchestration function calls a cleanup activity
+2. It then creates a timer that waits for 15 seconds
+3. After the timer expires, it calls `continue_as_new` with an incremented counter
+4. This process repeats for a specified number of iterations (5 in this case)
 
-- Using the Emulator
-- Using a deployed Scheduler and Taskhub
+Eternal orchestrations are useful for recurring tasks, monitoring processes, or any workflow that needs to run for an extended period without accumulating execution history.
 
-### Running with a Deployed Scheduler and Taskhub rResource
-1. To create a taskhub, follow these steps using the Azure CLI commands:
+## Prerequisites
 
-Create a Scheduler:
-```bash
-az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
+1. [Python 3.8+](https://www.python.org/downloads/)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
-Create Your Taskhub:
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
+## Configuring Durable Task Scheduler
 
-2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
+There are two ways to run this sample:
 
-3. Set the Environment Variables:
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
-```
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
-```
+### Using the Emulator (Recommended)
 
-4. Install the Correct Packages
-```bash
-pip install -r requirements.txt
-```
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-4. Grant your developer credentials the `Durable Task Data Contributor` Role.
-
-### Running with the Emulator
-The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
-
-1. Install Docker: If it is not already installed.
+1. Install Docker if it's not already installed.
 
 2. Pull the Docker Image for the Emulator:
 ```bash
 docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-3. Run the Emulator: Wait a few seconds for the container to be ready.
+3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.6
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
+Wait a few seconds for the container to be ready.
 
-3. Set the Environment Variables:
-Bash:
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+
+### Using a Deployed Scheduler and Taskhub in Azure
+
+For production scenarios or when you're ready to deploy to Azure:
+
+1. Create a Scheduler using the Azure CLI:
 ```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
-```
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
+az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
 ```
 
-4. Edit the Examples: Change the token_credential input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
-
-### Running the Examples
-You can now execute the sample using Python:
-
-Start the worker and ensure the TASKHUB and ENDPOINT environment variables are set in your shell:
-```bash 
-python3 ./worker.py
-```
-
-Next, start the orchestrator and make sure the TASKHUB and ENDPOINT environment variables are set in your shell:
+2. Create Your Taskhub:
 ```bash
-python3 ./orchestrator.py
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
 ```
 
-You should start seeing logs for processing orders in both shell outputs.
+3. Retrieve the Endpoint for the Scheduler from the Azure portal.
 
-### Review Orchestration History and Status in the Durable Task Scheduler Dashboard
-To access the Durable Task Scheduler Dashboard, follow these steps:
+4. Set the Environment Variables:
 
-- **Using the Emulator**: By default, the dashboard runs on portal 8082. Navigate to http://localhost:8082 and click on the default task hub.
+   Bash:
+   ```bash
+   export TASKHUB=<taskhubname>
+   export ENDPOINT=<taskhubEndpoint>
+   ```
 
-- **Using a Deployed Scheduler**: Navigate to the Scheduler resource. Then, go to the Task Hub subresource that you are using and click on the dashboard URL in the top right corner.
+   PowerShell:
+   ```powershell
+   $env:TASKHUB = "<taskhubname>"
+   $env:ENDPOINT = "<taskhubEndpoint>"
+   ```
+
+## How to Run the Sample
+
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+
+1. First, activate your Python virtual environment (if you're using one):
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+```
+
+2. Install the required packages:
+```bash
+pip install -r requirements.txt
+```
+
+3. Start the worker in a terminal:
+```bash
+python worker.py
+```
+You should see output indicating the worker has started and registered the orchestration and activities.
+
+4. In a new terminal (with the virtual environment activated if applicable), run the client:
+```bash
+python client.py
+```
+
+## Understanding the Output
+
+When you run the sample, you'll see output from both the worker and client processes:
+
+### Worker Output
+The worker shows:
+- Registration of the orchestration and activity
+- Cleanup activity being called approximately every 15 seconds
+- Messages indicating when the cleanup activity is running
+- Each new iteration of the orchestration after the `continue_as_new` call
+
+### Client Output
+The client shows:
+- Starting of the new orchestration instance with an initial counter value
+- The orchestration ID of the started instance
+
+Example output:
+```
+Starting Eternal Orchestrations pattern client...
+Using taskhub: default
+Using endpoint: http://localhost:8080
+Started eternal orchestration with ID = <instance-id>
+```
+
+Unlike other examples, you won't see a completion message because the orchestration is designed to run continuously for a set number of iterations. In this sample, it will run for 5 iterations before stopping.
+
+## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
+
+To access the Durable Task Scheduler Dashboard and review your orchestration:
+
+### Using the Emulator
+1. Navigate to http://localhost:8082 in your web browser
+2. Click on the "default" task hub
+3. You'll see the orchestration instance in the list
+4. If you click on the instance ID, you'll notice something interesting:
+   - You'll see only the most recent iteration of the orchestration
+   - Previous execution history is replaced each time `continue_as_new` is called
+   - This is a key benefit of eternal orchestrations - they avoid unbounded history growth
+
+### Using a Deployed Scheduler
+1. Navigate to the Scheduler resource in the Azure portal
+2. Go to the Task Hub subresource that you're using
+3. Click on the dashboard URL in the top right corner
+4. Search for your orchestration instance ID
+5. Review the execution details
+
+The dashboard helps visualize how eternal orchestrations work by showing only the current iteration's execution history. This is particularly important for long-running orchestrations as it prevents the history from growing indefinitely, which would impact performance and storage.

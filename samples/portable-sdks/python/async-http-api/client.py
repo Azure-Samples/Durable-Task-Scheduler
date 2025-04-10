@@ -26,24 +26,21 @@ class OperationResponse(BaseModel):
 # Dictionary to store client references
 client_cache = {}
 
-# Get environment variables for taskhub and endpoint
-TASKHUB = os.getenv("TASKHUB")
-ENDPOINT = os.getenv("ENDPOINT")
+# Get environment variables for taskhub and endpoint with defaults
+TASKHUB = os.getenv("TASKHUB", "default")
+ENDPOINT = os.getenv("ENDPOINT", "http://localhost:8080")
 
-# Check if environment variables are set
-if not TASKHUB:
-    logger.error("TASKHUB is not set. Please set the TASKHUB environment variable.")
-
-if not ENDPOINT:
-    logger.error("ENDPOINT is not set. Please set the ENDPOINT environment variable.")
+print(f"Using taskhub: {TASKHUB}")
+print(f"Using endpoint: {ENDPOINT}")
 
 async def get_client():
     """Get or create a Durable Task client."""
-    if "client" not in client_cache and TASKHUB and ENDPOINT:
-        credential = DefaultAzureCredential()
+    if "client" not in client_cache:
+        # Set credential to None for emulator, or DefaultAzureCredential for Azure
+        credential = None if ENDPOINT == "http://localhost:8080" else DefaultAzureCredential()
         client_cache["client"] = DurableTaskSchedulerClient(
             host_address=ENDPOINT, 
-            secure_channel=True,
+            secure_channel=ENDPOINT != "http://localhost:8080",
             taskhub=TASKHUB, 
             token_credential=credential
         )

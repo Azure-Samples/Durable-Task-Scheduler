@@ -1,108 +1,85 @@
 # Human Interaction Pattern
 
-This sample demonstrates the human interaction pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern enables workflows that require manual approval or input from humans before proceeding.
+## Description of the Sample
+
+This sample demonstrates the human interaction pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern is used for workflows that require human approval or input before continuing.
+
+In this sample:
+1. The orchestrator submits an approval request using the `submit_approval_request` activity
+2. It then waits for either an external event (approval response) or a timeout
+3. When it receives a response or times out, it calls the `process_approval` activity
+4. The final result includes the approval status and related information
+
+This pattern is useful for:
+- Approval workflows (expense reports, document reviews, change requests)
+- Business processes that require human decision making
+- Multi-step processes with human validation steps
+- Implementing timeouts for human response
 
 ## Prerequisites
 
 1. [Python 3.8+](https://www.python.org/downloads/)
-2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
-## Sample Overview
+## Configuring Durable Task Scheduler
 
-In this sample, the orchestration demonstrates the human interaction pattern by:
+There are two ways to run this sample:
 
-1. Submitting an approval request
-2. Waiting for a human to approve or reject before continuing
-3. Processing the approval response or handling a timeout if no response is received
+### Using the Emulator (Recommended)
 
-This pattern is useful for scenarios where a workflow requires human input before proceeding.
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-## Configuring the Sample
-
-There are two separate ways to run an example:
-
-- Using the Emulator
-- Using a deployed Scheduler and Taskhub
-
-### Running with a Deployed Scheduler and Taskhub Resource
-
-1. To create a taskhub, follow these steps using the Azure CLI commands:
-
-Create a Scheduler:
-
-```bash
-az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
-
-Create Your Taskhub:
-
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
-
-2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
-
-3. Set the Environment Variables:
-
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
-```
-
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
-```
-
-4. Install the Correct Packages:
-```bash
-pip install -r requirements.txt
-```
-
-5. Grant your developer credentials the Durable Task Data Contributor Role.
-
-### Running with the Emulator
-
-The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
-
-1. Install Docker: If it is not already installed.
+1. Install Docker if it's not already installed.
 
 2. Pull the Docker Image for the Emulator:
-
 ```bash
 docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-3. Run the Emulator: Wait a few seconds for the container to be ready.
-
+3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
+Wait a few seconds for the container to be ready.
+
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+
+### Using a Deployed Scheduler and Taskhub in Azure
+
+For production scenarios or when you're ready to deploy to Azure:
+
+1. Create a Scheduler using the Azure CLI:
+```bash
+az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
+```
+
+2. Create Your Taskhub:
+```bash
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
+
+3. Retrieve the Endpoint for the Scheduler from the Azure portal.
 
 4. Set the Environment Variables:
 
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=http://localhost:8080
-```
+   Bash:
+   ```bash
+   export TASKHUB=<taskhubname>
+   export ENDPOINT=<taskhubEndpoint>
+   ```
 
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "http://localhost:8080"
-```
+   PowerShell:
+   ```powershell
+   $env:TASKHUB = "<taskhubname>"
+   $env:ENDPOINT = "<taskhubEndpoint>"
+   ```
 
-5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
-
-## Running the Sample
+## How to Run the Sample
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, activate your Python virtual environment:
+1. First, activate your Python virtual environment (if you're using one):
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -119,69 +96,54 @@ python worker.py
 ```
 You should see output indicating the worker has started and registered the orchestration and activities.
 
-4. In a new terminal (with the virtual environment activated), run the FastAPI client:
+4. In a new terminal (with the virtual environment activated if applicable), run the client:
 ```bash
 python client.py
 ```
-The FastAPI application will start on http://localhost:8000.
+This will launch an interactive console client that creates an approval request and waits for your response.
 
-5. Interact with the API using curl or a web browser:
+## Understanding the Output
 
-   - **Create an approval request:**
-     ```
-     curl -X POST http://localhost:8000/api/requests \
-          -H "Content-Type: application/json" \
-          -d '{"requester": "Alice", "item": "Vacation Request", "timeout_hours": 1}'
-     ```
-     This will return a request ID and approval URL.
+When you run the sample, you'll see output from both the worker and client processes:
 
-   - **Check request status:**
-     ```
-     curl http://localhost:8000/api/requests/{request_id}
-     ```
-     Replace `{request_id}` with the ID returned from the previous call.
+### Worker Output
+The worker shows:
+- Registration of the orchestrator and activities
+- Logging when the approval request is submitted
+- The orchestrator waiting for an external event (your approval)
+- Processing of the approval once received (or timeout handling)
 
-   - **Approve or reject the request:**
-     ```
-     curl -X POST http://localhost:8000/api/approvals/{request_id} \
-          -H "Content-Type: application/json" \
-          -d '{"is_approved": true, "approver": "Manager", "comments": "Approved!"}'
-     ```
-     Replace `{request_id}` with the appropriate request ID and set `is_approved` to `true` or `false`.
+### Client Output
+The client shows:
+- Creating a new approval request with a unique ID
+- Initial status of the request (Pending)
+- Prompting you to approve or reject the request (press Enter to approve, type "reject" to reject)
+- Submitting your response
+- Final status showing the outcome (Approved, Rejected, or Timeout)
 
-### What Happens When You Run the Sample
+The example demonstrates how a workflow can pause execution while waiting for human input, then continue processing once the input is received or a timeout occurs.
 
-When you run the sample:
+## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
-1. The client creates a FastAPI web application that can start orchestrations and process approval responses.
+To access the Durable Task Scheduler Dashboard and review your orchestration:
 
-2. When you create a new request, the client schedules a new orchestration instance with parameters including the requester, item, and timeout.
+### Using the Emulator
+1. Navigate to http://localhost:8082 in your web browser
+2. Click on the "default" task hub
+3. You'll see the orchestration instance in the list
+4. Click on the instance ID to view the execution details, which will show:
+   - The call to the `submit_approval_request` activity
+   - The waiting period for an external event
+   - The potential parallel timeout task
+   - The reception of the external event (if approved before timeout)
+   - The call to the `process_approval` activity with the decision
+   - The final result
 
-3. The worker executes the `approval_workflow` orchestration function, which:
-   - Records the initial request details
-   - Creates an external event name unique to this request
-   - Waits for either an approval event or a timeout (using `wait_for_external_event` and `create_timer`)
-   - Processes the approval decision or timeout and returns the final result
+### Using a Deployed Scheduler
+1. Navigate to the Scheduler resource in the Azure portal
+2. Go to the Task Hub subresource that you're using
+3. Click on the dashboard URL in the top right corner
+4. Search for your orchestration instance ID
+5. Review the execution details
 
-4. When you submit an approval or rejection via the API, the client raises an external event to the waiting orchestration with the approval details.
-
-5. The orchestration processes the event and completes with the approval result.
-
-This sample demonstrates how to incorporate human decision points into automated workflows, which is crucial for approval processes, review workflows, and other scenarios requiring human judgment.
-
-## Sample Explanation
-
-The human interaction pattern is essential for workflows that require human approval or input before proceeding. Key aspects of this pattern include:
-
-1. Submitting a request for human review
-2. Suspending execution while waiting for a response
-3. Handling responses (approval/rejection) when received
-4. Managing timeouts if no response is received within a designated period
-
-Common use cases include:
-- Expense approval workflows
-- Content moderation systems
-- Change management processes
-- Access request approvals
-
-In this sample, the orchestration submits an approval request and then waits for either a human response (approve/reject) or a timeout. The FastAPI application provides endpoints for creating requests and responding to them, simulating a real-world approval system.
+The dashboard visualizes how the orchestration pauses while waiting for human input, showing the power of durable orchestrations to maintain state across long-running operations even when waiting for external events.

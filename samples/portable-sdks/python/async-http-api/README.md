@@ -1,109 +1,87 @@
 # Async HTTP API Pattern
 
-This sample demonstrates the async HTTP API pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern allows you to start long-running operations via HTTP and retrieve their results once they complete, without forcing clients to wait synchronously.
+## Description of the Sample
+
+This sample demonstrates the async HTTP API pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern is used to manage long-running operations through HTTP endpoints, allowing clients to start an operation and check its status asynchronously without keeping an HTTP connection open.
+
+In this sample:
+1. A FastAPI web server exposes endpoints to start operations and check their status
+2. When a client requests an operation, an orchestration is started to handle the long-running work
+3. The client receives an immediate response with an operation ID and a status endpoint URL
+4. The client can poll the status endpoint to check when the operation completes
+5. The long-running operation is simulated by the `process_long_running_operation` activity
+
+This pattern is useful for:
+- Exposing long-running operations via HTTP APIs
+- Implementing the REST asynchronous operation pattern
+- Building responsive web APIs that handle operations taking longer than a typical HTTP request timeout
+- Providing status tracking for operations that might take seconds, minutes, or even hours
 
 ## Prerequisites
 
 1. [Python 3.8+](https://www.python.org/downloads/)
-2. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-3. [Docker](https://www.docker.com/products/docker-desktop/) (for emulator option)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
+4. [FastAPI](https://fastapi.tiangolo.com/) and [Uvicorn](https://www.uvicorn.org/) (installed via requirements.txt)
 
-## Sample Overview
+## Configuring Durable Task Scheduler
 
-In this sample, the orchestration demonstrates the async HTTP API pattern by:
+There are two ways to run this sample:
 
-1. Starting a long-running operation asynchronously
-2. Returning a status URL immediately to the client
-3. Processing the request in the background
-4. Making the result available for retrieval when complete
+### Using the Emulator (Recommended)
 
-This pattern is ideal for implementing RESTful services with long-running operations, avoiding the need to keep HTTP connections open for extended periods.
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-## Configuring the Sample
-
-There are two separate ways to run an example:
-
-- Using the Emulator
-- Using a deployed Scheduler and Taskhub
-
-### Running with a Deployed Scheduler and Taskhub Resource
-
-1. To create a taskhub, follow these steps using the Azure CLI commands:
-
-Create a Scheduler:
-
-```bash
-az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
-
-Create Your Taskhub:
-
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
-
-2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
-
-3. Set the Environment Variables:
-
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
-```
-
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
-```
-
-4. Install the Correct Packages:
-```bash
-pip install -r requirements.txt
-```
-
-5. Grant your developer credentials the Durable Task Data Contributor Role.
-
-### Running with the Emulator
-
-The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
-
-1. Install Docker: If it is not already installed.
+1. Install Docker if it's not already installed.
 
 2. Pull the Docker Image for the Emulator:
-
 ```bash
 docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-3. Run the Emulator: Wait a few seconds for the container to be ready.
-
+3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.4
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
+Wait a few seconds for the container to be ready.
+
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+
+### Using a Deployed Scheduler and Taskhub in Azure
+
+For production scenarios or when you're ready to deploy to Azure:
+
+1. Create a Scheduler using the Azure CLI:
+```bash
+az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
+```
+
+2. Create Your Taskhub:
+```bash
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
+
+3. Retrieve the Endpoint for the Scheduler from the Azure portal.
 
 4. Set the Environment Variables:
 
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=http://localhost:8080
-```
+   Bash:
+   ```bash
+   export TASKHUB=<taskhubname>
+   export ENDPOINT=<taskhubEndpoint>
+   ```
 
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "http://localhost:8080"
-```
-
-5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
-
-## Running the Sample
+   PowerShell:
+   ```powershell
+   $env:TASKHUB = "<taskhubname>"
+   $env:ENDPOINT = "<taskhubEndpoint>"
+   ```
+ß
+## How to Run the Sample
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, activate your Python virtual environment:
+1. First, activate your Python virtual environment (if you're using one):
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -120,72 +98,91 @@ python worker.py
 ```
 You should see output indicating the worker has started and registered the orchestration and activities.
 
-4. In a new terminal (with the virtual environment activated), run the FastAPI client:
+4. In a new terminal (with the virtual environment activated if applicable), run the client (which is a FastAPI server):
 ```bash
 python client.py
 ```
-The FastAPI application will start on http://localhost:8000.
+This will start a FastAPI server on port 8000.
 
-5. Interact with the API using curl or a web browser:
-
-   - **Start a long-running operation:**
+5. Interact with the API using a browser or curl:
+   - To start a new operation:
+     ```bash
+     curl -X POST http://localhost:8000/api/start-operation -H "Content-Type: application/json" -d '{"processing_time": 10}'
      ```
-     curl -X POST http://localhost:8000/api/process \
-          -H "Content-Type: application/json" \
-          -d '{"name": "Your Name", "delay_seconds": 10}'
+   - To check operation status (replace `{operation_id}` with the ID from the previous response):
+     ```bash
+     curl http://localhost:8000/api/operations/{operation_id}
      ```
-     This will return links for checking status and retrieving the result.
 
-   - **Check operation status:**
-     ```
-     curl http://localhost:8000/api/status/{operation_id}
-     ```
-     Replace `{operation_id}` with the ID returned from the previous call.
+## Understanding the Output
 
-   - **Get operation result (when completed):**
-     ```
-     curl http://localhost:8000/api/result/{operation_id}
-     ```
-     Replace `{operation_id}` with the appropriate operation ID.
+When you run the sample, you'll see output from both the worker and client processes:
 
-### What Happens When You Run the Sample
+### Worker Output
+The worker shows:
+- Registration of the orchestrator and activities
+- Log entries when long-running operations are being processed
+- Information about each operation including its ID and processing time
+- Completion messages when operations finish
 
-When you run the sample:
+### Client Output (FastAPI Server)
+The client (FastAPI server) shows:
+- Server startup information
+- Log entries for API requests received
+- Starting operations when POST requests are made
+- Status checks when GET requests are made
 
-1. The client creates a FastAPI web application that provides REST endpoints for starting operations and checking their status.
+### API Response Examples
 
-2. When you submit a processing request:
-   - The client initiates a new orchestration instance
-   - It immediately returns a response with status code 202 (Accepted)
-   - The response includes URLs for checking status and retrieving results
+When starting an operation:
+```json
+{
+  "operation_id": "3f7b8ac2-5e6d-4f3g-9h2i-1j2k3l4m5n6o",
+  "status_url": "/api/operations/3f7b8ac2-5e6d-4f3g-9h2i-1j2k3l4m5n6o"
+}
+```
 
-3. The worker executes the `process_request` orchestration function, which:
-   - Receives the processing request parameters
-   - Calls the `simulate_long_running_activity` activity, which simulates work by sleeping
-   - Completes and returns the final result
+When checking status (in progress):
+```json
+{
+  "operation_id": "3f7b8ac2-5e6d-4f3g-9h2i-1j2k3l4m5n6o",
+  "status": "RUNNING",
+  "last_updated": "2023-05-10T15:30:45.123456Z"
+}
+```
 
-4. When you check the status, the API queries the current orchestration state and returns:
-   - Whether the operation is running, completed, or failed
-   - The current timestamp
-   - Links to status and result endpoints
+When checking status (completed):
+```json
+{
+  "operation_id": "3f7b8ac2-5e6d-4f3g-9h2i-1j2k3l4m5n6o",
+  "status": "Completed",
+  "result": {
+    "operation_id": "3f7b8ac2-5e6d-4f3g-9h2i-1j2k3l4m5n6o",
+    "status": "completed",
+    "result": "Operation 3f7b8ac2-5e6d-4f3g-9h2i-1j2k3l4m5n6o completed successfully",
+    "processed_at": 1683737445.123456
+  }
+}
+```
 
-5. When you request the result (after completion), the API retrieves and returns the final output of the orchestration.
+## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
-This sample demonstrates how to implement RESTful APIs for long-running operations using the Durable Task Scheduler, providing a better user experience by not requiring clients to maintain open connections while processing completes.
+To access the Durable Task Scheduler Dashboard and review your orchestration:
 
-## Sample Explanation
+### Using the Emulator
+1. Navigate to http://localhost:8082 in your web browser
+2. Click on the "default" task hub
+3. You'll see the orchestration instance(s) in the list
+4. Click on an instance ID to view the execution details, which will show:
+   - The call to the `process_long_running_operation` activity
+   - The input parameters including operation ID and processing time
+   - The completed result with timing information
 
-The async HTTP API pattern is useful for implementing RESTful services with long-running operations. Instead of keeping an HTTP connection open for the entire operation, this pattern:
+### Using a Deployed Scheduler
+1. Navigate to the Scheduler resource in the Azure portal
+2. Go to the Task Hub subresource that you're using
+3. Click on the dashboard URL in the top right corner
+4. Search for your orchestration instance ID
+5. Review the execution details
 
-1. Returns an immediate response with a status URL
-2. Processes the request asynchronously in the background
-3. Allows the client to check the status via the provided URL
-4. Returns the final result when the operation completes
-
-This pattern is common in many real-world scenarios:
-- File processing services
-- Data import/export operations
-- Complex calculations or analysis
-- Resource provisioning
-
-In this sample, the FastAPI application demonstrates how to use durable tasks to manage the lifecycle of asynchronous operations while providing a responsive HTTP API.
+The dashboard helps you understand how the async HTTP API pattern works behind the scenes, showing how the durable orchestration provides the backend processing for the asynchronous API endpoints.

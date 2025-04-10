@@ -119,24 +119,20 @@ async def main():
     """Main entry point for the worker process."""
     logger.info("Starting Human Interaction pattern worker...")
     
-    # Read the environment variable for taskhub
-    taskhub_name = os.getenv("TASKHUB")
-    if not taskhub_name:
-        logger.error("TASKHUB is not set. Please set the TASKHUB environment variable.")
-        return
-    
-    # Read the environment variable for endpoint
-    endpoint = os.getenv("ENDPOINT")
-    if not endpoint:
-        logger.error("ENDPOINT is not set. Please set the ENDPOINT environment variable.")
-        return
-    
-    credential = DefaultAzureCredential()
+    # Get environment variables for taskhub and endpoint with defaults
+    taskhub_name = os.getenv("TASKHUB", "default")
+    endpoint = os.getenv("ENDPOINT", "http://localhost:8080")
+
+    print(f"Using taskhub: {taskhub_name}")
+    print(f"Using endpoint: {endpoint}")
+
+    # Set credential to None for emulator, or DefaultAzureCredential for Azure
+    credential = None if endpoint == "http://localhost:8080" else DefaultAzureCredential()
     
     # Create a worker using Azure Managed Durable Task and start it with a context manager
     with DurableTaskSchedulerWorker(
         host_address=endpoint, 
-        secure_channel=True,
+        secure_channel=endpoint != "http://localhost:8080",
         taskhub=taskhub_name, 
         token_credential=credential
     ) as worker:

@@ -1,83 +1,84 @@
-# Portable SDK Sample for Sub Orchestrations and Fan-out / Fan-in
+# Sub-Orchestrations Pattern
 
-This sample demonstrates how to use the Durable Task SDK, also known as the Portable SDK, with the Durable Task Scheduler to create orchestrations that spin off child orchestrations but also perform parallel processing by leveraging the fan-out/fan-in application pattern.
+## Description of the Sample
 
-The scenario showcases an order processing system where orders are processed in batches. 
+This sample demonstrates the sub-orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. Sub-orchestrations allow you to break down complex workflows into smaller, reusable components that can be called from parent orchestrations.
 
-## Running the Examples
-There are two separate ways to run an example:
+In this sample:
+1. The main orchestrator function gets a list of orders from an activity function
+2. For each order, it starts a sub-orchestration to process it
+3. Each sub-orchestration runs a sequence of activities (inventory check, payment, shipping, notification)
+4. The main orchestrator aggregates the results from all sub-orchestrations
 
-- Using the Emulator
-- Using a deployed Scheduler and Taskhub
+Sub-orchestrations are useful for:
+- Breaking down complex workflows into simpler, more maintainable pieces
+- Reusing common workflow patterns across different orchestrations
+- Processing collections of items in parallel
 
-### Running with a Deployed Scheduler and Taskhub Resource
-1. To create a taskhub, follow these steps using the Azure CLI commands:
+## Prerequisites
 
-Create a Scheduler:
-```bash
-az durabletask scheduler create --resource-group --name --location --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
+1. [Python 3.8+](https://www.python.org/downloads/)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
-Create Your Taskhub:
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
+## Configuring Durable Task Scheduler
 
-2. Retrieve the Endpoint for the Scheduler: Locate the taskhub in the Azure portal to find the endpoint.
+There are two ways to run this sample:
 
-3. Set the Environment Variables:
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=<taskhubEndpoint>
-```
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "<taskhubEndpoint>"
-```
+### Using the Emulator (Recommended)
 
-4. Install the Correct Packages
-```bash
-pip install -r requirements.txt
-```
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-4. Grant your developer credentials the `Durable Task Data Contributor` Role.
-
-### Running with the Emulator
-The emulator simulates a scheduler and taskhub, packaged into an easy-to-use Docker container. For these steps, it is assumed that you are using port 8080.
-
-1. Install Docker: If it is not already installed.
+1. Install Docker if it's not already installed.
 
 2. Pull the Docker Image for the Emulator:
 ```bash
 docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
 
-3. Run the Emulator: Wait a few seconds for the container to be ready.
+3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:v0.0.6
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
 ```
+Wait a few seconds for the container to be ready.
+
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+
+### Using a Deployed Scheduler and Taskhub in Azure
+
+For production scenarios or when you're ready to deploy to Azure:
+
+1. Create a Scheduler using the Azure CLI:
+```bash
+az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
+```
+
+2. Create Your Taskhub:
+```bash
+az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+```
+
+3. Retrieve the Endpoint for the Scheduler from the Azure portal.
 
 4. Set the Environment Variables:
-Bash:
-```bash
-export TASKHUB=<taskhubname>
-export ENDPOINT=http://localhost:8080
-```
-Powershell:
-```powershell
-$env:TASKHUB = "<taskhubname>"
-$env:ENDPOINT = "http://localhost:8080"
-```
 
-5. Edit the Examples: Change the `token_credential` input of both the `DurableTaskSchedulerWorker` and `DurableTaskSchedulerClient` to `None`.
+   Bash:
+   ```bash
+   export TASKHUB=<taskhubname>
+   export ENDPOINT=<taskhubEndpoint>
+   ```
 
-## Running the Sample
+   PowerShell:
+   ```powershell
+   $env:TASKHUB = "<taskhubname>"
+   $env:ENDPOINT = "<taskhubEndpoint>"
+   ```
+
+## How to Run the Sample
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, activate your Python virtual environment:
+1. First, activate your Python virtual environment (if you're using one):
 ```bash
 python -m venv venv
 source venv/bin/activate  # On Windows, use: venv\Scripts\activate
@@ -94,58 +95,52 @@ python worker.py
 ```
 You should see output indicating the worker has started and registered the orchestration and activities.
 
-4. In a new terminal (with the virtual environment activated), run the orchestrator:
+4. In a new terminal (with the virtual environment activated if applicable), run the client:
 ```bash
-python orchestrator.py
+python client.py
 ```
 
-The orchestrator will create a main orchestration that processes orders in batches with child orchestrations.
+## Understanding the Output
 
-### What Happens When You Run the Sample
+When you run the sample, you'll see output from both the worker and client processes:
 
-When you run the sample:
+### Worker Output
+The worker shows:
+- Registration of the orchestrators and activities
+- Notification when orders are generated
+- Status updates as each order is processed through the various steps (inventory check, payment, shipping, notification)
+- Each step has a random chance of succeeding or failing
 
-1. The orchestrator creates a new main orchestration instance with a batch of simulated order data.
+### Client Output
+The client shows:
+- Starting the orchestration
+- The final result, which includes:
+  - The list of orders that were processed
+  - How many orders were completed successfully
+  - How many orders failed
+  - Detailed results for each order, including failure reasons if applicable
 
-2. The worker executes the `main_orchestration` function, which:
-   - Splits the orders into batches
-   - Creates child orchestrations (sub-orchestrations) for each batch
-   - Waits for all child orchestrations to complete using Task.all()
-   - Aggregates the results from all child orchestrations
-   - Returns the summary of processed orders
+The example demonstrates how multiple sub-orchestrations can run in parallel, with each managing its own workflow of activities.
 
-3. Each child `process_order_batch` orchestration:
-   - Receives a batch of orders
-   - Processes each order in parallel using Task.all()
-   - Collects the results
-   - Returns a summary of the processed batch
+## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
-4. The `process_order` activity is called for each individual order and simulates order processing.
+To access the Durable Task Scheduler Dashboard and review your orchestration:
 
-5. The client displays the final results showing the total number of orders processed and their status.
+### Using the Emulator
+1. Navigate to http://localhost:8082 in your web browser
+2. Click on the "default" task hub
+3. You'll see the orchestration instance in the list
+4. Click on the instance ID to see:
+   - The main orchestration
+   - All the sub-orchestrations it created
+   - The activities that were called
+   - The inputs and outputs at each step
 
-This sample demonstrates two important patterns:
-- **Sub-orchestrations**: Breaking down complex workflows into smaller, manageable orchestrations
-- **Fan-out/Fan-in**: Processing items in parallel and then collecting results
+### Using a Deployed Scheduler
+1. Navigate to the Scheduler resource in the Azure portal
+2. Go to the Task Hub subresource that you're using
+3. Click on the dashboard URL in the top right corner
+4. Search for your orchestration instance ID
+5. Review the execution details
 
-## Sample Explanation
-
-This sample demonstrates two important patterns in durable task orchestrations:
-
-1. **Sub-orchestrations**: The main orchestration delegates work to child orchestrations, which helps:
-   - Break down complex workflows into manageable pieces
-   - Improve monitoring and debugging by isolating failures
-   - Enable reuse of orchestration logic
-
-2. **Fan-out/Fan-in**: Both the main orchestration and the child orchestrations use parallel processing:
-   - The main orchestration fans out by creating multiple child orchestrations
-   - Each child orchestration fans out by processing multiple orders in parallel
-   - Results are aggregated (fan-in) at both levels
-
-These patterns are useful in real-world scenarios such as:
-- Order processing systems
-- Batch data processing
-- Distributed workloads
-- Complex approval workflows with multiple stages
-
-The sample simulates an order processing system where orders are batched for efficient processing. Each order goes through its own processing flow in parallel, and the results are aggregated to provide an overall status report.
+The dashboard helps visualize the parent-child relationship between the main orchestration and its sub-orchestrations, making it easier to understand the flow and identify any issues.

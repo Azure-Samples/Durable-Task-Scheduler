@@ -14,28 +14,20 @@ async def main():
     """Main entry point for the client application."""
     logger.info("Starting Function Chaining pattern client...")
     
-    # Read the environment variable for taskhub
-    taskhub_name = os.getenv("TASKHUB")
-    if not taskhub_name:
-        logger.error("TASKHUB is not set. Please set the TASKHUB environment variable.")
-        return
-    
-    # Read the environment variable
-    endpoint = os.getenv("ENDPOINT")
+    # Get environment variables for taskhub and endpoint with defaults
+    taskhub_name = os.getenv("TASKHUB", "default")
+    endpoint = os.getenv("ENDPOINT", "http://localhost:8080")
 
-    # Check if the variable exists
-    if endpoint:
-        print(f"The value of ENDPOINT is: {endpoint}")
-    else:
-        print("ENDPOINT is not set. Please set the ENDPOINT environment variable to the endpoint of the scheduler")
-        exit()
-    
-    credential = DefaultAzureCredential()
+    print(f"Using taskhub: {taskhub_name}")
+    print(f"Using endpoint: {endpoint}")
+
+    # Set credential to None for emulator, or DefaultAzureCredential for Azure
+    credential = None if endpoint == "http://localhost:8080" else DefaultAzureCredential()
     
     # Create a client using Azure Managed Durable Task
     client = DurableTaskSchedulerClient(
         host_address=endpoint, 
-        secure_channel=True,
+        secure_channel=endpoint != "http://localhost:8080",
         taskhub=taskhub_name, 
         token_credential=credential
     )
