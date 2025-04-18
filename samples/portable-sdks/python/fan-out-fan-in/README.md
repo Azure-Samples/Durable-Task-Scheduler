@@ -1,16 +1,21 @@
-# Eternal Orchestrations Pattern
+# Fan Out/Fan In Pattern
 
 ## Description of the Sample
 
-This sample demonstrates the eternal orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, an orchestration function runs continuously by recreating itself at the end of its execution using the `continue_as_new` method.
+This sample demonstrates the fan out/fan in pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern is used for parallel processing of multiple items, followed by an aggregation of the results.
 
 In this sample:
-1. The `periodic_cleanup` orchestration function calls a cleanup activity
-2. It then creates a timer that waits for 15 seconds
-3. After the timer expires, it calls `continue_as_new` with an incremented counter
-4. This process repeats for a specified number of iterations (5 in this case)
+1. The orchestrator receives a list of work items as input
+2. It "fans out" by creating parallel tasks for each work item (calling `process_work_item` for each one)
+3. It waits for all tasks to complete using `task.when_all`
+4. It then "fans in" by aggregating the results with the `aggregate_results` activity
+5. The final aggregated result is returned to the client
 
-Eternal orchestrations are useful for recurring tasks, monitoring processes, or any workflow that needs to run for an extended period without accumulating execution history.
+This pattern is useful for:
+- Processing multiple items concurrently to improve throughput
+- Performing calculations on batches of data
+- Running operations in parallel that don't depend on each other
+- Aggregating results from multiple parallel operations
 
 ## Prerequisites
 
@@ -94,8 +99,9 @@ You should see output indicating the worker has started and registered the orche
 
 4. In a new terminal (with the virtual environment activated if applicable), run the client:
 ```bash
-python client.py
+python client.py [number_of_items]
 ```
+You can optionally provide the number of work items as an argument. If not provided, 10 items will be used by default.
 
 ## Understanding the Output
 
@@ -103,25 +109,21 @@ When you run the sample, you'll see output from both the worker and client proce
 
 ### Worker Output
 The worker shows:
-- Registration of the orchestration and activity
-- Cleanup activity being called approximately every 15 seconds
-- Messages indicating when the cleanup activity is running
-- Each new iteration of the orchestration after the `continue_as_new` call
+- Registration of the orchestrator and activities
+- Status messages when processing each work item in parallel, showing that they're executing concurrently
+- Random delays for each work item (between 0.5 and 2 seconds) to simulate varying processing times
+- A final message showing the aggregation of results
 
 ### Client Output
 The client shows:
-- Starting of the new orchestration instance with an initial counter value
-- The orchestration ID of the started instance
+- Starting the orchestration with the specified number of work items
+- The unique orchestration instance ID
+- The final aggregated result, which includes:
+  - Total number of items processed
+  - Sum of all results (each item result is the square of its value)
+  - Average of all results
 
-Example output:
-```
-Starting Eternal Orchestrations pattern client...
-Using taskhub: default
-Using endpoint: http://localhost:8080
-Started eternal orchestration with ID = <instance-id>
-```
-
-Unlike other examples, you won't see a completion message because the orchestration is designed to run continuously for a set number of iterations. In this sample, it will run for 5 iterations before stopping.
+The example demonstrates how multiple items can be processed in parallel, with the results gathered and aggregated once all parallel tasks are complete.
 
 ## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
@@ -131,10 +133,11 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 1. Navigate to http://localhost:8082 in your web browser
 2. Click on the "default" task hub
 3. You'll see the orchestration instance in the list
-4. If you click on the instance ID, you'll notice something interesting:
-   - You'll see only the most recent iteration of the orchestration
-   - Previous execution history is replaced each time `continue_as_new` is called
-   - This is a key benefit of eternal orchestrations - they avoid unbounded history growth
+4. Click on the instance ID to view the execution details, which will show:
+   - The parallel execution of multiple `process_work_item` activities
+   - The wait for all tasks to complete using `task.when_all`
+   - The final call to `aggregate_results` with the collected results
+   - The inputs and outputs for each activity
 
 ### Using a Deployed Scheduler
 1. Navigate to the Scheduler resource in the Azure portal
@@ -143,4 +146,4 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 4. Search for your orchestration instance ID
 5. Review the execution details
 
-The dashboard helps visualize how eternal orchestrations work by showing only the current iteration's execution history. This is particularly important for long-running orchestrations as it prevents the history from growing indefinitely, which would impact performance and storage.
+The dashboard visualizes the concurrent execution of the tasks, allowing you to see how the fan-out/fan-in pattern improves throughput by processing items in parallel.

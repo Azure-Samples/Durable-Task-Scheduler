@@ -1,16 +1,20 @@
-# Eternal Orchestrations Pattern
+# Human Interaction Pattern
 
 ## Description of the Sample
 
-This sample demonstrates the eternal orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, an orchestration function runs continuously by recreating itself at the end of its execution using the `continue_as_new` method.
+This sample demonstrates the human interaction pattern with the Azure Durable Task Scheduler using the Python SDK. This pattern is used for workflows that require human approval or input before continuing.
 
 In this sample:
-1. The `periodic_cleanup` orchestration function calls a cleanup activity
-2. It then creates a timer that waits for 15 seconds
-3. After the timer expires, it calls `continue_as_new` with an incremented counter
-4. This process repeats for a specified number of iterations (5 in this case)
+1. The orchestrator submits an approval request using the `submit_approval_request` activity
+2. It then waits for either an external event (approval response) or a timeout
+3. When it receives a response or times out, it calls the `process_approval` activity
+4. The final result includes the approval status and related information
 
-Eternal orchestrations are useful for recurring tasks, monitoring processes, or any workflow that needs to run for an extended period without accumulating execution history.
+This pattern is useful for:
+- Approval workflows (expense reports, document reviews, change requests)
+- Business processes that require human decision making
+- Multi-step processes with human validation steps
+- Implementing timeouts for human response
 
 ## Prerequisites
 
@@ -96,6 +100,7 @@ You should see output indicating the worker has started and registered the orche
 ```bash
 python client.py
 ```
+This will launch an interactive console client that creates an approval request and waits for your response.
 
 ## Understanding the Output
 
@@ -103,25 +108,20 @@ When you run the sample, you'll see output from both the worker and client proce
 
 ### Worker Output
 The worker shows:
-- Registration of the orchestration and activity
-- Cleanup activity being called approximately every 15 seconds
-- Messages indicating when the cleanup activity is running
-- Each new iteration of the orchestration after the `continue_as_new` call
+- Registration of the orchestrator and activities
+- Logging when the approval request is submitted
+- The orchestrator waiting for an external event (your approval)
+- Processing of the approval once received (or timeout handling)
 
 ### Client Output
 The client shows:
-- Starting of the new orchestration instance with an initial counter value
-- The orchestration ID of the started instance
+- Creating a new approval request with a unique ID
+- Initial status of the request (Pending)
+- Prompting you to approve or reject the request (press Enter to approve, type "reject" to reject)
+- Submitting your response
+- Final status showing the outcome (Approved, Rejected, or Timeout)
 
-Example output:
-```
-Starting Eternal Orchestrations pattern client...
-Using taskhub: default
-Using endpoint: http://localhost:8080
-Started eternal orchestration with ID = <instance-id>
-```
-
-Unlike other examples, you won't see a completion message because the orchestration is designed to run continuously for a set number of iterations. In this sample, it will run for 5 iterations before stopping.
+The example demonstrates how a workflow can pause execution while waiting for human input, then continue processing once the input is received or a timeout occurs.
 
 ## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
@@ -131,10 +131,13 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 1. Navigate to http://localhost:8082 in your web browser
 2. Click on the "default" task hub
 3. You'll see the orchestration instance in the list
-4. If you click on the instance ID, you'll notice something interesting:
-   - You'll see only the most recent iteration of the orchestration
-   - Previous execution history is replaced each time `continue_as_new` is called
-   - This is a key benefit of eternal orchestrations - they avoid unbounded history growth
+4. Click on the instance ID to view the execution details, which will show:
+   - The call to the `submit_approval_request` activity
+   - The waiting period for an external event
+   - The potential parallel timeout task
+   - The reception of the external event (if approved before timeout)
+   - The call to the `process_approval` activity with the decision
+   - The final result
 
 ### Using a Deployed Scheduler
 1. Navigate to the Scheduler resource in the Azure portal
@@ -143,4 +146,4 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 4. Search for your orchestration instance ID
 5. Review the execution details
 
-The dashboard helps visualize how eternal orchestrations work by showing only the current iteration's execution history. This is particularly important for long-running orchestrations as it prevents the history from growing indefinitely, which would impact performance and storage.
+The dashboard visualizes how the orchestration pauses while waiting for human input, showing the power of durable orchestrations to maintain state across long-running operations even when waiting for external events.

@@ -1,16 +1,19 @@
-# Eternal Orchestrations Pattern
+# Sub-Orchestrations Pattern
 
 ## Description of the Sample
 
-This sample demonstrates the eternal orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, an orchestration function runs continuously by recreating itself at the end of its execution using the `continue_as_new` method.
+This sample demonstrates the sub-orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. Sub-orchestrations allow you to break down complex workflows into smaller, reusable components that can be called from parent orchestrations.
 
 In this sample:
-1. The `periodic_cleanup` orchestration function calls a cleanup activity
-2. It then creates a timer that waits for 15 seconds
-3. After the timer expires, it calls `continue_as_new` with an incremented counter
-4. This process repeats for a specified number of iterations (5 in this case)
+1. The main orchestrator function gets a list of orders from an activity function
+2. For each order, it starts a sub-orchestration to process it
+3. Each sub-orchestration runs a sequence of activities (inventory check, payment, shipping, notification)
+4. The main orchestrator aggregates the results from all sub-orchestrations
 
-Eternal orchestrations are useful for recurring tasks, monitoring processes, or any workflow that needs to run for an extended period without accumulating execution history.
+Sub-orchestrations are useful for:
+- Breaking down complex workflows into simpler, more maintainable pieces
+- Reusing common workflow patterns across different orchestrations
+- Processing collections of items in parallel
 
 ## Prerequisites
 
@@ -103,25 +106,21 @@ When you run the sample, you'll see output from both the worker and client proce
 
 ### Worker Output
 The worker shows:
-- Registration of the orchestration and activity
-- Cleanup activity being called approximately every 15 seconds
-- Messages indicating when the cleanup activity is running
-- Each new iteration of the orchestration after the `continue_as_new` call
+- Registration of the orchestrators and activities
+- Notification when orders are generated
+- Status updates as each order is processed through the various steps (inventory check, payment, shipping, notification)
+- Each step has a random chance of succeeding or failing
 
 ### Client Output
 The client shows:
-- Starting of the new orchestration instance with an initial counter value
-- The orchestration ID of the started instance
+- Starting the orchestration
+- The final result, which includes:
+  - The list of orders that were processed
+  - How many orders were completed successfully
+  - How many orders failed
+  - Detailed results for each order, including failure reasons if applicable
 
-Example output:
-```
-Starting Eternal Orchestrations pattern client...
-Using taskhub: default
-Using endpoint: http://localhost:8080
-Started eternal orchestration with ID = <instance-id>
-```
-
-Unlike other examples, you won't see a completion message because the orchestration is designed to run continuously for a set number of iterations. In this sample, it will run for 5 iterations before stopping.
+The example demonstrates how multiple sub-orchestrations can run in parallel, with each managing its own workflow of activities.
 
 ## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
@@ -131,10 +130,11 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 1. Navigate to http://localhost:8082 in your web browser
 2. Click on the "default" task hub
 3. You'll see the orchestration instance in the list
-4. If you click on the instance ID, you'll notice something interesting:
-   - You'll see only the most recent iteration of the orchestration
-   - Previous execution history is replaced each time `continue_as_new` is called
-   - This is a key benefit of eternal orchestrations - they avoid unbounded history growth
+4. Click on the instance ID to see:
+   - The main orchestration
+   - All the sub-orchestrations it created
+   - The activities that were called
+   - The inputs and outputs at each step
 
 ### Using a Deployed Scheduler
 1. Navigate to the Scheduler resource in the Azure portal
@@ -143,4 +143,4 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 4. Search for your orchestration instance ID
 5. Review the execution details
 
-The dashboard helps visualize how eternal orchestrations work by showing only the current iteration's execution history. This is particularly important for long-running orchestrations as it prevents the history from growing indefinitely, which would impact performance and storage.
+The dashboard helps visualize the parent-child relationship between the main orchestration and its sub-orchestrations, making it easier to understand the flow and identify any issues.

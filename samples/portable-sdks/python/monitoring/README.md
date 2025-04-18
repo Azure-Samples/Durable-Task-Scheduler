@@ -1,16 +1,22 @@
-# Eternal Orchestrations Pattern
+# Monitoring Pattern
 
 ## Description of the Sample
 
-This sample demonstrates the eternal orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, an orchestration function runs continuously by recreating itself at the end of its execution using the `continue_as_new` method.
+This sample demonstrates the monitoring pattern with the Azure Durable Task Scheduler using the Python SDK. The monitoring pattern is used for periodically checking the status of a long-running operation until it completes or times out.
 
 In this sample:
-1. The `periodic_cleanup` orchestration function calls a cleanup activity
-2. It then creates a timer that waits for 15 seconds
-3. After the timer expires, it calls `continue_as_new` with an incremented counter
-4. This process repeats for a specified number of iterations (5 in this case)
+1. The orchestrator starts monitoring a job with a specified ID
+2. It periodically calls the `check_job_status` activity at defined intervals
+3. The current job status is exposed via custom status, making it available to clients
+4. Monitoring continues until either:
+   - The job completes successfully
+   - The specified timeout period is reached
 
-Eternal orchestrations are useful for recurring tasks, monitoring processes, or any workflow that needs to run for an extended period without accumulating execution history.
+This pattern is useful for:
+- Polling external services or APIs that don't support callbacks
+- Checking the status of long-running operations
+- Implementing timeout mechanisms for operations with unpredictable durations
+- Maintaining state about progress of a workflow
 
 ## Prerequisites
 
@@ -94,8 +100,12 @@ You should see output indicating the worker has started and registered the orche
 
 4. In a new terminal (with the virtual environment activated if applicable), run the client:
 ```bash
-python client.py
+python client.py [job_id] [polling_interval] [timeout]
 ```
+You can optionally provide:
+- `job_id`: A unique identifier for the job (defaults to a random UUID)
+- `polling_interval`: How often to check job status in seconds (defaults to 5)
+- `timeout`: Maximum monitoring duration in seconds (defaults to 30)
 
 ## Understanding the Output
 
@@ -103,25 +113,24 @@ When you run the sample, you'll see output from both the worker and client proce
 
 ### Worker Output
 The worker shows:
-- Registration of the orchestration and activity
-- Cleanup activity being called approximately every 15 seconds
-- Messages indicating when the cleanup activity is running
-- Each new iteration of the orchestration after the `continue_as_new` call
+- Registration of the orchestrator and activities
+- Starting the monitoring orchestration with the specified parameters
+- Periodic log entries when the `check_job_status` activity is called
+- Status updates as the check count increases
+- A message when monitoring completes or times out
 
 ### Client Output
 The client shows:
-- Starting of the new orchestration instance with an initial counter value
-- The orchestration ID of the started instance
+- Starting the monitoring orchestration for the specified job
+- Real-time status updates as they occur (via custom status)
+- Status changes from "Unknown" to "Running" and finally to "Completed"
+- The final result, including:
+  - Job ID
+  - Final status
+  - Number of status checks performed
+  - Total monitoring duration
 
-Example output:
-```
-Starting Eternal Orchestrations pattern client...
-Using taskhub: default
-Using endpoint: http://localhost:8080
-Started eternal orchestration with ID = <instance-id>
-```
-
-Unlike other examples, you won't see a completion message because the orchestration is designed to run continuously for a set number of iterations. In this sample, it will run for 5 iterations before stopping.
+The sample demonstrates a job that completes after 3 status checks, but in a real application, the `check_job_status` activity would typically call an external service to determine the actual status.
 
 ## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
@@ -131,10 +140,11 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 1. Navigate to http://localhost:8082 in your web browser
 2. Click on the "default" task hub
 3. You'll see the orchestration instance in the list
-4. If you click on the instance ID, you'll notice something interesting:
-   - You'll see only the most recent iteration of the orchestration
-   - Previous execution history is replaced each time `continue_as_new` is called
-   - This is a key benefit of eternal orchestrations - they avoid unbounded history growth
+4. Click on the instance ID to view the execution details, which will show:
+   - The periodic calls to the `check_job_status` activity
+   - The timers created between checks
+   - The custom status updates at each step
+   - The final result when monitoring completes
 
 ### Using a Deployed Scheduler
 1. Navigate to the Scheduler resource in the Azure portal
@@ -143,4 +153,4 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 4. Search for your orchestration instance ID
 5. Review the execution details
 
-The dashboard helps visualize how eternal orchestrations work by showing only the current iteration's execution history. This is particularly important for long-running orchestrations as it prevents the history from growing indefinitely, which would impact performance and storage.
+The dashboard visualizes the polling pattern, showing how the orchestrator alternates between checking status and waiting, and how it uses timers to implement the polling interval.

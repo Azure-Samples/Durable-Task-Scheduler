@@ -1,16 +1,19 @@
-# Eternal Orchestrations Pattern
+# Function Chaining Pattern
 
 ## Description of the Sample
 
-This sample demonstrates the eternal orchestrations pattern with the Azure Durable Task Scheduler using the Python SDK. In this pattern, an orchestration function runs continuously by recreating itself at the end of its execution using the `continue_as_new` method.
+This sample demonstrates the function chaining pattern with the Azure Durable Task Scheduler using the Python SDK. Function chaining is a fundamental workflow pattern where activities are executed in a sequence, with the output of one activity passed as the input to the next activity.
 
 In this sample:
-1. The `periodic_cleanup` orchestration function calls a cleanup activity
-2. It then creates a timer that waits for 15 seconds
-3. After the timer expires, it calls `continue_as_new` with an incremented counter
-4. This process repeats for a specified number of iterations (5 in this case)
+1. The orchestrator calls the `say_hello` activity with a name input
+2. The result is passed to the `process_greeting` activity
+3. That result is passed to the `finalize_response` activity
+4. The final result is returned to the client
 
-Eternal orchestrations are useful for recurring tasks, monitoring processes, or any workflow that needs to run for an extended period without accumulating execution history.
+This pattern is useful for:
+- Creating sequential workflows where steps must execute in order
+- Passing data between steps with data transformations at each step
+- Building pipelines where each activity adds value to the result
 
 ## Prerequisites
 
@@ -94,8 +97,9 @@ You should see output indicating the worker has started and registered the orche
 
 4. In a new terminal (with the virtual environment activated if applicable), run the client:
 ```bash
-python client.py
+python client.py [name]
 ```
+You can optionally provide a name as an argument. If not provided, "User" will be used.
 
 ## Understanding the Output
 
@@ -103,25 +107,20 @@ When you run the sample, you'll see output from both the worker and client proce
 
 ### Worker Output
 The worker shows:
-- Registration of the orchestration and activity
-- Cleanup activity being called approximately every 15 seconds
-- Messages indicating when the cleanup activity is running
-- Each new iteration of the orchestration after the `continue_as_new` call
+- Registration of the orchestrator and activities
+- Log entries when each activity is called, showing the input received at each step
+- The progression through the chain of activities
 
 ### Client Output
 The client shows:
-- Starting of the new orchestration instance with an initial counter value
-- The orchestration ID of the started instance
+- Starting the orchestration with the provided name
+- The unique orchestration instance ID
+- The final result, which should be a greeting composed from all three activities:
+  - First activity: `Hello [name]!` 
+  - Second activity: `Hello [name]! How are you today?`
+  - Third activity: `Hello [name]! How are you today? I hope you're doing well!`
 
-Example output:
-```
-Starting Eternal Orchestrations pattern client...
-Using taskhub: default
-Using endpoint: http://localhost:8080
-Started eternal orchestration with ID = <instance-id>
-```
-
-Unlike other examples, you won't see a completion message because the orchestration is designed to run continuously for a set number of iterations. In this sample, it will run for 5 iterations before stopping.
+This demonstrates the chaining of functions in a sequence, with each function building on the result of the previous one.
 
 ## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
 
@@ -131,10 +130,10 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 1. Navigate to http://localhost:8082 in your web browser
 2. Click on the "default" task hub
 3. You'll see the orchestration instance in the list
-4. If you click on the instance ID, you'll notice something interesting:
-   - You'll see only the most recent iteration of the orchestration
-   - Previous execution history is replaced each time `continue_as_new` is called
-   - This is a key benefit of eternal orchestrations - they avoid unbounded history growth
+4. Click on the instance ID to view the execution details, which will show:
+   - The sequential execution of the three activities
+   - The input and output at each step
+   - The time taken for each step
 
 ### Using a Deployed Scheduler
 1. Navigate to the Scheduler resource in the Azure portal
@@ -143,4 +142,4 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 4. Search for your orchestration instance ID
 5. Review the execution details
 
-The dashboard helps visualize how eternal orchestrations work by showing only the current iteration's execution history. This is particularly important for long-running orchestrations as it prevents the history from growing indefinitely, which would impact performance and storage.
+The dashboard visualizes the sequential nature of function chaining, making it easy to see the flow of data from one activity to the next.
