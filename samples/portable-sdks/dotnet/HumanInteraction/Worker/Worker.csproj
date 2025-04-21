@@ -10,7 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.13.1" />
     <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />    
-    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.8.1-preview.1" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.0.0-preview.1" />
     <PackageReference Include="Microsoft.DurableTask.Generators" Version="1.0.0-preview.1" OutputItemType="Analyzer" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
