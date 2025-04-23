@@ -4,7 +4,7 @@ The durable task scheduler is a solution for durable execution in Azure. Durable
 
 Developers can use the durable task scheduler with the following orchestration frameworks: 
 - [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview) 
-- Durable Task SDKs, also referred to as "portable SDKs"
+- Durable Task SDKs, also referred to as "durabletask SDKs"
 - [Durable Task Framework](https://github.com/Azure/durabletask) 
 
 ### Use with Durable Functions and Durable Task Framework
@@ -12,10 +12,10 @@ When used with Durable Functions, a feature of Azure Functions, the durable task
 
 The durable task scheduler plays a similar role in the Durable Task Framework as in Durable Functions. 
 
-### Use with Durable Task SDKs or "portable SDKs"
-The Durable Task SDKs provide a lightweight client library for the durable task scheduler. When running orchestrations, apps using these SDKs would make a connection to the scheduler's orchestration engine in Azure. These SDKs are called "portable" because apps that leverage them can be hosted in various compute environments, such as Azure Container Apps, Azure Kubernetes Service, Azure App Service, or VMs. 
+### Use with Durable Task SDKs or "durabletask SDKs"
+The Durable Task SDKs provide a lightweight client library for the durable task scheduler. When running orchestrations, apps using these SDKs would make a connection to the scheduler's orchestration engine in Azure. These SDKs are called "durabletask" because apps that leverage them can be hosted in various compute environments, such as Azure Container Apps, Azure Kubernetes Service, Azure App Service, or VMs. 
 
-![Durable Task Scheduler in all Azure Computes](./media/images/portable-sdks/dts-in-all-computes.png)
+![Durable Task Scheduler in all Azure Computes](./media/images/durabletask-sdks/dts-in-all-computes.png)
 
 For more information on how to use the Azure Functions durable task scheduler and to explore its features, please refer to the [official documentation](https://aka.ms/dts-documentation)
 
@@ -34,7 +34,7 @@ This repo contains samples in different directories for all orchestration framew
 
 *<sup>1</sup> The out-of-the-box monitoring dashboard is available only when using the durable task scheduler as the backend provider.*
 
-> **Note:** For all **new apps**, we recommend the portable SDKs over the Durable Task Framework as the former follows more modern .NET conventions and will be the focus of our future investments.
+> **Note:** For all **new apps**, we recommend the durabletask SDKs over the Durable Task Framework as the former follows more modern .NET conventions and will be the focus of our future investments.
 
 ## API reference docs
 Durable Task SDKs

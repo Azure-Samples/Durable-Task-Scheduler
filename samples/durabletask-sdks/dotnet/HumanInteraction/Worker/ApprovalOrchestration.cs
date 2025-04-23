@@ -1,4 +1,4 @@
-// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/portable-sdks/dotnet/HumanInteraction/Worker/ApprovalOrchestration.cs
+// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/durabletask-sdks/dotnet/HumanInteraction/Worker/ApprovalOrchestration.cs
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
@@ -69,7 +69,7 @@ public class ApprovalOrchestration : TaskOrchestrator<ApprovalRequestData, Appro
 
         // Submit the approval request
         SubmissionResult submissionResult = await context.CallActivityAsync<SubmissionResult>(
-            nameof(SubmitApprovalRequestActivity), 
+            nameof(SubmitApprovalRequestActivity),
             requestData);
 
         // Make the status available via custom status
@@ -77,15 +77,15 @@ public class ApprovalOrchestration : TaskOrchestrator<ApprovalRequestData, Appro
 
         // Create a durable timer for the timeout
         DateTime timeoutDeadline = context.CurrentUtcDateTime.AddHours(timeoutHours);
-        
+
         using var timeoutCts = new CancellationTokenSource();
-        
+
         // Set up the timeout task that we can cancel if approval comes before timeout
         Task timeoutTask = context.CreateTimer(timeoutDeadline, timeoutCts.Token);
-        
+
         // Wait for an external event (approval/rejection)
         string approvalEventName = "approval_response";
-        
+
         Task<ApprovalResponseData> approvalTask = context.WaitForExternalEvent<ApprovalResponseData>(approvalEventName);
 
         // Wait for either the timeout or the approval response, whichever comes first
@@ -93,7 +93,7 @@ public class ApprovalOrchestration : TaskOrchestrator<ApprovalRequestData, Appro
 
         // Process based on which task completed
         ApprovalResult result;
-        
+
         if (completedTask == approvalTask)
         {
             // Human responded in time - cancel the timeout timer
@@ -101,7 +101,7 @@ public class ApprovalOrchestration : TaskOrchestrator<ApprovalRequestData, Appro
 
             // Get the event result
             ApprovalResponseData approvalData = approvalTask.Result;
-            
+
             // Process the approval
             result = await context.CallActivityAsync<ApprovalResult>(
                 nameof(ProcessApprovalActivity),
@@ -178,7 +178,7 @@ public class ProcessApprovalActivity : TaskActivity<ProcessApprovalActivityInput
         string comments = input.Comments ?? "";
 
         string approvalStatus = isApproved ? "Approved" : "Rejected";
-        _logger.LogInformation("Processing {ApprovalStatus} request {RequestId} by {Approver}", 
+        _logger.LogInformation("Processing {ApprovalStatus} request {RequestId} by {Approver}",
             approvalStatus, requestId, approver);
 
         // In a real system, this would update a database, trigger workflows, etc.

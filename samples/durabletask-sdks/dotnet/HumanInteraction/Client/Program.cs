@@ -1,4 +1,4 @@
-// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/portable-sdks/dotnet/HumanInteraction/Client/Program.cs
+// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/durabletask-sdks/dotnet/HumanInteraction/Client/Program.cs
 using Azure.Identity;
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Client;
@@ -81,12 +81,12 @@ var input = new
 };
 
 logger.LogInformation("Creating new approval request with ID: {RequestId}", requestId);
-logger.LogInformation("Request details: Requester: {Requester}, Item: {Item}, Timeout: {TimeoutHours}h", 
+logger.LogInformation("Request details: Requester: {Requester}, Item: {Item}, Timeout: {TimeoutHours}h",
     requester, item, timeoutHours);
 
 // Schedule the orchestration
 string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
-    "ApprovalOrchestration", 
+    "ApprovalOrchestration",
     input,
     new StartOrchestrationOptions(requestId)); // Use requestId as instanceId for simplicity
 
@@ -114,8 +114,8 @@ var approvalResponse = new HumanInteraction.Client.ApprovalResponseData
 // Send approval response as an external event
 logger.LogInformation("Submitting your response ({Response})...", isApproved ? "Approved" : "Rejected");
 await client.RaiseEventAsync(
-    instanceId, 
-    "approval_response", 
+    instanceId,
+    "approval_response",
     approvalResponse);
 
 // Wait for final status
@@ -129,10 +129,10 @@ OrchestrationMetadata? finalStatus = null;
 for (int i = 0; i < 5; i++)
 {
     await Task.Delay(TimeSpan.FromSeconds(2));
-    
+
     finalStatus = await client.GetInstanceAsync(instanceId, true);
-    
-    if (finalStatus != null && 
+
+    if (finalStatus != null &&
         (finalStatus.RuntimeStatus == OrchestrationRuntimeStatus.Completed ||
          finalStatus.RuntimeStatus == OrchestrationRuntimeStatus.Failed))
     {
@@ -161,9 +161,9 @@ static void PrintStatus(OrchestrationMetadata? status)
     if (!string.IsNullOrEmpty(status.SerializedCustomStatus))
     {
         Console.WriteLine("  Details:");
-        var customStatus = JsonSerializer.Serialize(JsonDocument.Parse(status.SerializedCustomStatus), new JsonSerializerOptions 
-        { 
-            WriteIndented = true 
+        var customStatus = JsonSerializer.Serialize(JsonDocument.Parse(status.SerializedCustomStatus), new JsonSerializerOptions
+        {
+            WriteIndented = true
         });
         Console.WriteLine($"{customStatus}");
     }
@@ -173,9 +173,9 @@ static void PrintStatus(OrchestrationMetadata? status)
     {
         var output = JsonDocument.Parse(status.SerializedOutput);
         Console.WriteLine("  Output:");
-        Console.WriteLine(JsonSerializer.Serialize(output, new JsonSerializerOptions 
-        { 
-            WriteIndented = true 
+        Console.WriteLine(JsonSerializer.Serialize(output, new JsonSerializerOptions
+        {
+            WriteIndented = true
         }));
     }
 

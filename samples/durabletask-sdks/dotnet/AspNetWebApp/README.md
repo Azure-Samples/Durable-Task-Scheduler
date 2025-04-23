@@ -60,7 +60,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az durabletask taskhub create `
         --resource-group my-resource-group `
         --scheduler-name my-scheduler `
-        --name "portable-dotnet"
+        --name "durabletask-dotnet"
     ```
 
     **Bash**:
@@ -69,10 +69,10 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az durabletask taskhub create \
         --resource-group my-resource-group \
         --scheduler-name my-scheduler \
-        --name "portable-dotnet"
+        --name "durabletask-dotnet"
     ```
 
-1. Grant the current user permission to connect to the `portable-dotnet` task hub:
+1. Grant the current user permission to connect to the `durabletask-dotnet` task hub:
 
     **PowerShell**:
 
@@ -83,7 +83,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az role assignment create `
         --assignee $loggedInUser `
         --role "Durable Task Data Contributor" `
-        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/portable-dotnet"
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/durabletask-dotnet"
     ```
 
     **Bash**:
@@ -95,7 +95,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az role assignment create \
         --assignee $loggedInUser \
         --role "Durable Task Data Contributor" \
-        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/portable-dotnet"
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/durabletask-dotnet"
     ```
 
     Note that it may take a minute for the role assignment to take effect.
@@ -110,7 +110,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
         --name my-scheduler `
         --query "properties.endpoint" `
         --output tsv
-    $taskhub = "portable-dotnet"
+    $taskhub = "durabletask-dotnet"
     $env:DURABLE_TASK_SCHEDULER_CONNECTION_STRING = "Endpoint=$endpoint;TaskHub=$taskhub;Authentication=DefaultAzure"
     ```
 
@@ -122,7 +122,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
         --name my-scheduler \
         --query "properties.endpoint" \
         --output tsv)
-    taskhub="portable-dotnet"
+    taskhub="durabletask-dotnet"
     export DURABLE_TASK_SCHEDULER_CONNECTION_STRING="Endpoint=$endpoint;TaskHub=$taskhub;Authentication=DefaultAzure"
     ```
 
@@ -134,7 +134,7 @@ In the same terminal window as above, use the following steps to run the sample 
 
 1. Clone this repository.
 
-1. Open a terminal window and navigate to the `samples/portable-sdk/dotnet/AspNetWebApp` directory.
+1. Open a terminal window and navigate to the `samples/durabletask-sdk/dotnet/AspNetWebApp` directory.
 
 1. Run the following command to build and run the sample:
 
@@ -149,7 +149,7 @@ You should see output similar to the following:
 2025-01-14T22:31:11.041Z info: Microsoft.Hosting.Lifetime[14] Now listening on: http://localhost:5008
 2025-01-14T22:31:11.042Z info: Microsoft.Hosting.Lifetime[0] Application started. Press Ctrl+C to shut down.
 2025-01-14T22:31:11.043Z info: Microsoft.Hosting.Lifetime[0] Hosting environment: Development
-2025-01-14T22:31:11.043Z info: Microsoft.Hosting.Lifetime[0] Content root path: /home/cgillum/code/github.com/Azure/Azure-Functions-Durable-Task-Scheduler-Private-Preview/samples/portable-sdk/dotnet/AspNetWebApp
+2025-01-14T22:31:11.043Z info: Microsoft.Hosting.Lifetime[0] Content root path: /home/cgillum/code/github.com/Azure/Azure-Functions-Durable-Task-Scheduler-Private-Preview/samples/durabletask-sdk/dotnet/AspNetWebApp
 2025-01-14T22:31:14.885Z info: Microsoft.DurableTask[4] Sidecar work-item streaming connection established.
 ```
 
@@ -175,7 +175,7 @@ Use the following PowerShell command from a new terminal window to get the dashb
 $dashboardUrl = az durabletask taskhub show `
     --resource-group "my-resource-group" `
     --scheduler-name "my-scheduler" `
-    --name "portable-dotnet" `
+    --name "durabletask-dotnet" `
     --query "properties.dashboardUrl" `
     --output tsv
 $dashboardUrl
@@ -187,7 +187,7 @@ $dashboardUrl
 dashboardUrl=$(az durabletask taskhub show \
     --resource-group "my-resource-group" \
     --scheduler-name "my-scheduler" \
-    --name "portable-dotnet" \
+    --name "durabletask-dotnet" \
     --query "properties.dashboardUrl" \
     --output tsv)
 echo $dashboardUrl
@@ -196,17 +196,17 @@ echo $dashboardUrl
 The URL should look something like the following:
 
 ```plaintext
-https://dashboard.durabletask.io/subscriptions/{subscriptionID}/schedulers/my-scheduler/taskhubs/portable-dotnet?endpoint=https%3a%2f%2fmy-scheduler-gvdmebc6dmdj.northcentralus.durabletask.io
+https://dashboard.durabletask.io/subscriptions/{subscriptionID}/schedulers/my-scheduler/taskhubs/durabletask-dotnet?endpoint=https%3a%2f%2fmy-scheduler-gvdmebc6dmdj.northcentralus.durabletask.io
 ```
 
 Once logged in, you should see the orchestrations that were created by the sample app. Below is an example of what the dashboard might look like (note that some of the details will be different than the screenshot):
 
-![Durable Task Scheduler dashboard](../../../../media/images/portable-sdks/portable-sample-dashboard.png)
+![Durable Task Scheduler dashboard](../../../../media/images/durabletask-sdks/durabletask-sample-dashboard.png)
 
 ## Optional: Deploy to Azure Container Apps
 
 1. Create an container app following the instructions in the [Azure Container App documentation](https://learn.microsoft.com/azure/container-apps/get-started?tabs=bash).
-1. During step 1, specify the deployed container app code folder at samples\portable-sdk\dotnet\AspNetWebApp
+1. During step 1, specify the deployed container app code folder at samples\durabletask-sdk\dotnet\AspNetWebApp
 1. Follow the instructions to create a user managed identity and assign the `Durable Task Data Contributor` role then attach it to the container app you created in step 1 at [Azure-Functions-Durable-Task-Scheduler-Private-Preview](..\..\..\..\docs\configure-existing-app.md#run-the-app-on-azure-net). Please skip section "Add required environment variables to app" since these environment variables are not required for deploying to container app.
 1. Call the container app endpoint at `http://sampleapi-<your-container-app-name>.azurecontainerapps.io/scenarios/hellocities?count=10`, Sample curl command:
 
