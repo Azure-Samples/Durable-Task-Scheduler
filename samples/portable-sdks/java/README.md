@@ -5,7 +5,6 @@ This directory contains sample applications demonstrating various patterns using
 ## Prerequisites
 
 - Java 11 or later
-- Gradle 7.4 or above
 - Azure Durable Task Scheduler connection string (see [Getting Started with Durable Task Scheduler](https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler?tabs=function-app-integrated-creation&pivots=az-cli) for setup instructions)
 
 ## Setup
