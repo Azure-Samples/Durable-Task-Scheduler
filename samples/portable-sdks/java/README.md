@@ -81,9 +81,9 @@ cd sub-orchestrations
 
 You can view the orchestrations in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:8082` in your browser and selecting the `default` task hub.
 
-## Using Azure Durable Task service
+## Using Azure Durable Task Scheduler
 
-To use the Azure Durable Task service instead of the emulator, set the connection string to your Azure service connection string:
+To use the Azure Durable Task Scheduler instead of the emulator, set the connection string to your Durable Task Scheduler connection string:
 
 ```bash
 # Windows
