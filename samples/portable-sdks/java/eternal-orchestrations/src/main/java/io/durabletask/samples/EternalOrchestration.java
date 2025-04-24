@@ -36,21 +36,26 @@ public class EternalOrchestration {
                 @Override
                 public TaskOrchestration create() {
                     return ctx -> {
-                        int counter = 0;
+                        // Get the current counter value from input
+                        Integer inputCounter = ctx.getInput(Integer.class);
+                        int counter = (inputCounter != null) ? inputCounter : 0;
                         
-                        // Run forever
-                        while (true) {
-                            // Do some work
-                            String result = ctx.callActivity(
-                                "ProcessWorkItem",
-                                "Work item " + counter++,
-                                String.class).await();
+                        // Do some work
+                        String result = ctx.callActivity(
+                            "ProcessWorkItem",
+                            "Work item " + counter,
+                            String.class).await();
                             
+                        // Only log when not replaying
+                        if (!ctx.getIsReplaying()) {
                             logger.info("Work item processed: {}", result);
-                            
-                            // Wait before processing next item
-                            ctx.createTimer(WORK_INTERVAL).await();
                         }
+                            
+                        // Wait before processing next item
+                        ctx.createTimer(WORK_INTERVAL).await();
+
+                        // Continue the orchestration with the incremented counter
+                        ctx.continueAsNew(counter + 1);
                     };
                 }
             })
@@ -82,7 +87,7 @@ public class EternalOrchestration {
 
         // Create client and start orchestration
         DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();
-        String instanceId = client.scheduleNewOrchestrationInstance(ORCHESTRATION_NAME);
+        String instanceId = client.scheduleNewOrchestrationInstance(ORCHESTRATION_NAME, 0); // Start with counter 0
         logger.info("Started eternal orchestration with ID: {}", instanceId);
 
         // Keep the main application alive
