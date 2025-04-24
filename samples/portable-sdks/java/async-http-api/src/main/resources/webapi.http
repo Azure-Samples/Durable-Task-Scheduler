@@ -2,7 +2,7 @@
 @instanceId = ''
 
 ### Create a new order
-POST http://localhost:8082/api/orders
+POST http://localhost:8083/api/orders
 Content-Type: application/json
 
 {
