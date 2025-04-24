@@ -1,0 +1,60 @@
+### Variables
+@instanceId = ''
+
+### Create a new order
+POST http://localhost:8082/api/orders
+Content-Type: application/json
+
+{
+  "orderId": "ORD123456",
+  "customerId": "CUST789",
+  "amount": 125.50,
+  "items": [
+    {
+      "productId": "PROD001",
+      "quantity": 2,
+      "price": 49.99
+    },
+    {
+      "productId": "PROD002",
+      "quantity": 1,
+      "price": 25.52
+    }
+  ],
+  "shippingAddress": {
+    "street": "123 Main St",
+    "city": "Seattle",
+    "state": "WA",
+    "zipCode": "98101",
+    "country": "USA"
+  }
+}
+
+### Get order by instance ID
+# Replace the instanceId variable with the actual value returned from the create order request
+GET http://localhost:8082/api/orders/{{instanceId}}
+Content-Type: application/json
+
+### Example with invalid order (amount is 0)
+POST http://localhost:8082/api/orders
+Content-Type: application/json
+
+{
+  "orderId": "ORD123457",
+  "customerId": "CUST789",
+  "amount": 0,
+  "items": [
+    {
+      "productId": "PROD003",
+      "quantity": 1,
+      "price": 0
+    }
+  ],
+  "shippingAddress": {
+    "street": "123 Main St",
+    "city": "Seattle",
+    "state": "WA",
+    "zipCode": "98101",
+    "country": "USA"
+  }
+} 

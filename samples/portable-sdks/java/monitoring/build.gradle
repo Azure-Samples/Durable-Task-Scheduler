@@ -1,0 +1,39 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group 'io.durabletask'
+version = '0.1.0'
+def grpcVersion = '1.59.0'
+archivesBaseName = 'durabletask-samples'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
+task runMonitoringPattern(type: JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass = 'io.durabletask.samples.MonitoringPattern'
+    systemProperty 'logback.configurationFile', 'src/main/resources/logback-spring.xml'
+}
+
+dependencies {
+    implementation("com.microsoft:durabletask-client:1.5.0")
+    implementation("com.microsoft:durabletask-azuremanaged:1.5.0-preview.1")
+
+    // Logging dependencies
+    implementation 'ch.qos.logback:logback-classic:1.2.6'
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+
+    // https://github.com/grpc/grpc-java#download
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    implementation 'com.azure:azure-identity:1.15.0'
+
+    // install lombok
+    annotationProcessor 'org.projectlombok:lombok:1.18.22'
+    compileOnly 'org.projectlombok:lombok:1.18.22'
+}
