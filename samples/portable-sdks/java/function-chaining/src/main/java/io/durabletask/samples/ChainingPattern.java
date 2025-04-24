@@ -20,7 +20,7 @@ final class ChainingPattern {
         String connectionString = System.getenv("DURABLE_TASK_CONNECTION_STRING");
         if (connectionString == null) {
             // Default to local development connection string if not set
-            "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+            connectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
         }
 
         // Create worker using Azure-managed extensions

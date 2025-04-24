@@ -11,8 +11,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
 /**
  * Sample Spring Boot application demonstrating Azure-managed Durable Task integration.
