@@ -14,12 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-@ConfigurationProperties(prefix = "durable.task")
-@lombok.Data
-class DurableTaskProperties {
-    private String connectionString;
-}
-
 /**
  * Sample Spring Boot application demonstrating Azure-managed Durable Task integration.
  * This sample shows how to:
@@ -28,7 +22,6 @@ class DurableTaskProperties {
  * 3. Handle REST API endpoints for order processing
  */
 @SpringBootApplication
-@EnableConfigurationProperties(DurableTaskProperties.class)
 public class WebApi {
 
     public static void main(String[] args) {
@@ -42,12 +35,17 @@ public class WebApi {
     @Configuration
     static class DurableTaskConfig {
         @Bean
-        public DurableTaskGrpcWorker durableTaskWorker(
-                DurableTaskProperties properties) {
+        public DurableTaskGrpcWorker durableTaskWorker() {
 
             // Create worker using Azure-managed extensions
+            // use system env variable DURABLE_TASK_CONNECTION_STRING or default to local development
+            String connectionString = System.getenv("DURABLE_TASK_CONNECTION_STRING");
+            if (connectionString == null) {
+                connectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+            }
             DurableTaskGrpcWorkerBuilder workerBuilder = DurableTaskSchedulerWorkerExtensions.createWorkerBuilder(
-                properties.getConnectionString());
+                connectionString
+            );
 
             // Add orchestrations using the factory pattern
             workerBuilder.addOrchestration(new TaskOrchestrationFactory() {
@@ -132,11 +130,15 @@ public class WebApi {
         }
 
         @Bean
-        public DurableTaskClient durableTaskClient(
-                DurableTaskProperties properties) {
+        public DurableTaskClient durableTaskClient() {
+            
+            String connectionString = System.getenv("DURABLE_TASK_CONNECTION_STRING");
+            if (connectionString == null) {
+                connectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+            }
 
             // Create client using Azure-managed extensions
-            return DurableTaskSchedulerClientExtensions.createClientBuilder(properties.getConnectionString()).build();
+            return DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();
         }
     }
 

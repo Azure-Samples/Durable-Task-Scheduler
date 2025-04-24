@@ -23,7 +23,10 @@ public class SubOrchestrationPattern {
     public static void main(String[] args) throws Exception {
         // Get connection string from environment variable
         String connectionString = System.getenv("DURABLE_TASK_CONNECTION_STRING");
-
+        if (connectionString == null) {
+            // Default to local development connection string if not set
+            "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+        }
         // Create worker and register orchestrations
         DurableTaskGrpcWorker worker = createWorker(connectionString);
         worker.start();

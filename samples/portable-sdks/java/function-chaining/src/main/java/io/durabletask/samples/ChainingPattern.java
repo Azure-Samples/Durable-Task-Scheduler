@@ -16,8 +16,12 @@ final class ChainingPattern {
     private static final Logger logger = LoggerFactory.getLogger(ChainingPattern.class);
 
     public static void main(String[] args) throws IOException, InterruptedException, TimeoutException {
-        // Get connection string from environment variable or use a default for local development
+        // Get connection string from environment variable
         String connectionString = System.getenv("DURABLE_TASK_CONNECTION_STRING");
+        if (connectionString == null) {
+            // Default to local development connection string if not set
+            "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+        }
 
         // Create worker using Azure-managed extensions
         DurableTaskGrpcWorker worker = DurableTaskSchedulerWorkerExtensions.createWorkerBuilder(connectionString)

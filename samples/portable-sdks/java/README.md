@@ -5,18 +5,31 @@ This directory contains sample applications demonstrating various patterns using
 ## Prerequisites
 
 - Java 8 or later
-- Azure Durable Task Scheduler connection string (see [Getting Started with Durable Task Scheduler](https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler?tabs=function-app-integrated-creation&pivots=az-cli) for setup instructions)
+- [Docker](https://www.docker.com/get-started)
 
-## Setup
+## Running the samples with the Durable Task Scheduler Emulator
 
-1. Set the connection string environment variable:
+The samples can be run locally using the Durable Task Scheduler Emulator. The emulator is a containerized version of the Durable Task Scheduler service that persists state in memory. It is useful for development and testing purposes.
+
+1. Start the Durable Task Scheduler Emulator:
+
+   ```bash
+   # Pull the emulator image
+   docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.5
+
+   # Run the emulator
+   docker run -itP mcr.microsoft.com/dts/dts-emulator:v0.0.5
+   ```
+
+2. Set the connection string environment variable:
    ```bash
    # Windows
-   set DURABLE_TASK_CONNECTION_STRING=your_connection_string
+   set DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:<port>;TaskHub=default;Authentication=None
 
    # Linux/macOS
-   export DURABLE_TASK_CONNECTION_STRING=your_connection_string
+   export DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:<port>;TaskHub=default;Authentication=None
    ```
+   Replace `<port>` with the port number mapped to port `8080` in Docker.
 
 ## Available Samples
 
@@ -62,4 +75,20 @@ cd monitoring
 # For sub-orchestrations sample
 cd sub-orchestrations
 ./gradlew runSubOrchestrationPattern
+```
+
+## View orchestrations in the dashboard
+
+You can view the orchestrations in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:8082` in your browser and selecting the `default` task hub.
+
+## Using Azure Durable Task service
+
+To use the Azure Durable Task service instead of the emulator, set the connection string to your Azure service connection string:
+
+```bash
+# Windows
+set DURABLE_TASK_CONNECTION_STRING=your_azure_connection_string
+
+# Linux/macOS
+export DURABLE_TASK_CONNECTION_STRING=your_azure_connection_string
 ```
