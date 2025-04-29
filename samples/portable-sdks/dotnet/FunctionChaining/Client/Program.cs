@@ -5,6 +5,9 @@ using Microsoft.DurableTask.Client.AzureManaged;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Diagnostics;
 
 // Configure logging
 using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
@@ -74,38 +77,97 @@ DurableTaskClient client = serviceProvider.GetRequiredService<DurableTaskClient>
 
 // Create a name input for the greeting orchestration
 string name = "User";
-logger.LogInformation("Starting greeting orchestration for name: {Name}", name);
+logger.LogInformation("Scheduling 2,000 orchestrations concurrently for name: {Name}", name);
 
-// Schedule the orchestration
-string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
-    "GreetingOrchestration", 
-    name);
+// Create a stopwatch to measure performance
+Stopwatch stopwatch = Stopwatch.StartNew();
 
-logger.LogInformation("Started orchestration with ID: {InstanceId}", instanceId);
+// Create a list to store all instance IDs
+List<string> instanceIds = new List<string>(2000);
 
-// Wait for orchestration to complete
-logger.LogInformation("Waiting for orchestration to complete...");
+// Schedule 2,000 orchestrations all at once
+const int OrchestrationCount = 2000;
+var scheduleTasks = new List<Task<string>>(OrchestrationCount);
 
-// Create a cancellation token source with timeout
-using CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-
-// Wait for the orchestration to complete using built-in method
-OrchestrationMetadata instance = await client.WaitForInstanceCompletionAsync(
-    instanceId,
-    getInputsAndOutputs: true,
-    cts.Token);
-
-logger.LogInformation("Orchestration completed with status: {Status}", instance.RuntimeStatus);
-
-if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Completed)
+for (int i = 0; i < OrchestrationCount; i++)
 {
-    var result = instance.ReadOutputAs<string>();
-    logger.LogInformation("Greeting result: {Result}", result);
+    // Create a task for each orchestration schedule but don't await it yet
+    scheduleTasks.Add(client.ScheduleNewOrchestrationInstanceAsync(
+        "GreetingOrchestration", 
+        $"{name}_{i}"));
 }
-else if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Failed)
+
+logger.LogInformation("Created {Count} scheduling tasks, waiting for all to complete...", OrchestrationCount);
+
+// Wait for all scheduling tasks to complete simultaneously
+string[] results = await Task.WhenAll(scheduleTasks);
+instanceIds.AddRange(results);
+
+// Log the completion of scheduling
+stopwatch.Stop();
+logger.LogInformation("Scheduled {Count} orchestrations concurrently in {ElapsedMs}ms", 
+    OrchestrationCount, stopwatch.ElapsedMilliseconds);
+
+// Wait for orchestrations to complete
+logger.LogInformation("Waiting for orchestrations to complete...");
+
+// Create a cancellation token source with extended timeout for multiple orchestrations
+using CancellationTokenSource cts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+
+// Track completion stats
+int completed = 0;
+int failed = 0;
+stopwatch.Restart();
+
+// Create tasks for waiting for all orchestrations to complete
+var waitTasks = new List<Task<OrchestrationMetadata>>(OrchestrationCount);
+foreach (string id in instanceIds)
 {
-    logger.LogError("Orchestration failed: {ErrorMessage}", instance.FailureDetails?.ErrorMessage);
+    waitTasks.Add(client.WaitForInstanceCompletionAsync(
+        id,
+        getInputsAndOutputs: false,  // Set to false to reduce overhead
+        cts.Token));
 }
+
+// Process completion results as they arrive
+while (waitTasks.Count > 0)
+{
+    // Wait for any task to complete
+    Task<OrchestrationMetadata> completedTask = await Task.WhenAny(waitTasks);
+    waitTasks.Remove(completedTask);
+    
+    try
+    {
+        OrchestrationMetadata instance = await completedTask;
+        
+        if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Completed)
+        {
+            completed++;
+        }
+        else if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Failed)
+        {
+            failed++;
+            logger.LogError("Orchestration {Id} failed: {ErrorMessage}", 
+                instance.InstanceId, instance.FailureDetails?.ErrorMessage);
+        }
+        
+        // Log progress every 200 instances
+        if ((completed + failed) % 200 == 0)
+        {
+            logger.LogInformation("Progress: {Completed} completed, {Failed} failed, {Remaining} remaining", 
+                completed, failed, waitTasks.Count);
+        }
+    }
+    catch (OperationCanceledException)
+    {
+        logger.LogWarning("Timeout waiting for orchestration to complete");
+    }
+}
+
+stopwatch.Stop();
+logger.LogInformation("Completed {SuccessCount}/{TotalCount} orchestrations in {ElapsedMs}ms", 
+    completed, OrchestrationCount, stopwatch.ElapsedMilliseconds);
+logger.LogInformation("Success rate: {SuccessRate}%", (double)completed / OrchestrationCount * 100);
 
 // Keep the client running in container environments or exit gracefully in interactive environments
 logger.LogInformation("Task completed successfully.");
