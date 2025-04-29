@@ -40,8 +40,16 @@ if (isLocalEmulator)
 }
 else
 {
-    // For Azure, use DefaultAzureCredential
-    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzureCredential";
+    // For Azure, use DefaultAzureCredential - make sure TaskHub is included
+    if (!endpoint.Contains("TaskHub="))
+    {
+        // Append the TaskHub parameter if it's not already in the connection string
+        connectionString = $"{endpoint};TaskHub={taskHubName}";
+    }
+    else
+    {
+        connectionString = endpoint;
+    }
     logger.LogInformation("Using Azure endpoint with DefaultAzureCredential");
 }
 
@@ -97,4 +105,27 @@ if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Completed)
 else if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Failed)
 {
     logger.LogError("Orchestration failed: {ErrorMessage}", instance.FailureDetails?.ErrorMessage);
+}
+
+// Keep the client running in container environments or exit gracefully in interactive environments
+logger.LogInformation("Task completed successfully.");
+if (Environment.UserInteractive && !Console.IsInputRedirected)
+{
+    logger.LogInformation("Press any key to exit...");
+    Console.ReadKey();
+}
+else
+{
+    // In non-interactive environments like containers, wait for a signal to shut down
+    logger.LogInformation("Running in non-interactive mode. Service will stay alive.");
+    
+    // Create a simple way to handle shutdown signals
+    var waitForShutdown = new TaskCompletionSource<bool>();
+    Console.CancelKeyPress += (sender, e) => {
+        e.Cancel = true;
+        waitForShutdown.TrySetResult(true);
+    };
+    
+    // Wait indefinitely or until shutdown signal
+    await waitForShutdown.Task;
 }

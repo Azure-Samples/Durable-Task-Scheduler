@@ -46,8 +46,16 @@ if (isLocalEmulator)
 }
 else
 {
-    // For Azure, use DefaultAzureCredential
-    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzureCredential";
+    // For Azure, use DefaultAzureCredential - make sure TaskHub is included
+    if (!endpoint.Contains("TaskHub="))
+    {
+        // Append the TaskHub parameter if it's not already in the connection string
+        connectionString = $"{endpoint};TaskHub={taskHubName}";
+    }
+    else
+    {
+        connectionString = endpoint;
+    }
     logger.LogInformation("Using Azure endpoint with DefaultAzureCredential");
 }
 
@@ -76,8 +84,20 @@ logger.LogInformation("Starting Function Chaining Pattern - Greeting Worker");
 // Start the host
 await host.StartAsync();
 
-logger.LogInformation("Worker started. Press any key to stop...");
-Console.ReadKey(); // Keep console ReadKey for interactive input
+logger.LogInformation("Worker started and waiting for tasks...");
+
+// Wait indefinitely in environments without interactive console,
+// or until a key is pressed in interactive environments
+if (Environment.UserInteractive && !Console.IsInputRedirected)
+{
+    logger.LogInformation("Press any key to stop...");
+    Console.ReadKey();
+}
+else
+{
+    // In non-interactive environments (like containers), wait indefinitely
+    await Task.Delay(Timeout.InfiniteTimeSpan);
+}
 
 // Stop the host
 await host.StopAsync();

@@ -1,0 +1,52 @@
+param appName string
+param location string = resourceGroup().location
+param tags object = {}
+
+param identityName string
+param containerAppsEnvironmentName string
+param containerRegistryName string
+param serviceName string = 'aca'
+param exists bool
+param dtsEndpoint string
+param taskHubName string
+
+type managedIdentity = {
+  resourceId: string
+  clientId: string
+}
+
+@description('Unique identifier for user-assigned managed identity.')
+param userAssignedManagedIdentity managedIdentity
+
+module containerAppsApp '../core/host/container-app.bicep' = {
+  name: 'container-apps-${serviceName}'
+  params: {
+    name: appName
+    containerAppsEnvironmentName: containerAppsEnvironmentName
+    containerRegistryName: containerRegistryName
+    location: location
+    tags: union(tags, { 'azd-service-name': serviceName })
+    secrets: {
+        'azure-managed-identity-client-id':  userAssignedManagedIdentity.clientId
+      }
+    env: [
+      {
+        name: 'AZURE_MANAGED_IDENTITY_CLIENT_ID'
+        secretRef: 'azure-managed-identity-client-id'
+      }
+      {
+        name: 'ENDPOINT'
+        value: 'Endpoint=${dtsEndpoint};Authentication=ManagedIdentity;ClientID=${userAssignedManagedIdentity.clientId}'
+      }
+      {
+        name: 'TASKHUB'
+        value: taskHubName
+      }
+    ]
+    targetPort: 8080
+    identityName: identityName
+  }
+}
+
+output endpoint string = containerAppsApp.outputs.uri
+output envName string = containerAppsApp.outputs.name
