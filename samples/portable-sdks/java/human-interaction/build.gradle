@@ -21,8 +21,8 @@ task runHumanInteraction(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.5.0")
-    implementation("com.microsoft:durabletask-azuremanaged:1.5.0-preview.1")
+    implementation("com.microsoft:durabletask-client:1.5.1")
+    implementation("com.microsoft:durabletask-azuremanaged:1.5.1-preview.1")
 
     // Logging dependencies
     implementation 'ch.qos.logback:logback-classic:1.2.6'
