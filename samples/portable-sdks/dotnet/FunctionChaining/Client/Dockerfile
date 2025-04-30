@@ -14,5 +14,8 @@ FROM mcr.microsoft.com/dotnet/runtime:8.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
 
+# Expose port 80 explicitly
+EXPOSE 8080
+
 # Set the entrypoint
 ENTRYPOINT ["dotnet", "Client.dll"]

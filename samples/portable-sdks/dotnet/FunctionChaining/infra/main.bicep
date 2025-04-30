@@ -16,11 +16,10 @@ param location string
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
-param storageAccountName string = ''
 param containerAppsEnvName string = ''
 param containerAppsAppName string = ''
 param containerRegistryName string = ''
-param dtsLocation string = location
+param dtsLocation string = 'centralus'
 param dtsSkuName string = 'Dedicated'
 param dtsCapacity int = 1
 param dtsName string = ''
@@ -89,6 +88,17 @@ module identityAssignDTSDash './core/security/role.bicep' = {
   }
 }
 
+// Create virtual network with subnets for Container Apps
+module vnet './core/networking/vnet.bicep' = {
+  name: 'vnet'
+  scope: rg
+  params: {
+    name: '${abbrs.networkVirtualNetworks}${resourceToken}'
+    location: location
+    tags: tags
+  }
+}
+
 // Container apps env and registry
 module containerAppsEnv './core/host/container-apps.bicep' = {
   name: 'container-apps'
@@ -98,6 +108,9 @@ module containerAppsEnv './core/host/container-apps.bicep' = {
     containerAppsEnvironmentName: !empty(containerAppsEnvName) ? containerAppsEnvName : '${abbrs.appManagedEnvironments}${resourceToken}'
     containerRegistryName: !empty(containerRegistryName) ? containerRegistryName : '${abbrs.containerRegistryRegistries}${resourceToken}'
     location: location
+    // Add subnet configuration
+    subnetResourceId: vnet.outputs.infrastructureSubnetId
+    loadBalancerType: 'External' // Can be changed to 'Internal' if needed
   }
 }
 

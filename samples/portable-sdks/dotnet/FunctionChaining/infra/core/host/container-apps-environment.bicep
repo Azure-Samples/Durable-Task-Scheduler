@@ -12,6 +12,13 @@ param daprEnabled bool = false
 @description('Name of the Log Analytics workspace')
 param logAnalyticsWorkspaceName string = ''
 
+@description('Subnet resource ID for the Container Apps environment')
+param subnetResourceId string = ''
+
+@description('Whether to use an internal or external load balancer')
+@allowed(['Internal', 'External'])
+param loadBalancerType string = 'External'
+
 resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-05-01' = {
   name: name
   location: location
@@ -25,6 +32,12 @@ resource containerAppsEnvironment 'Microsoft.App/managedEnvironments@2023-05-01'
     //   }
     // }
     // daprAIInstrumentationKey: daprEnabled && !empty(applicationInsightsName) ? applicationInsights.properties.InstrumentationKey : ''
+    
+    // Add vnet configuration if a subnet is provided
+    vnetConfiguration: !empty(subnetResourceId) ? {
+      infrastructureSubnetId: subnetResourceId
+      internal: loadBalancerType == 'Internal'
+    } : null
   }
 }
 

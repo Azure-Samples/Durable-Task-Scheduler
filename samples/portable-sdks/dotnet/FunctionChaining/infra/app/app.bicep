@@ -26,6 +26,7 @@ module containerAppsApp '../core/host/container-app.bicep' = {
     containerRegistryName: containerRegistryName
     location: location
     tags: union(tags, { 'azd-service-name': serviceName })
+    ingressEnabled: false
     secrets: {
         'azure-managed-identity-client-id':  userAssignedManagedIdentity.clientId
       }
@@ -43,8 +44,19 @@ module containerAppsApp '../core/host/container-app.bicep' = {
         value: taskHubName
       }
     ]
-    targetPort: 8080
     identityName: identityName
+    containerMinReplicas: 1
+    containerMaxReplicas: 10
+    enableCustomScaleRule: true
+    scaleRuleName: 'dtsscaler-orchestration'
+    scaleRuleType: 'azure-durabletask-scheduler'
+    scaleRuleMetadata: {
+      endpoint: dtsEndpoint
+      maxConcurrentWorkItemsCount: '1'
+      taskhubName: taskHubName
+      workItemType: 'Orchestration'
+    }
+    scaleRuleIdentity: userAssignedManagedIdentity.resourceId
   }
 }
 

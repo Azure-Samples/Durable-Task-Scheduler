@@ -11,6 +11,10 @@ param logAnalyticsWorkspaceName string = ''
 param applicationInsightsName string = ''
 param daprEnabled bool = false
 
+// Virtual network and subnet parameters
+param subnetResourceId string = ''
+param loadBalancerType string = 'External'
+
 module containerAppsEnvironment 'container-apps-environment.bicep' = {
   name: '${name}-container-apps-environment'
   params: {
@@ -20,6 +24,8 @@ module containerAppsEnvironment 'container-apps-environment.bicep' = {
     logAnalyticsWorkspaceName: logAnalyticsWorkspaceName
     applicationInsightsName: applicationInsightsName
     daprEnabled: daprEnabled
+    subnetResourceId: subnetResourceId
+    loadBalancerType: loadBalancerType
   }
 }
 

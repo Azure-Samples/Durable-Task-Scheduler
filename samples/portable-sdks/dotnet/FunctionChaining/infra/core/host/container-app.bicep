@@ -25,6 +25,21 @@ param containerMinReplicas int = 1
 @description('The name of the container')
 param containerName string = 'main'
 
+@description('Enable custom scale rule')
+param enableCustomScaleRule bool = false
+
+@description('Scale rule name')
+param scaleRuleName string = 'scaler'
+
+@description('Scale rule type')
+param scaleRuleType string = ''
+
+@description('Scale rule metadata')
+param scaleRuleMetadata object = {}
+
+@description('Scale rule identity')
+param scaleRuleIdentity string = ''
+
 @description('The name of the container registry')
 param containerRegistryName string = ''
 
@@ -93,7 +108,7 @@ module containerRegistryAccess '../security/registry-access.bicep' = if (usePriv
   }
 }
 
-resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
+resource app 'Microsoft.App/containerApps@2025-01-01' = {
   name: name
   location: location
   tags: tags
@@ -152,6 +167,16 @@ resource app 'Microsoft.App/containerApps@2023-05-02-preview' = {
       scale: {
         minReplicas: containerMinReplicas
         maxReplicas: containerMaxReplicas
+        rules: enableCustomScaleRule ? [
+          {
+            name: scaleRuleName
+            custom: {
+              type: scaleRuleType
+              metadata: scaleRuleMetadata
+              identity: scaleRuleIdentity
+            }
+          }
+        ] : []
       }
     }
   }
