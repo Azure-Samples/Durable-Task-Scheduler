@@ -13,11 +13,14 @@ services:
     project: ./Client
     language: csharp
     host: containerapp
+    apiVersion: 2025-01-01
     docker:
       path: ./Dockerfile
   worker:
     project: ./Worker
     language: csharp
     host: containerapp
+    apiVersion: 2025-01-01
     docker:
       path: ./Dockerfile
+      
