@@ -47,16 +47,6 @@ module containerAppsApp '../core/host/container-app.bicep' = {
     identityName: identityName
     containerMinReplicas: 1
     containerMaxReplicas: 10
-    enableCustomScaleRule: true
-    scaleRuleName: 'dtsscaler-orchestration'
-    scaleRuleType: 'azure-durabletask-scheduler'
-    scaleRuleMetadata: {
-      endpoint: dtsEndpoint
-      maxConcurrentWorkItemsCount: '1'
-      taskhubName: taskHubName
-      workItemType: 'Orchestration'
-    }
-    scaleRuleIdentity: userAssignedManagedIdentity.resourceId
   }
 }
 

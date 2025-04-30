@@ -25,21 +25,6 @@ param containerMinReplicas int = 1
 @description('The name of the container')
 param containerName string = 'main'
 
-@description('Enable custom scale rule')
-param enableCustomScaleRule bool = false
-
-@description('Scale rule name')
-param scaleRuleName string = 'scaler'
-
-@description('Scale rule type')
-param scaleRuleType string = ''
-
-@description('Scale rule metadata')
-param scaleRuleMetadata object = {}
-
-@description('Scale rule identity')
-param scaleRuleIdentity string = ''
-
 @description('The name of the container registry')
 param containerRegistryName string = ''
 
@@ -167,16 +152,6 @@ resource app 'Microsoft.App/containerApps@2025-01-01' = {
       scale: {
         minReplicas: containerMinReplicas
         maxReplicas: containerMaxReplicas
-        rules: enableCustomScaleRule ? [
-          {
-            name: scaleRuleName
-            custom: {
-              type: scaleRuleType
-              metadata: scaleRuleMetadata
-              identity: scaleRuleIdentity
-            }
-          }
-        ] : []
       }
     }
   }

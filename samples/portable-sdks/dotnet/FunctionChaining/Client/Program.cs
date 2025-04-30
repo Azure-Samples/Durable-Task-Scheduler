@@ -77,153 +77,88 @@ DurableTaskClient client = serviceProvider.GetRequiredService<DurableTaskClient>
 
 // Create a name input for the greeting orchestration
 string name = "User";
-logger.LogInformation("Starting perpetual orchestration scheduler - 5 orchestrations every 5 seconds");
+logger.LogInformation("Starting sequential orchestration scheduler - 20 orchestrations, 1 every 5 seconds");
 
-// Set up orchestration batch parameters
-const int BatchSize = 5;           // Number of orchestrations per batch
-const int IntervalSeconds = 5;     // Time between batches in seconds
-int batchNumber = 0;               // Track which batch we're on
-var completedOrchestrations = 0;   // Track total completed orchestrations
-var failedOrchestrations = 0;      // Track total failed orchestrations
+// Set up orchestration parameters
+const int TotalOrchestrations = 20;  // Total number of orchestrations to run
+const int IntervalSeconds = 5;       // Time between orchestrations in seconds
+var completedOrchestrations = 0;     // Track total completed orchestrations
+var failedOrchestrations = 0;        // Track total failed orchestrations
 
-// Create a cancellation token source that will be used to signal shutdown
-using var appShutdownCts = new CancellationTokenSource();
+// Run the main workflow to schedule and wait for all orchestrations
+await RunSequentialOrchestrationsAsync();
 
-// Register console cancellation to trigger graceful shutdown
-Console.CancelKeyPress += (sender, e) => {
-    e.Cancel = true;
-    logger.LogInformation("Shutdown signal received. Completing current batch and exiting...");
-    appShutdownCts.Cancel();
-};
+logger.LogInformation("All orchestrations completed. Application shutting down.");
 
-// Start the perpetual scheduling loop
-_ = Task.Run(async () => {
-    try 
-    {
-        while (!appShutdownCts.Token.IsCancellationRequested)
-        {
-            batchNumber++;
-            logger.LogInformation("Scheduling batch #{BatchNumber} ({BatchSize} orchestrations)", batchNumber, BatchSize);
-            
-            // Create a stopwatch to measure batch performance
-            var batchStopwatch = Stopwatch.StartNew();
-            
-            // Schedule a batch of orchestrations concurrently
-            var scheduleTasks = new List<Task<string>>(BatchSize);
-            for (int i = 0; i < BatchSize; i++)
-            {
-                // Create a unique instance ID based on timestamp and index
-                string instanceName = $"{name}_batch{batchNumber}_{i}";
-                
-                // Add scheduling task to batch
-                scheduleTasks.Add(client.ScheduleNewOrchestrationInstanceAsync(
-                    "GreetingOrchestration", 
-                    instanceName));
-            }
-            
-            try
-            {
-                // Wait for all orchestrations in this batch to be scheduled
-                string[] batchInstanceIds = await Task.WhenAll(scheduleTasks);
-                batchStopwatch.Stop();
-                
-                logger.LogInformation("Batch #{BatchNumber} scheduled in {ElapsedMs}ms", 
-                    batchNumber, batchStopwatch.ElapsedMilliseconds);
-                
-                // Start monitoring batch completion in the background
-                _ = MonitorBatchCompletionAsync(batchInstanceIds, batchNumber);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error scheduling batch #{BatchNumber}", batchNumber);
-            }
-            
-            // Wait for the configured interval before scheduling the next batch
-            try
-            {
-                await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds), appShutdownCts.Token);
-            }
-            catch (TaskCanceledException)
-            {
-                // This is expected when shutdown is requested
-                break;
-            }
-        }
-    }
-    catch (Exception ex)
-    {
-        logger.LogError(ex, "Error in scheduling loop");
-    }
-    finally
-    {
-        logger.LogInformation("Scheduling loop terminated");
-    }
-});
-
-// Method to monitor batch completion
-async Task MonitorBatchCompletionAsync(string[] batchInstanceIds, int batchNum)
+// Method to run orchestrations sequentially
+async Task RunSequentialOrchestrationsAsync()
 {
-    try
+    // List to track all instance ids for monitoring
+    var allInstanceIds = new List<string>(TotalOrchestrations);
+    
+    // Schedule each orchestration with delay between them
+    for (int i = 0; i < TotalOrchestrations; i++)
     {
-        // Create tasks for waiting for orchestrations in this batch to complete
-        var batchWaitTasks = new List<Task<OrchestrationMetadata>>(batchInstanceIds.Length);
-        foreach (string id in batchInstanceIds)
-        {
-            batchWaitTasks.Add(client.WaitForInstanceCompletionAsync(id, getInputsAndOutputs: false, CancellationToken.None));
-        }
+        // Create a unique instance ID
+        string instanceName = $"{name}_{i+1}";
+        logger.LogInformation("Scheduling orchestration #{Number} ({InstanceName})", i+1, instanceName);
         
-        // Process completion results as they arrive
-        int batchCompleted = 0;
-        int batchFailed = 0;
-        
-        while (batchWaitTasks.Count > 0)
+        var stopwatch = Stopwatch.StartNew();
+        try
         {
-            // Wait for any orchestration to complete
-            Task<OrchestrationMetadata> completedTask = await Task.WhenAny(batchWaitTasks);
-            batchWaitTasks.Remove(completedTask);
-            
-            try
-            {
-                OrchestrationMetadata instance = await completedTask;
+            // Schedule the orchestration
+            string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
+                "GreetingOrchestration", 
+                instanceName);
                 
-                if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Completed)
-                {
-                    batchCompleted++;
-                    Interlocked.Increment(ref completedOrchestrations);
-                }
-                else if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Failed)
-                {
-                    batchFailed++;
-                    Interlocked.Increment(ref failedOrchestrations);
-                    logger.LogError("Orchestration {Id} failed: {ErrorMessage}", 
-                        instance.InstanceId, instance.FailureDetails?.ErrorMessage);
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing orchestration completion");
-            }
+            allInstanceIds.Add(instanceId);
+            stopwatch.Stop();
+            
+            logger.LogInformation("Orchestration #{Number} scheduled in {ElapsedMs}ms with ID: {InstanceId}", 
+                i+1, stopwatch.ElapsedMilliseconds, instanceId);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error scheduling orchestration #{Number}", i+1);
         }
         
-        // Log batch completion stats
-        logger.LogInformation("Batch #{BatchNumber} completed: {Completed} succeeded, {Failed} failed", 
-            batchNum, batchCompleted, batchFailed);
-            
-        // Log overall stats periodically (every 10 batches)
-        if (batchNum % 10 == 0)
+        // Wait before scheduling next orchestration (except for the last one)
+        if (i < TotalOrchestrations - 1)
         {
-            logger.LogInformation("OVERALL STATS: {Completed} completed, {Failed} failed, {Total} total orchestrations", 
-                completedOrchestrations, failedOrchestrations, completedOrchestrations + failedOrchestrations);
+            logger.LogInformation("Waiting {Seconds} seconds before scheduling next orchestration...", IntervalSeconds);
+            await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds));
         }
     }
-    catch (Exception ex)
+    
+    logger.LogInformation("All {Count} orchestrations scheduled. Waiting for completion...", allInstanceIds.Count);
+
+    // Now wait for all orchestrations to complete
+    foreach (string id in allInstanceIds)
     {
-        logger.LogError(ex, "Error monitoring batch #{BatchNumber}", batchNum);
+        try
+        {
+            OrchestrationMetadata instance = await client.WaitForInstanceCompletionAsync(
+                id, getInputsAndOutputs: false, CancellationToken.None);
+            
+            if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Completed)
+            {
+                completedOrchestrations++;
+                logger.LogInformation("Orchestration {Id} completed successfully", instance.InstanceId);
+            }
+            else if (instance.RuntimeStatus == OrchestrationRuntimeStatus.Failed)
+            {
+                failedOrchestrations++;
+                logger.LogError("Orchestration {Id} failed: {ErrorMessage}", 
+                    instance.InstanceId, instance.FailureDetails?.ErrorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error waiting for orchestration {Id} completion", id);
+        }
     }
+    
+    // Log final stats
+    logger.LogInformation("FINAL RESULTS: {Completed} completed, {Failed} failed, {Total} total orchestrations", 
+        completedOrchestrations, failedOrchestrations, allInstanceIds.Count);
 }
-
-// Keep the app running until shutdown is requested
-logger.LogInformation("Perpetual orchestration scheduler running. Press Ctrl+C to exit...");
-await Task.Delay(Timeout.Infinite, appShutdownCts.Token).ContinueWith(_ => Task.CompletedTask);
-
-logger.LogInformation("Application shutdown complete");

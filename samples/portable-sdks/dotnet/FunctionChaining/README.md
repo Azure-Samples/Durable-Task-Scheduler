@@ -100,24 +100,70 @@ connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, build the solution:
-```bash
-cd FunctionChaining
-dotnet build
-```
+### Local Development
 
-2. Start the worker in a terminal:
-```bash
-cd Worker
-dotnet run
-```
-You should see output indicating the worker has started and registered the orchestration and activities.
+1. First, start the Worker (processing component):
 
-3. In a new terminal, run the client:
-```bash
-cd Client
-dotnet run
-```
+   ```bash
+   cd Worker
+   dotnet run
+   ```
+
+2. In a separate terminal, run the Client (orchestration initiator):
+
+   ```bash
+   cd Client
+   dotnet run
+   ```
+
+### Deploying with Azure Developer CLI (AZD)
+
+This sample includes an `azure.yaml` configuration file that allows you to deploy the entire solution to Azure using Azure Developer CLI (AZD).
+
+#### Prerequisites for AZD Deployment
+
+1. Install [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)
+2. Authenticate with Azure:
+   ```bash
+   azd auth login
+   ```
+
+#### Deployment Steps
+
+1. Navigate to the Function Chaining sample directory:
+   ```bash
+   cd /path/to/Durable-Task-Scheduler/samples/portable-sdks/dotnet/FunctionChaining
+   ```
+
+2. Initialize the AZD environment with a unique name:
+   ```bash
+   azd init --template .
+   ```
+
+3. Provision resources and deploy the application:
+   ```bash
+   azd up
+   ```
+   This command will:
+   - Provision Azure resources (including Azure Container Apps and Durable Task Scheduler)
+   - Build and deploy both the Client and Worker components
+   - Set up the necessary connections between components
+
+4. After deployment completes, AZD will display URLs for your deployed services.
+
+5. Monitor your orchestrations using the Azure Portal by navigating to your Durable Task Scheduler resource.
+
+6. To confirm the sample is working correctly, use log streaming to view the application logs:
+   ```bash
+   # For the Worker container app
+   azd monitor --service worker
+   
+   # For the Client container app (in a separate terminal)
+   azd monitor --service client
+   ```
+   
+   These logs will show orchestrations being scheduled, activities executing, and results being processed, similar to running locally.
+
 
 ## Understanding the Code Structure
 
@@ -175,15 +221,35 @@ await host.StartAsync();
 The Client project:
 
 - Uses the same connection string logic as the worker
-- Schedules an orchestration instance with a name input
-- Waits for the orchestration to complete and displays the result
-- Uses WaitForInstanceCompletionAsync for efficient polling
+- Implements a sequential orchestration scheduler that:
+  - Schedules 20 orchestration instances, one at a time
+  - Waits 5 seconds between scheduling each orchestration
+  - Tracks all orchestration instances in a list
+  - Waits for all orchestrations to complete before exiting
+- Uses standard logging to show progress and results
 
 ```csharp
-var instance = await client.WaitForInstanceCompletionAsync(
-    instanceId,
-    getInputsAndOutputs: true,
-    cts.Token);
+// Schedule 20 orchestrations sequentially
+for (int i = 0; i < TotalOrchestrations; i++)
+{
+    // Create a unique instance ID
+    string instanceName = $"{name}_{i+1}";
+    
+    // Schedule the orchestration
+    string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
+        "GreetingOrchestration", 
+        instanceName);
+    
+    // Wait 5 seconds before scheduling the next one
+    await Task.Delay(TimeSpan.FromSeconds(IntervalSeconds));
+}
+
+// Wait for all orchestrations to complete
+foreach (string id in allInstanceIds)
+{
+    OrchestrationMetadata instance = await client.WaitForInstanceCompletionAsync(
+        id, getInputsAndOutputs: false, CancellationToken.None);
+}
 ```
 
 ## Understanding the Output
