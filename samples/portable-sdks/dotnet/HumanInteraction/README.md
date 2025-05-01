@@ -93,7 +93,7 @@ The connection string is constructed dynamically based on the environment:
 connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=None";
 
 // For Azure
-connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzureCredential";
+connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzure";
 ```
 
 ## How to Run the Sample

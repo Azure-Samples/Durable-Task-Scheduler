@@ -46,9 +46,9 @@ if (isLocalEmulator)
 }
 else
 {
-    // For Azure, use DefaultAzureCredential
-    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzureCredential";
-    logger.LogInformation("Using Azure endpoint with DefaultAzureCredential");
+    // For Azure, use DefaultAzure authentication
+    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzure";
+    logger.LogInformation("Using Azure endpoint with DefaultAzure authentication");
 }
 
 logger.LogInformation("Using endpoint: {Endpoint}", endpoint);

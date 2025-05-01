@@ -19,205 +19,85 @@ This pattern is useful for:
 ## Prerequisites
 
 1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for building the image)
 3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
-## Configuring Durable Task Scheduler
+### Deploying with Azure Developer CLI (AZD)
 
-There are two ways to run this sample:
+This sample includes an `azure.yaml` configuration file that allows you to deploy the entire solution to Azure using Azure Developer CLI (AZD). This deployment includes a custom KEDA scaler for your Container Apps that automatically scales based on the Durable Task Scheduler's workload.
 
-### Using the Emulator (Recommended)
+#### Prerequisites for AZD Deployment
 
-The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
-
-1. Install Docker if it's not already installed.
-
-2. Pull the Docker Image for the Emulator:
-```bash
-docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
-```
-
-3. Run the Emulator:
-```bash
-docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
-```
-Wait a few seconds for the container to be ready.
-
-Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
-
-### Using a Deployed Scheduler and Taskhub in Azure
-
-For production scenarios or when you're ready to deploy to Azure:
-
-1. Create a Scheduler using the Azure CLI:
-```bash
-az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
-
-2. Create Your Taskhub:
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
-
-3. Retrieve the Endpoint for the Scheduler from the Azure portal.
-
-4. Set the Environment Variables:
-
-   Bash:
+1. Install [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)
+2. Authenticate with Azure:
    ```bash
-   export TASKHUB=<taskhubname>
-   export ENDPOINT=<taskhubEndpoint>
+   azd auth login
    ```
 
-   PowerShell:
-   ```powershell
-   $env:TASKHUB = "<taskhubname>"
-   $env:ENDPOINT = "<taskhubEndpoint>"
+#### Deployment Steps
+
+1. Navigate to the AutoscalingInACA sample directory:
+   ```bash
+   cd /path/to/Durable-Task-Scheduler/samples/portable-sdks/dotnet/AutoscalingInACA
    ```
 
-## Authentication
+2. Initialize the AZD environment with a unique name:
+   ```bash
+   azd init --template .
+   ```
 
-The sample includes smart detection of the environment and configures authentication automatically:
+3. Provision resources and deploy the application:
+   ```bash
+   azd up
+   ```
+   This command will:
+   - Provision Azure resources (including Azure Container Apps and Durable Task Scheduler)
+   - Build and deploy both the Client and Worker components
+   - Set up the custom KEDA scaler for the Worker container app
+   - Configure the necessary connections between components
 
-- For local development with the emulator (when endpoint is http://localhost:8080), no authentication is required.
-- For Azure deployments, DefaultAzureCredential is used, which tries multiple authentication methods:
-  - Managed Identity
-  - Environment variables (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET)
-  - Azure CLI login
-  - Visual Studio login
-  - and more
+4. Monitor your orchestrations using the Azure Portal by navigating to your Durable Task Scheduler resource dashboard, or view the container app logs using the Azure Portal:
 
-The connection string is constructed dynamically based on the environment:
-```csharp
-// For local emulator
-connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=None";
+   - Navigate to the Azure Portal and find your resource group
+   - Go to each Container App (Worker and Client) that was deployed
+   - In the left sidebar, select "Log stream" under the "Monitoring" section
+   - Observe the logs in real-time to confirm that:
+     - Client app is submitting orchestration requests
+     - Worker app is processing the orchestrations through each activity
+     - You should see logs showing the completion of `SayHelloActivity`, `ProcessGreetingActivity`, and `FinalizeResponseActivity`
+   - This confirms that your orchestrations are being processed correctly
 
-// For Azure
-connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzureCredential";
-```
+## Understanding the Custom Scaler
 
-## How to Run the Sample
+This sample implements autoscaling using KEDA (Kubernetes Event-Driven Autoscaling) with a custom scaler for Azure Container Apps. The scaler monitors the Durable Task Scheduler workload and automatically adjusts the number of worker instances based on the current orchestration load.
 
-Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+### How the Custom Scaler Works
 
-1. First, build the solution:
-```bash
-cd AutoscalingInACA
-dotnet build
-```
+The custom scaler:
+- Monitors the number of pending orchestrations in the task hub
+- Scales the number of worker replicas up when there is increased workload
+- Scales back down when the load decreases
+- Provides efficient resource utilization by matching capacity to demand
 
-2. Start the worker in a terminal:
-```bash
-cd Worker
-dotnet run
-```
-You should see output indicating the worker has started and registered the orchestration and activities.
+### Confirming the Scaler is Working
 
-3. In a new terminal, run the client:
-```bash
-cd Client
-dotnet run
-```
+To verify that the autoscaling is functioning correctly:
 
-## Understanding the Code Structure
+1. Navigate to the Azure Portal and find your resource group
+2. Go to the Worker Container App that was deployed
+3. Select the "Revision management" section in the sidebar
+4. Observe the "Replica count" as it changes based on load
+5. You can also check the "Scale" tab to see the KEDA scaler configuration
 
-### Worker Project
+To test the autoscaling:
+1. Run the client with a large number of orchestration requests
+   ```bash
+   # You can modify the Client/Program.cs to schedule more orchestrations
+   # Then run from your AZD environment:
+   azd deploy --service client
+   ```
+2. Monitor the replica count in the Azure Portal
+3. You should see the number of replicas increase as the workload grows
+4. Once the orchestrations complete, the replicas should scale back down after a cooldown period
 
-The Worker project contains:
-
-- **GreetingOrchestration.cs**: Defines the orchestrator and activity functions in a single file
-- **Program.cs**: Sets up the worker host with proper connection string handling
-
-#### Orchestration Implementation
-
-The orchestration directly calls each activity in sequence using the standard `CallActivityAsync` method:
-
-```csharp
-public override async Task<string> RunAsync(TaskOrchestrationContext context, string name)
-{
-    // Step 1: Say hello to the person
-    string greeting = await context.CallActivityAsync<string>(nameof(SayHelloActivity), name);
-    
-    // Step 2: Process the greeting
-    string processedGreeting = await context.CallActivityAsync<string>(nameof(ProcessGreetingActivity), greeting);
-    
-    // Step 3: Finalize the response
-    string finalResponse = await context.CallActivityAsync<string>(nameof(FinalizeResponseActivity), processedGreeting);
-    
-    return finalResponse;
-}
-```
-
-Each activity is implemented as a separate class decorated with the `[DurableTask]` attribute:
-
-```csharp
-[DurableTask]
-public class SayHelloActivity : TaskActivity<string, string>
-{
-    // Implementation details
-}
-```
-
-The worker uses Microsoft.Extensions.Hosting for proper lifecycle management:
-```csharp
-var builder = Host.CreateApplicationBuilder();
-builder.Services.AddDurableTaskWorker()
-    .AddTasks(registry => {
-        registry.AddAllGeneratedTasks();
-    })
-    .UseDurableTaskScheduler(connectionString);
-var host = builder.Build();
-await host.StartAsync();
-```
-
-### Client Project
-
-The Client project:
-
-- Uses the same connection string logic as the worker
-- Schedules an orchestration instance with a name input
-- Waits for the orchestration to complete and displays the result
-- Uses WaitForInstanceCompletionAsync for efficient polling
-
-```csharp
-var instance = await client.WaitForInstanceCompletionAsync(
-    instanceId,
-    getInputsAndOutputs: true,
-    cts.Token);
-```
-
-## Understanding the Output
-
-When you run the client, you should see:
-1. The client starting an orchestration with a name input
-2. The worker processing the chained activities
-3. The client displaying the final result from the completed orchestration
-
-Example output:
-```
-Starting greeting orchestration for name: GitHub Copilot
-Started orchestration with ID: 7f8e9a6b-1c2d-3e4f-5a6b-7c8d9e0f1a2b
-Waiting for orchestration to complete...
-Orchestration completed with status: Completed
-Greeting result: Hello GitHub Copilot! It's nice to meet you. Welcome to the Durable Task Framework!
-```
-
-## Reviewing the Orchestration in the Durable Task Scheduler Dashboard
-
-To access the Durable Task Scheduler Dashboard and review your orchestration:
-
-### Using the Emulator
-1. Navigate to http://localhost:8082 in your web browser
-2. Click on the "default" task hub
-3. You'll see the orchestration instance in the list
-4. Click on the instance ID to view the execution details, which will show:
-   - The sequential execution of the activities
-   - The input and output at each step
-   - The time taken for each step
-
-### Using a Deployed Scheduler
-1. Navigate to the Scheduler resource in the Azure portal
-2. Go to the Task Hub subresource that you're using
-3. Click on the dashboard URL in the top right corner
-4. Search for your orchestration instance ID
-5. Review the execution details
+You can also view the Application Insights logs to see the scaling events and performance metrics for your Container Apps.

@@ -43,7 +43,7 @@ if (isLocalEmulator)
 }
 else
 {
-    // For Azure, use DefaultAzureCredential - make sure TaskHub is included
+    // For Azure, use DefaultAzure - make sure TaskHub is included
     if (!endpoint.Contains("TaskHub="))
     {
         // Append the TaskHub parameter if it's not already in the connection string
@@ -53,7 +53,7 @@ else
     {
         connectionString = endpoint;
     }
-    logger.LogInformation("Using Azure endpoint with DefaultAzureCredential");
+    logger.LogInformation("Using Azure endpoint with DefaultAzure");
 }
 
 logger.LogInformation("Using endpoint: {Endpoint}", endpoint);

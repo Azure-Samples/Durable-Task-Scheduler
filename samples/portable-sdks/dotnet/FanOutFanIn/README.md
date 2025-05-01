@@ -82,7 +82,7 @@ az durabletask taskhub create --resource-group <testrg> --scheduler-name <testsc
 The sample includes smart detection of the environment and configures authentication automatically:
 
 - For local development with the emulator (when endpoint is http://localhost:8080), no authentication is required.
-- For Azure deployments, DefaultAzureCredential is used, which tries multiple authentication methods:
+- For Azure deployments, DefaultAzure authentication is used, which utilizes DefaultAzureCredential behind the scenes and tries multiple authentication methods:
   - Managed Identity
   - Environment variables (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET)
   - Azure CLI login
