@@ -132,15 +132,10 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
 
 1. Navigate to the Function Chaining sample directory:
    ```bash
-   cd /path/to/Durable-Task-Scheduler/samples/portable-sdks/dotnet/FunctionChaining
+   cd /path/to/Durable-Task-Scheduler/samples/durable-task-sdks/dotnet/FunctionChaining
    ```
 
-2. Initialize the AZD environment with a unique name:
-   ```bash
-   azd init --template .
-   ```
-
-3. Provision resources and deploy the application:
+2. Provision resources and deploy the application:
    ```bash
    azd up
    ```

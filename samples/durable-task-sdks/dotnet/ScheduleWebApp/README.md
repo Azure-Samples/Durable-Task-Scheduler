@@ -75,7 +75,7 @@ This sample demonstrates a web application that leverages the durable task sched
 
 1. Navigate to the application directory:
    ```bash
-   cd samples/portable-sdk/dotnet/ScheduleWebApp
+   cd samples/durable-task-sdks/dotnet/ScheduleWebApp
    ```
 
 2. Run the application:
@@ -87,7 +87,7 @@ The application will start and listen on `http://localhost:5000` by default.
 
 ## API Endpoints
 
-The sample provides a list of schedule management endpoints that can be found at [`samples/portable-sdk/dotnet/ScheduleWebApp/ScheduleWebApp.http`](ScheduleWebApp.http).
+The sample provides a list of schedule management endpoints that can be found at [`samples/durable-task-sdks/dotnet/ScheduleWebApp/ScheduleWebApp.http`](ScheduleWebApp.http).
 The file contains sample REST requests for testing the schedule management endpoints. It includes examples for creating, retrieving, listing, updating, pausing, resuming, and deleting schedules. These examples are designed for use with REST client tools (e.g., the VS Code REST Client extension).
 
 ## Schedule Creation Options

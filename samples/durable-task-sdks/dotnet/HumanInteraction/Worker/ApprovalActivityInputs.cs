@@ -1,4 +1,4 @@
-// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/portable-sdks/dotnet/HumanInteraction/Worker/ApprovalActivityInputs.cs
+// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/durable-task-sdks/dotnet/HumanInteraction/Worker/ApprovalActivityInputs.cs
 namespace HumanInteraction;
 
 /// <summary>

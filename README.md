@@ -15,7 +15,7 @@ The durable task scheduler plays a similar role in the Durable Task Framework as
 ### Use with Durable Task SDKs or "portable SDKs"
 The Durable Task SDKs provide a lightweight client library for the durable task scheduler. When running orchestrations, apps using these SDKs would make a connection to the scheduler's orchestration engine in Azure. These SDKs are called "portable" because apps that leverage them can be hosted in various compute environments, such as Azure Container Apps, Azure Kubernetes Service, Azure App Service, or VMs. 
 
-![Durable Task Scheduler in all Azure Computes](./media/images/portable-sdks/dts-in-all-computes.png)
+![Durable Task Scheduler in all Azure Computes](./media/images/durable-task-sdks/dts-in-all-computes.png)
 
 For more information on how to use the Azure Functions durable task scheduler and to explore its features, please refer to the [official documentation](https://aka.ms/dts-documentation)
 

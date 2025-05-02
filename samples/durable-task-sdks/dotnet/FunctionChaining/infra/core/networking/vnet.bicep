@@ -1,4 +1,4 @@
-// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/portable-sdks/dotnet/FunctionChaining/infra/core/networking/vnet.bicep
+// filepath: /Users/nickgreenfield1/workspace/Durable-Task-Scheduler/samples/durable-task-sdks/dotnet/FunctionChaining/infra/core/networking/vnet.bicep
 @description('The name of the Virtual Network')
 param name string
 

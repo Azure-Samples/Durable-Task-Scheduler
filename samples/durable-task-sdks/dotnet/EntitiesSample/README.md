@@ -16,7 +16,7 @@ From a terminal window as above, use the following steps to run the sample on yo
 
 1. Clone this repository.
 
-1. Navigate to the `samples/portable-sdk/dotnet/EntitiesSample` directory.
+1. Navigate to the `samples/durable-task-sdks/dotnet/EntitiesSample` directory.
 
 1. Start the Durable Task Scheduler Emulator.
 
@@ -49,7 +49,7 @@ From a terminal window as above, use the following steps to run the sample on yo
     2025-02-25T04:11:48.682Z info: Microsoft.Hosting.Lifetime[14] Now listening on: http://localhost:5203
     2025-02-25T04:11:48.683Z info: Microsoft.Hosting.Lifetime[0] Application started. Press Ctrl+C to shut down.
     2025-02-25T04:11:48.684Z info: Microsoft.Hosting.Lifetime[0] Hosting environment: Development
-    2025-02-25T04:11:48.684Z info: Microsoft.Hosting.Lifetime[0] Content root path: C:\GitHub\Azure-Functions-Durable-Task-Scheduler-Private-Preview\samples\portable-sdk\dotnet\EntitiesSample
+    2025-02-25T04:11:48.684Z info: Microsoft.Hosting.Lifetime[0] Content root path: C:\GitHub\Azure-Functions-Durable-Task-Scheduler-Private-Preview\samples\durable-task-sdks\dotnet\EntitiesSample
     2025-02-25T04:11:48.747Z info: Microsoft.DurableTask[4] Sidecar work-item streaming connection established.
     ```
 
