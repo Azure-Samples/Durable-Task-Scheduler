@@ -400,8 +400,8 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# portable java sdk build folders and compiled files
-samples/portable-sdks/java/**/build/
-samples/portable-sdks/java/**/*.class
-samples/portable-sdks/java/**/.gradle/
-samples/portable-sdks/java/**/out/
+# durable-task-sdks java build folders and compiled files
+samples/durable-task-sdks/java/**/build/
+samples/durable-task-sdks/java/**/*.class
+samples/durable-task-sdks/java/**/.gradle/
+samples/durable-task-sdks/java/**/out/
