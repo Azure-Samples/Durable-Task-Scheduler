@@ -41,7 +41,13 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
    cd /path/to/Durable-Task-Scheduler/samples/scenarios/AutoscalingInACA
    ```
 
-2. Provision resources and deploy the application:
+2. Initialize the Azure Developer CLI project (only needed the first time):
+   ```bash
+   azd init
+   ```
+   This step prepares the environment for deployment and creates necessary configuration files.
+
+3. Provision resources and deploy the application:
    ```bash
    azd up
    ```

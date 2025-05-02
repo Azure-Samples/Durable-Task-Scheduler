@@ -135,7 +135,13 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
    cd /path/to/Durable-Task-Scheduler/samples/durable-task-sdks/dotnet/FunctionChaining
    ```
 
-2. Provision resources and deploy the application:
+2. Initialize the Azure Developer CLI project (only needed the first time):
+   ```bash
+   azd init
+   ```
+   This step prepares the environment for deployment and creates necessary configuration files.
+
+3. Provision resources and deploy the application:
    ```bash
    azd up
    ```
@@ -148,16 +154,15 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
 
 5. Monitor your orchestrations using the Azure Portal by navigating to your Durable Task Scheduler resource.
 
-6. To confirm the sample is working correctly, use log streaming to view the application logs:
-   ```bash
-   # For the Worker container app
-   azd monitor --service worker
+6. To confirm the sample is working correctly, view the application logs through the Azure Portal:
+   - Navigate to the Azure Portal (https://portal.azure.com)
+   - Go to your resource group where the application was deployed
+   - Find and select the Container Apps for both the worker and client components
+   - For each Container App:
+     - Click on "Log stream" in the left navigation menu under "Monitoring"
+     - View the real-time logs showing orchestrations being scheduled, activities executing, and results being processed
    
-   # For the Client container app (in a separate terminal)
-   azd monitor --service client
-   ```
-   
-   These logs will show orchestrations being scheduled, activities executing, and results being processed, similar to running locally.
+   These logs will show the same information as when running locally, allowing you to confirm the application is working correctly.
 
 
 ## Understanding the Code Structure

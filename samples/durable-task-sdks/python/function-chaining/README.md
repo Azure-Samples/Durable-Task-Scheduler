@@ -76,6 +76,10 @@ az durabletask taskhub create --resource-group <testrg> --scheduler-name <testsc
 
 ## How to Run the Sample
 
+There are two ways to run this sample: locally or deployed to Azure.
+
+### Running Locally
+
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
 1. First, activate your Python virtual environment (if you're using one):
@@ -100,6 +104,54 @@ You should see output indicating the worker has started and registered the orche
 python client.py [name]
 ```
 You can optionally provide a name as an argument. If not provided, "User" will be used.
+
+### Deploying with Azure Developer CLI (AZD)
+
+This sample includes an `azure.yaml` configuration file that allows you to deploy the entire solution to Azure using Azure Developer CLI (AZD).
+
+#### Prerequisites for AZD Deployment
+
+1. Install [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)
+2. Authenticate with Azure:
+   ```bash
+   azd auth login
+   ```
+
+#### Deployment Steps
+
+1. Navigate to the Function Chaining sample directory:
+   ```bash
+   cd /path/to/Durable-Task-Scheduler/samples/durable-task-sdks/python/function-chaining
+   ```
+
+2. Initialize the Azure Developer CLI project (only needed the first time):
+   ```bash
+   azd init
+   ```
+   This step prepares the environment for deployment and creates necessary configuration files.
+
+3. Provision resources and deploy the application:
+   ```bash
+   azd up
+   ```
+   This command will:
+   - Provision Azure resources (including Azure Container Apps and Durable Task Scheduler)
+   - Build and deploy both the Client and Worker components
+   - Set up the necessary connections between components
+
+3. After deployment completes, AZD will display URLs for your deployed services.
+
+4. Monitor your orchestrations using the Azure Portal by navigating to your Durable Task Scheduler resource.
+
+5. To confirm the sample is working correctly, view the application logs through the Azure Portal:
+   - Navigate to the Azure Portal (https://portal.azure.com)
+   - Go to your resource group where the application was deployed
+   - Find and select the Container Apps for both the worker and client components
+   - For each Container App:
+     - Click on "Log stream" in the left navigation menu under "Monitoring"
+     - View the real-time logs showing orchestrations being scheduled, activities executing, and results being processed
+   
+   These logs will show the same information as when running locally, allowing you to confirm the application is working correctly.
 
 ## Understanding the Output
 
