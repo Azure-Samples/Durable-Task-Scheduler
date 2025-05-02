@@ -13,7 +13,7 @@ This directory includes a sample .NET console app that demonstrates how to use t
 
 Before you can run the app, you need to create a durable task scheduler task hub in Azure.
 
-> **NOTE**: These are abbreviated instructions for simplicity. For a full set of instructions, see the Azure Durable Functions [QuickStart guide](../../../../quickstarts/durable-functions/dotnet/HelloCities/README.md#create-a-durable-task-scheduler-namespace-and-task-hub).
+> **NOTE**: These are abbreviated instructions for simplicity. For a full set of instructions, see the Azure Durable Functions [QuickStart guide](../../../../quickstarts/durable-functions/dotnet/HelloCities/README.md).
 
 1. Install the durable task scheduler CLI extension:
 
