@@ -147,7 +147,7 @@ public class MonitoringPattern {
                             
                             // Simulate some work
                             try {
-                                Thread.sleep(Duration.ofSeconds(jobData.pollingIntervalSeconds).toMillis());
+                                ctx.createTimer(Duration.ofSeconds(jobData.pollingIntervalSeconds), CancellationToken.NONE);
                             } catch (InterruptedException e) {
                                 Thread.currentThread().interrupt();
                                 throw new RuntimeException("Job monitoring interrupted", e);
