@@ -146,12 +146,7 @@ public class MonitoringPattern {
                             ctx.setCustomStatus(new JobStatus("Polling job status (attempt " + (++pollingCount) + ")"));
                             
                             // Simulate some work
-                            try {
-                                ctx.createTimer(Duration.ofSeconds(jobData.pollingIntervalSeconds), CancellationToken.NONE);
-                            } catch (InterruptedException e) {
-                                Thread.currentThread().interrupt();
-                                throw new RuntimeException("Job monitoring interrupted", e);
-                            }
+                            ctx.createTimer(Duration.ofSeconds(jobData.pollingIntervalSeconds));
                             
                             // Check if job is complete (simulated)
                             if (pollingCount >= 3) {
