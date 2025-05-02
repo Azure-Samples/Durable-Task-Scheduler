@@ -1,7 +1,8 @@
 import asyncio
 import logging
 import os
-from azure.identity import DefaultAzureCredential
+from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
+from azure.core.exceptions import ClientAuthenticationError
 from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
 
 # Configure logging
@@ -51,18 +52,29 @@ async def main():
     print(f"Using taskhub: {taskhub_name}")
     print(f"Using endpoint: {endpoint}")
     
-    # Split the endpoint if it contains authentication info
-    if ";" in endpoint:
-        host_address = endpoint.split(';')[0]
-    else:
-        host_address = endpoint
+    # Credential handling with better error management
+    credential = None
+    if endpoint != "http://localhost:8080":
+        try:
+            # Check if we're running in Azure with a managed identity
+            client_id = os.getenv("AZURE_MANAGED_IDENTITY_CLIENT_ID")
+            if client_id:
+                logger.info(f"Using Managed Identity with client ID: {client_id}")
+                credential = ManagedIdentityCredential(client_id=client_id)
+                # Test the credential to make sure it works
+                credential.get_token("https://management.azure.com/.default")
+                logger.info("Successfully authenticated with Managed Identity")
+            else:
+                # Fall back to DefaultAzureCredential only if no client ID is available
+                logger.info("No client ID found, falling back to DefaultAzureCredential")
+                credential = DefaultAzureCredential()
+        except Exception as e:
+            logger.error(f"Authentication error: {e}")
+            logger.warning("Continuing without authentication - this may only work with local emulator")
+            credential = None
     
-    # Set credential to None for emulator, or DefaultAzureCredential for Azure
-    credential = None if endpoint == "http://localhost:8080" else DefaultAzureCredential()
-    
-    # Create a worker using Azure Managed Durable Task and start it with a context manager
     with DurableTaskSchedulerWorker(
-        host_address=host_address, 
+        host_address=endpoint, 
         secure_channel=endpoint != "http://localhost:8080",
         taskhub=taskhub_name, 
         token_credential=credential
