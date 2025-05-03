@@ -67,7 +67,7 @@ public class MonitoringPattern {
             logger.info("Status updates will be displayed as they occur.");
             
             // Create a simple timeout for the demonstration
-            Duration maxWaitTime = Duration.ofSeconds(timeout + 10);  // Add a buffer to the timeout
+            Duration maxWaitTime = Duration.ofSeconds(timeout + 20);  // Add a buffer to the timeout
             Duration waitInterval = Duration.ofSeconds(2);
             Duration totalWaitTime = Duration.ZERO;
             
@@ -136,9 +136,6 @@ public class MonitoringPattern {
                         // Set initial status
                         ctx.setCustomStatus(new JobStatus("Starting monitoring..."));
                         
-                        // Create a timeout timer
-                        Task timeoutTask = ctx.createTimer(Duration.ofSeconds(jobData.timeoutSeconds));
-                        
                         // Simulate job monitoring with status updates
                         int pollingCount = 0;
                         while (true) {
@@ -146,7 +143,7 @@ public class MonitoringPattern {
                             ctx.setCustomStatus(new JobStatus("Polling job status (attempt " + (++pollingCount) + ")"));
                             
                             // Simulate some work
-                            ctx.createTimer(Duration.ofSeconds(jobData.pollingIntervalSeconds));
+                            ctx.createTimer(Duration.ofSeconds(jobData.pollingIntervalSeconds)).await();
                             
                             // Check if job is complete (simulated)
                             if (pollingCount >= 3) {

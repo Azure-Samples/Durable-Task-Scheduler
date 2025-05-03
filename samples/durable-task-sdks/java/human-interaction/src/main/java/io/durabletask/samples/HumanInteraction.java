@@ -21,7 +21,7 @@ import java.util.logging.Logger;
  */
 public class HumanInteraction {
     private static final String ORCHESTRATION_NAME = "ApprovalWorkflow";
-    private static final Duration TIMEOUT = Duration.ofMinutes(5); // Short timeout for demo
+    private static final Duration TIMEOUT = Duration.ofMinutes(1); // Short timeout for demo
     private static final Logger logger = Logger.getLogger(HumanInteraction.class.getName());
 
     public static void main(String[] args) throws IOException, InterruptedException, TimeoutException {
@@ -128,11 +128,11 @@ public class HumanInteraction {
                         // Wait for either approval response or timeout
                         Task<ApprovalResponse> approvalTask = ctx.waitForExternalEvent("ApprovalResponse", ApprovalResponse.class);
                         
-                        // Wait for approval with timeout
-                        try {
-                            ApprovalResponse response = approvalTask.await();
-                            
-                            // Update status and complete
+                        // Wait for either approval or timeout
+                        Task<?> winner = ctx.anyOf(approvalTask, timeoutTask).await();
+
+                        if (winner == approvalTask) {
+                            ApprovalResponse response = approvalTask.await();  // safe because we checked
                             String status = response.isApproved ? "APPROVED" : "REJECTED";
                             ctx.setCustomStatus(new WorkflowStatus(status, response));
                             ctx.complete(new WorkflowResult(
@@ -140,8 +140,8 @@ public class HumanInteraction {
                                 response.isApproved ? "Request approved" : "Request rejected",
                                 response
                             ));
-                        } catch (Exception e) {
-                            // Handle timeout
+                        } else {
+                            // Timeout occurred first
                             ctx.setCustomStatus(new WorkflowStatus("Timed out", null));
                             ctx.complete(new WorkflowResult("TIMEOUT", "Request timed out", null));
                         }
