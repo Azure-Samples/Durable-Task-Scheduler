@@ -15,7 +15,7 @@ The samples can be run locally using the Durable Task Scheduler Emulator. The em
 
    ```bash
    # Pull the emulator image
-   docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.5
+   docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
 
    # Run the emulator
    docker run -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.5
@@ -24,12 +24,11 @@ The samples can be run locally using the Durable Task Scheduler Emulator. The em
 2. Set the connection string environment variable:
    ```bash
    # Windows
-   set DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:<port>;TaskHub=default;Authentication=None
+   set DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:8080;TaskHub=default;Authentication=None
 
    # Linux/macOS
-   export DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:<port>;TaskHub=default;Authentication=None
+   export DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:8080;TaskHub=default;Authentication=None
    ```
-   Replace `<port>` with the port number mapped to port `8080` in Docker.
 
 ## Available Samples
 
