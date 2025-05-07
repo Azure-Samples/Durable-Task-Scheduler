@@ -35,12 +35,12 @@ The emulator simulates a scheduler and taskhub in a Docker container, making it 
 
 2. Pull the Docker Image for the Emulator:
 ```bash
-docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
+docker pull mcr.microsoft.com/dts/dts-emulator:latest
 ```
 
 3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.6
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
 ```
 Wait a few seconds for the container to be ready.
 

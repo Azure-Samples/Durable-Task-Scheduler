@@ -15,10 +15,10 @@ The samples can be run locally using the Durable Task Scheduler Emulator. The em
 
    ```bash
    # Pull the emulator image
-   docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.6
+   docker pull mcr.microsoft.com/dts/dts-emulator:latest
 
    # Run the emulator
-   docker run -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:v0.0.5
+   docker run -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
    ```
 
 2. Set the connection string environment variable:

@@ -21,11 +21,11 @@ From a terminal window as above, use the following steps to run the sample on yo
 1. Start the Durable Task Scheduler Emulator.
 
     ```bash
-    docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.5
+    docker pull mcr.microsoft.com/dts/dts-emulator:latest
     ```
 
     ```bash
-    docker run -itP mcr.microsoft.com/dts/dts-emulator:v0.0.5
+    docker run -itP mcr.microsoft.com/dts/dts-emulator:latest
     ```
 
 1. Set the `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` environment variable:

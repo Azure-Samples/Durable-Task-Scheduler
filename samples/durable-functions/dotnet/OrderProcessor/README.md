@@ -63,11 +63,11 @@ To run the app:
 1. Pull the durable task scheduler emulator image from Docker and run it:
 
     ```bash
-    docker pull mcr.microsoft.com/dts/dts-emulator:v0.0.5
+    docker pull mcr.microsoft.com/dts/dts-emulator:latest
     ```
 
     ```bash
-    docker run -itP mcr.microsoft.com/dts/dts-emulator:v0.0.5
+    docker run -itP mcr.microsoft.com/dts/dts-emulator:latest
     ```
 
     There are several ports exposed and mapped dynamically by default. The port that maps to `8080` is the one to use in the connection string.
