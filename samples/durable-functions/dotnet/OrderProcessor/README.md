@@ -15,7 +15,7 @@ languages:
 -->
 ## Order processing workflow (.NET isolated)
 
-This sample showcases a order processing workflow implemented using Durable Functions in .NET (isolated) and the Durable Task Scheduler as the storage backend provider. 
+This sample showcases an order processing workflow implemented using Durable Functions in .NET (isolated) and the Durable Task Scheduler as the storage backend provider. 
 
 You'll need: 
 - [Docker](https://docs.docker.com/engine/install/) installed to run the durable task scheduler emulator.
@@ -52,13 +52,11 @@ To run the app:
         "Values": {
             "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
             "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-            "DTS_CONNECTION_STRING": "Endpoint=http://localhost:{port number};Authentication=None",
+            "DTS_CONNECTION_STRING": "Endpoint=http://localhost:8080;Authentication=None",
             "TASKHUB_NAME": "default"
         }
     }
     ```
-
-    Follow the next step to get the port number. 
 
 1. Pull the durable task scheduler emulator image from Docker and run it:
 
@@ -68,13 +66,11 @@ To run the app:
 
     ```bash
     docker run -itP mcr.microsoft.com/dts/dts-emulator:latest
+
+    docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
     ```
 
-    There are several ports exposed and mapped dynamically by default. The port that maps to `8080` is the one to use in the connection string.
-
-    ![Docker container ports](./img/container-ports.png)
-
-    In the example above, port `55000` is mapped to the `8080` endpoint, so the connection string should be `Endpoint=http://localhost:55000;Authentication=None`
+    Port `8080` exposes the gRPC endpoint for the durable task scheduler, and `8082` exposes the endpoint for the monitoring dashboard. 
 
 1. Start the Azure Storage emulator [Azurite](https://learn.microsoft.com/azure/storage/common/storage-use-azurite) in the project root directory. (This is needed for by the Function app.)
 
@@ -112,7 +108,7 @@ To run the app:
 
 1. Navigate to the `OrderProcessingOrchestration_HttpStart` URL. This will start an order processing orchestration instance. 
 
-1. Check the status of the orchestration by using the durable task scheduler monitoring dashboard. 
+1. The HTTP call in the last step should return a list of URLs that you can use to manage the orchestration instance. You can check `StatusQueryGetUri` for the orchestration status. However, the durable task scheduler monitoring dashboard may be a better place to look as it provides more details about the instance. 
 
 ### Durable task scheduler dashboard 
 The dashboard comes out-of-the-box and is also available when using the emulator. Click on the `8082` port on Docker desktop, and then click on the task hub named  `default` to see the dashboard.
@@ -169,7 +165,10 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
 
     UpdateInventory - [activityTrigger]
     ``` 
-1. Navigate to the `OrderProcessingOrchestration_HttpStart` URL to start an order processing orchestration instance. Use the durable task scheduler dashboard to check orchestration details. 
+1. Navigate to the `OrderProcessingOrchestration_HttpStart` URL to start an order processing orchestration instance. Use the durable task scheduler dashboard to check orchestration details.
+
+## Identity-based authentication
+The durable task scheduler supports identity-based authentication only. This sample sets up the authentication through specifications in bicep files. If you're configuring identity-based access yourself, refer to [documentation on Microsoft Learn](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler?tabs=function-app-integrated-creation&pivots=az-cli#configure-identity-based-authentication-for-app-to-access-durable-task-scheduler). 
 
 ## Access dashboard after deployment
 You can access the dashboard by going to **https://dashboard.durabletask.io/** and registering a task hub endpoint or by following steps below to get the dashboard URL on Azure portal. 
