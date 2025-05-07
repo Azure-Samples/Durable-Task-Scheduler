@@ -1,6 +1,6 @@
 # Funds Transfer with the Durable Task SDK for .NET
 
-The [Durable Task SDK for .NET](https://github.com/microsoft/durabletask-dotnet) supports [Durable Entities](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-entities) when used with the Durable Task Scheduler service. This sample shows how to use Durable Entities when targeting the Durable Task Scheduler service, with no Azure Functions dependency.
+The [Durable Task SDK for .NET](https://github.com/microsoft/durabletask-dotnet) supports [Durable Entities](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-entities) when used with the Durable Task Scheduler. This sample shows how to use Durable Entities when targeting the Durable Task Scheduler service, with no Azure Functions dependency.
 
 ## Prerequisites
 
