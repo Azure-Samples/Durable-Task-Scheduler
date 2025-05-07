@@ -205,7 +205,7 @@ Once logged in, you should see the orchestrations that were created by the sampl
 
 ## Optional: Deploy to Azure Container Apps
 
-1. Create an container app following the instructions in the [Azure Container App documentation](https://learn.microsoft.com/azure/container-apps/get-started?tabs=bash).
+1. Create an container app following the instructions in the [Azure Container App documentation](https://learn.microsoft.com/en-us/azure/container-apps/quickstart-code-to-cloud?tabs=bash%2Ccsharp).
 1. During step 1, specify the deployed container app code folder at samples\durable-task-sdks\dotnet\AspNetWebApp
 1. Create a user managed identity in Azure and assign the `Durable Task Data Contributor` role to it. Then attach this managed identity to the container app you created in step 1. Please use the Azure CLI or Azure Portal to set this up. For detailed instructions, see the [Azure Container Apps managed identities documentation](https://learn.microsoft.com/en-us/azure/container-apps/managed-identity).
 1. Call the container app endpoint at `http://sampleapi-<your-container-app-name>.azurecontainerapps.io/scenarios/hellocities?count=10`, Sample curl command:

@@ -41,7 +41,7 @@ docker pull mcr.microsoft.com/dts/dts-emulator:latest
 
 3. Run the Emulator:
 ```bash
-docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+docker run -it -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
 ```
 Wait a few seconds for the container to be ready.
 
@@ -53,28 +53,28 @@ For production scenarios or when you're ready to deploy to Azure:
 
 1. Create a Scheduler using the Azure CLI:
 ```bash
-az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
+az durabletask scheduler create --resource-group <resource-group> --name <scheduler-name> --location <location> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
 ```
 
 2. Create Your Taskhub:
 ```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+az durabletask taskhub create --resource-group <resource-group> --scheduler-name <scheduler-name> --name <taskhub-name>
 ```
 
-3. Retrieve the Endpoint for the Scheduler from the Azure portal.
+3. Retrieve the endpoint for the Scheduler from the Azure portal. The endpoint can be found in the Scheduler's overview tab in the Azure Portal.
 
 4. Set the Environment Variables:
 
    Bash:
    ```bash
-   export TASKHUB=<taskhubname>
-   export ENDPOINT=<taskhubEndpoint>
+   export TASKHUB=<taskhub-name>
+   export ENDPOINT=<taskhub-endpoint>
    ```
 
    PowerShell:
    ```powershell
-   $env:TASKHUB = "<taskhubname>"
-   $env:ENDPOINT = "<taskhubEndpoint>"
+   $env:TASKHUB = "<taskhub-name>"
+   $env:ENDPOINT = "<taskhub-endpoint>"
    ```
 
 ## Authentication
@@ -102,20 +102,14 @@ connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, build the solution:
-```bash
-cd FanOutFanIn
-dotnet build
-```
-
-2. Start the worker in a terminal:
+1. Start the worker in a terminal:
 ```bash
 cd Worker
 dotnet run
 ```
 You should see output indicating the worker has started and registered the orchestration and activities.
 
-3. In a new terminal, run the client:
+2. In a new terminal, run the client:
 ```bash
 cd Client
 dotnet run

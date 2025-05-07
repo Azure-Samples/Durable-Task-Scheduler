@@ -134,8 +134,6 @@ From a terminal window as above, use the following steps to run the sample on yo
     }
     ```
 
-## View orchestrations in the dashboard
+## View orchestrations and entities in the dashboard
 
-You can view the orchestrations in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:8082` in your browser and selecting the `default` task hub.
-
-At the time of writing, the dashboard does not support viewing the entities that were created by the sample app. Support for visualizing entities in the dashboard is coming soon.
+You can view the sample's orchestrations and entities in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:<port number>` (where *port number* is the one mapped to port 8082 in Docker) in your browser and selecting the `default` task hub.
