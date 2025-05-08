@@ -100,22 +100,16 @@ connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-1. First, build the solution:
+1. Start the worker in a terminal:
 ```bash
-cd HumanInteraction
-dotnet build
-```
-
-2. Start the worker in a terminal:
-```bash
-cd Worker
+cd samples\durable-task-sdks\dotnet\HumanInteraction\Worker
 dotnet run
 ```
 You should see output indicating the worker has started and registered the orchestration and activities.
 
-3. In a new terminal, run the client:
+2. In a new terminal, run the client:
 ```bash
-cd Client
+cd samples\durable-task-sdks\dotnet\HumanInteraction\Client
 dotnet run
 ```
 This will launch an interactive console client that creates an approval request and waits for your response.
