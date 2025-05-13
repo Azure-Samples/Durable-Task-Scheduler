@@ -100,7 +100,7 @@ Ohter than the **async-http-api** sample, the rest of the samples should be stra
    ```
 
    You should get a result similar to:
-   
+
    ```json
    {"status": "SUCCESS", "payment": {"success":true, "transactionId":"TXN1747162910336"}, "shipment": {"trackingNumber":"TRACK1747162911373"}}
    ```
@@ -109,7 +109,7 @@ Ohter than the **async-http-api** sample, the rest of the samples should be stra
 
 You can view the orchestrations in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:8082` in your browser and selecting the `default` task hub.
 
-## Using Azure Durable Task Scheduler
+## Using Durable Task Scheduler
 
 To use a Durable Task Scheduler running in Azure instead of the emulator, set the connection string to your Durable Task Scheduler connection string. The [format of the string)[(https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity?tabs=df&pivots=az-cli)] depends on the type of managed identity you use. 
 
