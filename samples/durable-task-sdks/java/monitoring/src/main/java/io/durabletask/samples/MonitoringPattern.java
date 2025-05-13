@@ -116,6 +116,7 @@ public class MonitoringPattern {
             
         } finally {
             worker.stop();
+            System.exit(0);
         }
     }
 

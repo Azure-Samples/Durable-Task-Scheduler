@@ -79,6 +79,7 @@ public class SubOrchestrationPattern {
             
         } finally {
             worker.stop();
+            System.exit(0);
         }
     }
 

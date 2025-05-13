@@ -27,7 +27,7 @@ The samples can be run locally using the Durable Task Scheduler Emulator. The em
    set DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:8080;TaskHub=default;Authentication=None
 
    # Linux/macOS
-   export DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:8080;TaskHub=default;Authentication=None
+   export DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
    ```
 
 ## Available Samples
@@ -45,6 +45,9 @@ Each sample demonstrates a different orchestration pattern:
 ## Running the Samples
 
 Navigate to the specific sample directory and use Gradle to run the sample:
+
+> [!NOTE]
+> If you run into a permission denied error when running `./gradlew`, run `chmod +x gradlew` and then run the command again.
 
 ```bash
 # For async-http-api sample
@@ -76,13 +79,39 @@ cd sub-orchestrations
 ./gradlew runSubOrchestrationPattern
 ```
 
+## Testing 
+
+Ohter than the **async-http-api** sample, the rest of the samples should be straightforward to test.  
+
+### Async-http-api sample
+1. Send a `POST` request to start an orchestration: 
+
+   ```bash
+   curl -X POST http://localhost:<WEBSERVER PORT>/api/orders \
+      -H "Content-Type: application/json" \
+      -d '{"orderId": "123", "amount": 100}'
+   ```
+   A successful request returns the instance ID of the orchestration started. 
+
+1. You can get the status of the orchestration by making a `GET` request with the instance ID returned in the previous step:
+
+   ```bash
+   curl -X GET http://localhost:<WEBSERVER PORT>/api/orders/<instanceId>
+   ```
+
+   You should get a result similar to:
+
+   ```json
+   {"status": "SUCCESS", "payment": {"success":true, "transactionId":"TXN1747162910336"}, "shipment": {"trackingNumber":"TRACK1747162911373"}}
+   ```
+
 ## View orchestrations in the dashboard
 
 You can view the orchestrations in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:8082` in your browser and selecting the `default` task hub.
 
-## Using Azure Durable Task Scheduler
+## Using Durable Task Scheduler
 
-To use the Azure Durable Task Scheduler instead of the emulator, set the connection string to your Durable Task Scheduler connection string:
+To use a Durable Task Scheduler running in Azure instead of the emulator, set the connection string to your Durable Task Scheduler connection string. The [format of the string)[(https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity?tabs=df&pivots=az-cli)] depends on the type of managed identity you use. 
 
 ```bash
 # Windows
