@@ -99,5 +99,6 @@ final class ChainingPattern {
 
         // Shutdown the worker and exit
         worker.stop();
+        System.exit(0);
     }
 }
