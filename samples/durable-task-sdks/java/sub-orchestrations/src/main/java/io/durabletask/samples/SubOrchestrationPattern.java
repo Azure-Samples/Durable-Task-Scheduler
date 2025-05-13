@@ -114,7 +114,9 @@ public class SubOrchestrationPattern {
                                 childInput,
                                 String.class).await();
                             
-                            logger.info("Child orchestration " + (i + 1) + " completed with ID: " + childId);
+                            if (!ctx.getIsReplaying()) {
+                                logger.info("Child orchestration " + (i + 1) + " completed with ID: " + childId);
+                            }
                             totalChildren++;
                             
                             // Update status
