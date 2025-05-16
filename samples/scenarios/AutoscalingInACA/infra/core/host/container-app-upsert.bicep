@@ -16,9 +16,8 @@ param containerMaxReplicas int = 10
 @description('The amount of memory allocated to a single container instance, e.g., 1Gi')
 param containerMemory string = '1.0Gi'
 
-@description('The minimum number of replicas to run. Must be at least 1.')
-@minValue(1)
-param containerMinReplicas int = 1
+@description('The minimum number of replicas to run. Must be at least 0.')
+param containerMinReplicas int = 0
 
 @description('The name of the container')
 param containerName string = 'main'

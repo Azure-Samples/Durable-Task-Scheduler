@@ -45,7 +45,7 @@ module containerAppsApp '../core/host/container-app.bicep' = {
       }
     ]
     identityName: identityName
-    containerMinReplicas: 1
+    containerMinReplicas: 0
     containerMaxReplicas: 10
   }
 }
