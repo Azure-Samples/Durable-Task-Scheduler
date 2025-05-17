@@ -51,7 +51,8 @@ docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts
 ```
 Wait a few seconds for the container to be ready.
 
-Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+> [!NOTE] 
+> The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
 
 ### Using a Deployed Scheduler and Taskhub in Azure
 
@@ -62,17 +63,19 @@ For production scenarios or when you're ready to deploy to Azure:
 az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
 ```
 
-2. Create Your Taskhub:
+1. Create Your Taskhub:
 ```bash
 az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
 ```
 
-3. Retrieve the Endpoint for the Scheduler from the Azure portal.
+1. Provide your developer identity access to the scheduler. 
 
-4. Set the connection string environment variable:
+1. Retrieve the Endpoint for the Scheduler from the Azure portal.
+
+1. Set the connection string environment variable:
    ```bash
    # Windows
-   set DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:8080;TaskHub=default;Authentication=None
+   set DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
 
    # Linux/macOS
    export DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
@@ -86,8 +89,13 @@ There are two ways to run this sample: locally or deployed to Azure.
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
+```bash
 cd function-chaining
 ./gradlew runChainingPattern
+```
+
+> [!NOTE]
+> If you run into a permission denied error when running `./gradlew`, run `chmod +x gradlew` and then run the command again.
 
 ### Deploying with Azure Developer CLI (AZD)
 
@@ -105,7 +113,7 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
 
 1. Navigate to the Function Chaining sample directory:
    ```bash
-   cd /path/to/Durable-Task-Scheduler/samples/durable-task-sdks/java/function-chaining
+   cd samples/durable-task-sdks/java/function-chaining
    ```
 
 2. Initialize the Azure Developer CLI project (only needed the first time):
@@ -131,10 +139,16 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
    - Navigate to the Azure Portal (https://portal.azure.com)
    - Go to your resource group where the application was deployed
    - Find and select the Container App
-   - Click on "Log stream" in the left navigation menu under "Monitoring"
+   - Click on "Log stream" in the left navigation menu under "Monitoring". Choose Category **Application**
    - View the real-time logs showing orchestrations being scheduled, activities executing, and results being processed
 
    These logs will show the same information as when running locally, allowing you to confirm the application is working correctly.
+
+   You should see the following application logs, which show the orchestration status and input/output:
+
+   ```
+   2025-05-17T03:50:19.327636819Z 03:50:19.228 [main] INFO  i.d.samples.ChainingPattern - Orchestration completed: [Name: 'ActivityChaining', ID: 'dfcb783d-aacf-4b89-9fd4-a848e7779bc4', RuntimeStatus: COMPLETED, CreatedAt: 2025-05-17T03:50:18.727Z, LastUpdatedAt: 2025-05-17T03:50:19.208Z, Input: '"Hello, world!"', Output: '"!DLROW-,OLLEH"']
+   ```
 
 ## Understanding the Output
 
