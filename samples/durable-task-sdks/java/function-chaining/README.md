@@ -59,14 +59,14 @@ Wait a few seconds for the container to be ready.
 For production scenarios or when you're ready to deploy to Azure:
 
 1. Create a Scheduler using the Azure CLI:
-```bash
-az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
+   ```bash
+   az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
+   ```
 
 1. Create Your Taskhub:
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
+   ```bash
+   az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
+   ```
 
 1. Provide your developer identity access to the task hub in the scheduler. 
    ```bash
