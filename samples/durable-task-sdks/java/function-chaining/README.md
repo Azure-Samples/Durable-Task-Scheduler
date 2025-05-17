@@ -68,17 +68,24 @@ az durabletask scheduler create --resource-group <testrg> --name <testscheduler>
 az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
 ```
 
-1. Provide your developer identity access to the scheduler. 
+1. Provide your developer identity access to the task hub in the scheduler. 
+   ```bash
+   assignee=$(az ad user show --id "someone@microsoft.com" --query "id" --output tsv)
+
+   scope="/subscriptions/SUBSCRIPTION_ID/resourceGroups/RESOURCE_GROUP_NAME/providers/Microsoft.DurableTask/schedulers/SCHEDULER_NAME/taskHubs/TASKHUB_NAME"
+
+   az role assignment create --assignee "$assignee" --role "Durable Task Data Contributor" --scope "$scope"
+   ```
 
 1. Retrieve the Endpoint for the Scheduler from the Azure portal.
 
 1. Set the connection string environment variable:
    ```bash
    # Windows
-   set DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
+   set DURABLE_TASK_CONNECTION_STRING="Endpoint={scheduler endpoint};Authentication=DefaultAzure"
 
    # Linux/macOS
-   export DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
+   export DURABLE_TASK_CONNECTION_STRING="Endpoint={scheduler endpoint};Authentication=DefaultAzure"
    ```
 
 ## How to Run the Sample
@@ -116,13 +123,13 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
    cd samples/durable-task-sdks/java/function-chaining
    ```
 
-2. Initialize the Azure Developer CLI project (only needed the first time):
+1. Initialize the Azure Developer CLI project (only needed the first time):
    ```bash
    azd init
    ```
    This step prepares the environment for deployment and creates necessary configuration files.
 
-3. Provision resources and deploy the application:
+1. Provision resources and deploy the application:
    ```bash
    azd up
    ```
@@ -131,11 +138,11 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
    - Build and deploy components
    - Set up the necessary connections between components
 
-3. After deployment completes, AZD will display URLs for your deployed services.
+1. After deployment completes, AZD will display URLs for your deployed services.
 
-4. Monitor your orchestrations using the Azure Portal by navigating to your Durable Task Scheduler resource.
+1. Monitor your orchestrations using the Azure Portal by navigating to your Durable Task Scheduler resource.
 
-5. To confirm the sample is working correctly, view the application logs through the Azure Portal:
+1. To confirm the sample is working correctly, view the application logs through the Azure Portal:
    - Navigate to the Azure Portal (https://portal.azure.com)
    - Go to your resource group where the application was deployed
    - Find and select the Container App
