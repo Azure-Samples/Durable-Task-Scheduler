@@ -66,10 +66,6 @@ echo "Restarting the function app..."
 echo "az functionapp restart --name $AZURE_FUNCTION_NAME --resource-group $AZURE_RESOURCE_GROUP"
 az functionapp restart --name $AZURE_FUNCTION_NAME --resource-group $AZURE_RESOURCE_GROUP
 
-# Enable runtime scale monitoring for autoscaling of Elastic Premium app
-echo "Enable runtime scale monitoring for autoscaling of app..."
-az resource update -g $AZURE_RESOURCE_GROUP -n $AZURE_FUNCTION_NAME/config/web --set properties.functionsRuntimeScaleMonitoringEnabled=1 --resource-type Microsoft.Web/sites
-
 # Purge a deleted resource
 # az resource delete --ids /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$AZURE_FORMRECOGNIZER_SERVICE
 # az resource delete --ids /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$AZURE_SEARCH_SERVICE

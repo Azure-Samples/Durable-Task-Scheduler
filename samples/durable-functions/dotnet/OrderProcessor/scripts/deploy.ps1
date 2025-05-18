@@ -65,10 +65,6 @@ Write-Output "Deployed functions.zip successfully to $env:AZURE_STORAGE_ACCOUNT_
 Write-Output "Restarting the function app..."
 az functionapp restart --name $env:AZURE_FUNCTION_NAME --resource-group $env:AZURE_RESOURCE_GROUP
 
-# Enable runtime scale monitoring for autoscaling of Elastic Premium app
-Write-Output "Enable runtime scale monitoring for autoscaling of app..."
-az resource update -g $env:AZURE_RESOURCE_GROUP -n $env:AZURE_FUNCTION_NAME/config/web --set properties.functionsRuntimeScaleMonitoringEnabled=1 --resource-type Microsoft.Web/sites
-
 # Purge a deleted resource (commented out)
 # az resource delete --ids /subscriptions/$env:AZURE_SUBSCRIPTION_ID/resourceGroups/$env:AZURE_RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$env:AZURE_FORMRECOGNIZER_SERVICE
 # az resource delete --ids /subscriptions/$env:AZURE_SUBSCRIPTION_ID/resourceGroups/$env:AZURE_RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$env:AZURE_SEARCH_SERVICE

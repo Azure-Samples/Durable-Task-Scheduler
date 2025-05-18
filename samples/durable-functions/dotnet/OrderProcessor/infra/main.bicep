@@ -166,27 +166,63 @@ module storage './core/storage/storage-account.bicep' = {
   }
 }
 
-var storageRoleDefinitionId  = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' //Storage Blob Data Owner role
-
 // Allow access from durable function to storage account using a user assigned managed identity
-module storageRoleAssignmentApiUAMI 'app/storage-Access.bicep' = {
-  name: 'storageRoleAssignmentPocessorUAMI'
+var blobDataOwnerRoleDefinitionId  = 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' //Storage Blob Data Owner role
+var tableDataContributorDefinitionId = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // Storage Table Data Contributor role
+var queueDataContributorDefinitionId = '974c5e8b-45b9-4653-ba55-5f855dd0fb88' // Storage Queue Data Contributor role
+var blobDataContributorDefinitionId  = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' //Storage Blob Data Contributor role
+
+module blobOwnerAssignmentUAMI 'app/storage-Access.bicep' = {
+  name:'blobDataOwnerPocessorUAMI'
   scope: rg
   params: {
     storageAccountName: storage.outputs.name
-    roleDefinitionID: storageRoleDefinitionId
+    roleDefinitionID: blobDataOwnerRoleDefinitionId
     principalID: durableFunctionUserAssignedIdentity.outputs.identityPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
 
-// Allow access from durable function to storage account using the Login identity of this bicep (usually AZD CLI)
-module storageRoleAssignmentApi 'app/storage-Access.bicep' = {
-  name: 'storageRoleAssignmentDurableFunctionLoginIdentity'
+module tableDataContributorUAMI 'app/storage-Access.bicep' = {
+  name: 'tableDataContributorPocessorUAMI'
   scope: rg
   params: {
     storageAccountName: storage.outputs.name
-    roleDefinitionID: storageRoleDefinitionId
+    roleDefinitionID: tableDataContributorDefinitionId
+    principalID: durableFunctionUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+module queueDataContributorUAMI 'app/storage-Access.bicep' = {
+  name: 'queueDataContributorPocessorUAMI'
+  scope: rg
+  params: {
+    storageAccountName: storage.outputs.name
+    roleDefinitionID: queueDataContributorDefinitionId
+    principalID: durableFunctionUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+module blobDataContributorUAMI 'app/storage-Access.bicep' = {
+  name: 'blobDataContributorPocessorUAMI'
+  scope: rg
+  params: {
+    storageAccountName: storage.outputs.name
+    roleDefinitionID: blobDataContributorDefinitionId
+    principalID: durableFunctionUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Allow access to storage account using the Login identity of this bicep (usually AZD CLI)
+module storageRoleAssignmentApi 'app/storage-Access.bicep' = {
+  name: 'blobDataOwnerLoginIdentity'
+  scope: rg
+  params: {
+    storageAccountName: storage.outputs.name
+    roleDefinitionID: blobDataOwnerRoleDefinitionId
     principalID: principalId
     principalType: 'User'
   }
