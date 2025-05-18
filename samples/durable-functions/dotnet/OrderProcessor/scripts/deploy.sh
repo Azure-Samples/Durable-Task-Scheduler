@@ -39,6 +39,21 @@ echo ""
 # echo "Showing environment variables with env command:"
 # env
 
+# Fetch the current public IP address
+clientIp=$(curl -4 ifconfig.me)
+echo "Current public IP: $clientIp"
+
+# Enable access for the current IP address to the storage account
+echo "Adding network rule for IP: $clientIp"
+az storage account network-rule add \
+  --resource-group $AZURE_RESOURCE_GROUP \
+  --account-name $AZURE_STORAGE_ACCOUNT_NAME \
+  --ip-address $clientIp
+
+# Give some time for the rule to take effect
+echo "Waiting for network rules to apply..."
+sleep 10
+
 # Upload the zip package to Azure Storage Blob container
 echo "Uploading functions.zip to Azure Storage Blob container $AZURE_STORAGE_ACCOUNT_NAME/$AZURE_STORAGE_CONTAINER_NAME/$zipFileName..."
 echo "az storage blob upload --account-name $AZURE_STORAGE_ACCOUNT_NAME --container-name $AZURE_STORAGE_CONTAINER_NAME --name $zipFileName --file $zipFilePath/$zipFileName --auth-mode login --overwrite"
@@ -50,6 +65,10 @@ echo "Deployed functions.zip successfully to $AZURE_STORAGE_ACCOUNT_NAME/$AZURE_
 echo "Restarting the function app..."
 echo "az functionapp restart --name $AZURE_FUNCTION_NAME --resource-group $AZURE_RESOURCE_GROUP"
 az functionapp restart --name $AZURE_FUNCTION_NAME --resource-group $AZURE_RESOURCE_GROUP
+
+# Enable runtime scale monitoring for autoscaling of Elastic Premium app
+echo "Enable runtime scale monitoring for autoscaling of app..."
+az resource update -g $AZURE_RESOURCE_GROUP -n $AZURE_FUNCTION_NAME/config/web --set properties.functionsRuntimeScaleMonitoringEnabled=1 --resource-type Microsoft.Web/sites
 
 # Purge a deleted resource
 # az resource delete --ids /subscriptions/$AZURE_SUBSCRIPTION_ID/resourceGroups/$AZURE_RESOURCE_GROUP/providers/Microsoft.CognitiveServices/accounts/$AZURE_FORMRECOGNIZER_SERVICE
