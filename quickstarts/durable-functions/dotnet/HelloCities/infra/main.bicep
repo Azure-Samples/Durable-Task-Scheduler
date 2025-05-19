@@ -69,6 +69,7 @@ var resourceToken = toLower(uniqueString(subscription().id, environmentName, loc
 var tags = { 'azd-env-name': environmentName }
 var functionAppName = !empty(durableFunctionServiceName) ? durableFunctionServiceName : '${abbrs.webSitesFunctions}${resourceToken}'
 var deploymentStorageContainerName = 'app-package-${take(functionAppName, 32)}-${take(toLower(uniqueString(functionAppName, resourceToken)), 7)}'
+var desktopIpAddress = ''  //keep empty to set later, or set now
 
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
@@ -142,7 +143,18 @@ module storage './core/storage/storage-account.bicep' = {
       name: deploymentStorageContainerName
       publicAccess: 'None'
     }]
-    publicNetworkAccess: 'Enabled' // revisit for wave 3
+    publicNetworkAccess: 'Enabled' // Pinning this to enabled, and we use defaultAction Deny or Allow
+    networkAcls: {
+      defaultAction: 'Deny'
+      bypass: 'None'
+      // Conditionally add the desktop IP to ipRules
+      ipRules: !empty(desktopIpAddress) ? [
+        {
+          action: 'Allow'
+          value: desktopIpAddress 
+        }
+      ] : [] // If desktopIpAddress is not provided, ipRules will be an empty array
+    }
     allowBlobPublicAccess: false
   }
 }

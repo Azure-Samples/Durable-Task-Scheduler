@@ -25,7 +25,8 @@ Let's begin working with Durable Functions using the new Durable Task Scheduler 
 
 In this quickstart, the [provided sample](https://github.com/Azure/Azure-Functions-Durable-Task-Scheduler-Private-Preview/tree/main/quickstarts/HelloCities) uses the [official Durable Functions "hello cities" quickstart](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-isolated-create-first-csharp?pivots=code-editor-vscode). The sample schedules orchestrations that include 3 activities via an HTTP trigger.
 
-This quickstart showcases the necessary configuration for using Durable Task Scheduler as the backend provider for your Durable Function app.
+This quickstart showcases the necessary configuration for using Durable Task Scheduler as the backend provider for your Durable Function app. The template defaults to **Elastic Premium EP1 sku plan on Linux**.
+
 
 ## Prerequisites
 
@@ -84,14 +85,14 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
    - The Azure subscription you'd like to use.
    - The Azure location to use. This location is related to the location in which you created the resource group, scheduler, and task hub.
 
-   > **Note:** This template defaults to **Elastic Premium EP1 sku plan on Linux**.
+    Once the azd up command finishes, the app will have successfully provisioned and deployed.
 
-1. The terminal tracks the deployment process. The deployment finishes with a `"Run-From-Zip is set to a remote URL using WEBSITE_RUN_FROM_PACKAGE or WEBSITE_USE_ZIP app setting.` error. You can ignore this.  
+    > **Note:**
+    > If the deployment finishes with a `"Run-From-Zip is set to a remote URL using WEBSITE_RUN_FROM_PACKAGE or WEBSITE_USE_ZIP app setting` error, you can ignore it.
+    >
+    > If you get the error `The request may be blocked by network rules of storage account` when uploading _functions.zip_ to blob storage, rerun the upload command. There's a command in the deploy script that allow-lists you computer's IP address in the storage account firewall. However, more time than specified might be needed for the allowlist to take into effect.  
 
 Your application has been deployed!
-
-
-
 
 ## Navigate to the Durable Task Scheduler Observability Dashboard
 

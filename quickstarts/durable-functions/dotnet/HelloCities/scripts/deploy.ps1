@@ -40,6 +40,21 @@ Write-Output ""
 Write-Output "Environment variables set."
 Write-Output ""
 
+# Fetch the current public IP address
+$clientIp = (Invoke-WebRequest -Uri "https://ifconfig.me/ip" -UseBasicParsing).Content
+Write-Output "Current public IP: $clientIp"
+
+# Enable access for the current IP address to the storage account
+Write-Output "Adding network rule for IP: $clientIp"
+az storage account network-rule add `
+  --resource-group $env:AZURE_RESOURCE_GROUP `
+  --account-name $env:AZURE_STORAGE_ACCOUNT_NAME `
+  --ip-address $clientIp
+
+# Give some time for the rule to take effect
+Write-Output "Waiting for network rules to apply..."
+Start-Sleep -Seconds 15
+
 # Upload the zip package to Azure Storage Blob container
 Write-Output "Uploading functions.zip to Azure Storage Blob container $env:AZURE_STORAGE_ACCOUNT_NAME/$env:AZURE_STORAGE_CONTAINER_NAME/$zipFileName..."
 az storage blob upload --account-name $env:AZURE_STORAGE_ACCOUNT_NAME --container-name $env:AZURE_STORAGE_CONTAINER_NAME --name $zipFileName --file "$zipFilePath/$zipFileName" --auth-mode login --overwrite
