@@ -15,7 +15,7 @@ Eternal orchestrations are useful for recurring tasks, monitoring processes, or 
 ## Prerequisites
 
 1. [Python 3.9+](https://www.python.org/downloads/)
-2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
 3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
 ## Configuring Durable Task Scheduler
