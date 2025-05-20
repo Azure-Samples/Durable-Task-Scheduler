@@ -19,21 +19,21 @@ The Durable Task SDKs provide a lightweight client library for the durable task 
 For more information on how to use the Azure Functions durable task scheduler and to explore its features, please refer to the [official documentation](https://aka.ms/dts-documentation)
 
 ## Choosing your orchestration framework
-Refer to this article for how to choose the orchestration framework for your use case. 
+Refer to [Choosing an orchestration framework](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework) article for guidance on how to pick the framework for your use case. 
 
 ## API reference docs
 Durable Task SDKs
-- [.NET](https://learn.microsoft.com/en-us/dotnet/api/microsoft.durabletask?view=durabletask-dotnet-1.x)
+- [.NET](https://learn.microsoft.com/dotnet/api/microsoft.durabletask?view=durabletask-dotnet-1.x)
 - [Python](https://github.com/microsoft/durabletask-python)
-- [Java](https://learn.microsoft.com/en-us/java/api/com.microsoft.durabletask?view=durabletask-java-1.x)
+- [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask?view=durabletask-java-1.x)
 - JavaScript (coming soon)
 
 
 Durable Functions
-- [.NET (isolated)](https://learn.microsoft.com/en-us/dotnet/api/microsoft.azure.functions.worker.extensions.durabletask?view=azure-dotnet)
-- [Python](https://learn.microsoft.com/en-us/python/api/azure-functions-durable/azure.durable_functions?view=azure-python)
-- [Java](https://learn.microsoft.com/en-us/java/api/com.microsoft.durabletask.azurefunctions?view=azure-java-stable)
-- [JavaScript](https://learn.microsoft.com/en-us/javascript/api/durable-functions/?view=azure-node-latest)
+- [.NET (isolated)](https://learn.microsoft.com/dotnet/api/microsoft.azure.functions.worker.extensions.durabletask?view=azure-dotnet)
+- [Python](https://learn.microsoft.com/python/api/azure-functions-durable/azure.durable_functions?view=azure-python)
+- [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask.azurefunctions?view=azure-java-stable)
+- [JavaScript](https://learn.microsoft.com/javascript/api/durable-functions/?view=azure-node-latest)
 
 ## Tell us what you think
 
