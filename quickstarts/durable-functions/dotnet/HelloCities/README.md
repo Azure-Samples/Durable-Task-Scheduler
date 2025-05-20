@@ -31,14 +31,8 @@ This quickstart showcases the necessary configuration for using Durable Task Sch
 ## Prerequisites
 
 - [Create an active Azure subscription](https://learn.microsoft.com/azure/guides/developer/azure-developer-guide#understanding-accounts-subscriptions-and-billing).
-- [Install the latest Azure Functions Core Tools to use the CLI](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
-- [Install Azure Developer CLI](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd)
-- [Install .NET Core SDK](https://dotnet.microsoft.com/download) version 6 or later installed.
-- [Install the latest Visual Studio Code](https://code.visualstudio.com/download).
-- Install the following Visual Studio Code extensions:
-  - [Azure Functions](https://marketplace.visualstudio.com/items?itemName=ms-azuretools.vscode-azurefunctions)
-  - [C#](https://marketplace.visualstudio.com/items?itemName=ms-dotnettools.csharp)
-- [Start and configure an Azurite storage emulator for local storage](https://learn.microsoft.com/azure/storage/common/storage-use-azurite).
+- [Azure Developer CLI (`azd`)](https://aka.ms/azd) installed
+
 
 ## Log into the Azure CLI
 
@@ -74,6 +68,11 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
 
 > **Note:** If you open this repo in GitHub CodeSpaces, the `azd` tooling is already installed.
 
+1. Find the regions where the Durable Task Scheduler is available:
+   ```bash
+  az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+  ```
+
 1. Navigate to `quickstarts/hello_cities` and run the following command to provision:
 
     ```bash
@@ -92,30 +91,59 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
     >
     > If you get the error `The request may be blocked by network rules of storage account` when uploading _functions.zip_ to blob storage, rerun the upload command. There's a command in the deploy script that allow-lists you computer's IP address in the storage account firewall. However, more time than specified might be needed for the allowlist to take into effect.  
 
-Your application has been deployed!
+1. After the deployment is complete, go to the portal and locate the provisioned resource group (`rg-ENVIRONMENT-NAME`). Click on the resource group and copy the name of the function app that was created inside it.
 
-## Navigate to the Durable Task Scheduler Observability Dashboard
+1. Run the following command, replacing the placeholder with the name of your app:
 
-### Using the portal
+    ```bash
+    func azure functionapp list-functions <FUNCTION_APP_NAME> --show-keys
+    ```
 
-1. In the portal, navigate to the `rg-<YOUR_AZD_ENVIRONMENT_NAME>` overview page.
-1. Select the `dts-<randomGUID>` resource.
+    *Expected output*
+    ```
+    SayHello - [activityTrigger]
 
-    ![Select the DTS dashboard resource](../../../../media/images/dts-dashboard-resource.png)
+    DurableFunctionsOrchestrationCSharp1 - [orchestrationTrigger]
 
-1. When on the Scheduler Resource overview page, select the TaskHub child resource:
+    DurableFunctionsOrchestrationCSharp1_HttpStart - [httpTrigger]
+        Invoke url: https://my-func-app.azurewebsites.net/api/durablefunctionsorchestrationcsharp1_httpstart
 
+    ``` 
+1. Navigate to the `DurableFunctionsOrchestrationsCSharp1_HttpStart` URL to start an order processing orchestration instance. Use the durable task scheduler dashboard to check orchestration details.
+
+## Access dashboard after deployment
+
+You can access the dashboard by going to **https://dashboard.durabletask.io/** and [registering a task hub endpoint](#scheduler-registration) or by following steps below to get the dashboard URL on Azure portal. 
+
+1. Navigate to the `rg-<YOUR_AZD_ENVIRONMENT_NAME>` overview page on Azure portal.
+
+1. Select the `dts-<randomGUID>` resource:
+    ![Provisioned resources overview](../../../../media/images/dts-dashboard-resource.png)
+
+1. When on the resource overview page, select the task hub:
     ![TaskHub child resource](../../../../media/images/dts-overview-portal.png)
 
-1. Select the Dashboard URL:
-
-    ![TaskHub child resource](../../../../media/images/taskhub-overview-portal.png)
+1. Find the dashboard url in the top "Essentials" section:
+    ![Dashboard url](../../../../media/images/taskhub-overview-portal.png)
 
 1. Browse orchestration state and history from within the TaskHub:
 
-    ![TaskHub Overview](../../../../media/images/taskhub-overview.png)
+![TaskHub Overview](../../../../media/images/taskhub-overview.png)
 
-### Scheduler registration using the Azure CLI
+
+## Identity-based authentication
+
+The durable task scheduler supports identity-based authentication only. This sample sets up the authentication through specifications in bicep files. If you're configuring identity-based access yourself, refer to [documentation on Microsoft Learn](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler?tabs=function-app-integrated-creation&pivots=az-cli#configure-identity-based-authentication-for-app-to-access-durable-task-scheduler). 
+
+## Clean up resources
+
+Delete the resource group `rg-ENVIRONMENT-NAME` to deprovision all resources created:
+
+```bash
+az group delete --name rg-ENVIRONMENT-NAME
+```
+
+## Scheduler registration
 
 1. Navigate to [https://dashboard.durabletask.io](https://dashboard.durabletask.io/) and sign in using your Microsoft Entra ID account.
 
@@ -201,32 +229,10 @@ az durabletask taskhub list -s "SCHEDULER-NAME" -g "RESOURCE-GROUP"
 
 3. Once the connection has been successfully added, you will be able to navigate to the TaskHub Overview page, where you can see the status of the orchestrations within that TaskHub.
 
-
     ![TaskHub Overview](../../../../media/images/taskhub-overview.png)
 
-## Clean up resources
+## Next steps
 
-1. Remove the task hub you created.
-
-    ```azurecli
-    az durabletask taskhub delete --resource-group YOUR_RESOURCE_GROUP --scheduler-name YOUR_SCHEDULER --name YOUR_TASKHUB
-    ```
-
-    Successful deletion doesn't return any output.
-
-1. Next, delete the scheduler that housed that task hub.
-
-    ```azurecli
-    az durabletask scheduler --resource-group YOUR_RESOURCE_GROUP --scheduler-name YOUR_SCHEDULER 
-    ```
-
-1. Make sure you've deleted all task hubs in the Durable Task Scheduler environment. If you haven't, you'll receive the following error message:
-
-    ```json
-    {
-      "error": {
-        "code": "CannotDeleteResource",
-        "message": "Cannot delete resource while nested resources exist. Some existing nested resource IDs include: 'Microsoft.DurableTask/schedulers/YOUR_SCHEDULER/taskhubs/YOUR_TASKHUB'. Please delete all nested resources before deleting this resource."
-      }
-    }
-    ```
+Learn more about:
+- [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview)
+- [Durable Task Scheduler](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler)
