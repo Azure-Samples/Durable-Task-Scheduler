@@ -5,12 +5,11 @@ The durable task scheduler is a solution for durable execution in Azure. Durable
 Developers can use the durable task scheduler with the following orchestration frameworks: 
 - [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview) 
 - Durable Task SDKs, also referred to as "portable SDKs"
-- [Durable Task Framework](https://github.com/Azure/durabletask) 
 
-### Use with Durable Functions and Durable Task Framework
+> **Note:** Though the durable task scheduler can also be used with the [Durable Task Framework](https://github.com/Azure/durabletask), we recommend new apps to use the Durable Task SDK over the Durable Task Framework as the former follows more modern .NET conventions and will be the focus of our future investments.
+
+### Use with Durable Functions 
 When used with Durable Functions, a feature of Azure Functions, the durable task scheduler plays the role the ["backend provider"](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-storage-providers), where state data is persisted as the app runs. While other backend providers are supported, only the durable task scheduler offers a fully managed experience, which removes operational overhead from users. Additionally, the scheduler offers exceptional performance, reliability, and the ease of monitoring orchestrations. 
-
-The durable task scheduler plays a similar role in the Durable Task Framework as in Durable Functions. 
 
 ### Use with Durable Task SDKs or "portable SDKs"
 The Durable Task SDKs provide a lightweight client library for the durable task scheduler. When running orchestrations, apps using these SDKs would make a connection to the scheduler's orchestration engine in Azure. These SDKs are called "portable" because apps that leverage them can be hosted in various compute environments, such as Azure Container Apps, Azure Kubernetes Service, Azure App Service, or VMs. 
@@ -20,21 +19,7 @@ The Durable Task SDKs provide a lightweight client library for the durable task 
 For more information on how to use the Azure Functions durable task scheduler and to explore its features, please refer to the [official documentation](https://aka.ms/dts-documentation)
 
 ## Choosing your orchestration framework
-This repo contains samples in different directories for all orchestration frameworks supported by the durable task scheduler. The following table provides some considerations when choosing a framework. 
-
-|Consideration | Durable Task SDKs | Durable Functions | Durable Task Framework|
-|--------------| --------------| ------------------| --------------------- | 
-|Hosting option| Azure Container Apps, Azure Kubernetes Service, Azure App Service, VMs | Azure Functions | Azure Container Apps, Azure Kubernetes Service, Azure App Service, VMs |
-|Language support | [.NET](https://github.com/microsoft/durabletask-dotnet/), [Python](https://github.com/microsoft/durabletask-python), [Java (coming soon)](https://github.com/microsoft/durabletask-java), [JavaScript (coming soon)](https://github.com/microsoft/durabletask-js) | [.NET](https://github.com/Azure/azure-functions-durable-extension), [Python](https://github.com/Azure/azure-functions-durable-python), [Java](https://github.com/microsoft/durabletask-java), [JavaScript](https://github.com/Azure/azure-functions-durable-js), [PowerShell](https://github.com/Azure/azure-functions-powershell-worker/tree/dev/examples/durable) | [.NET](https://github.com/Azure/durabletask) |
-|Official support| No | Yes | No |
-|Durable task scheduler emulator| Available | Available |Available |
-|Monitoring dashboard| Available | Available <sup>1</sup> | Available <sup>1</sup>|
-|[Durable Entities](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-entities)| Not supported | Supported | Not supported|
-|Other supported feature(s)| Scheduler| <li>Azure Functions triggers and bindings</li> <li> Supports all backend providers </li> |Supports all backend providers|
-
-*<sup>1</sup> The out-of-the-box monitoring dashboard is available only when using the durable task scheduler as the backend provider.*
-
-> **Note:** For all **new apps**, we recommend the portable SDKs over the Durable Task Framework as the former follows more modern .NET conventions and will be the focus of our future investments.
+Refer to this article for how to choose the orchestration framework for your use case. 
 
 ## API reference docs
 Durable Task SDKs
@@ -54,4 +39,4 @@ Durable Functions
 
 Your feedback is essential in shaping the future direction of this product. We encourage you to share your experiences, both the good and the bad. If there are any missing features or capabilities that you would like to see supported in the Durable Task Scheduler, we want to hear about them.
 
-> **Note:** This is an early-stage version of the product. You can share your feedback either by dropping us an issue in this repo (other private preview users will see your issue) or send an email to our product managers Nick and Lily ([nicholas.greenfield@microsoft.com](mailto:nicholas.greenfield@microsoft.com); [jiayma@microsoft.com](mailto:jiayma@microsoft.com)).
+> **Note:** This repo is a sample repo. If you have feature requests or feedback, you can share by dropping us an issue in the [Azure/Durable Task Scheduler repo](https://github.com/azure/Durable-Task-Scheduler) or send an email to our product managers Nick and Lily ([nicholas.greenfield@microsoft.com](mailto:nicholas.greenfield@microsoft.com); [jiayma@microsoft.com](mailto:jiayma@microsoft.com)).
