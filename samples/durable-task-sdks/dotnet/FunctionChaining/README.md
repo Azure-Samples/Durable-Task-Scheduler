@@ -19,7 +19,7 @@ This pattern is useful for:
 ## Prerequisites
 
 1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
 3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
 ## Configuring Durable Task Scheduler
@@ -45,25 +45,54 @@ Note: The example code automatically uses the default emulator settings (endpoin
 
 ### Using a Deployed Scheduler and Taskhub in Azure
 
-For production scenarios or when you're ready to deploy to Azure:
+1. Install the durable task scheduler CLI extension:
 
-1. Create a Scheduler using the Azure CLI:
-   ```bash
-   az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-   ```
-
-1. Create Your Taskhub:
-   ```bash
-   az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-   ```
-
-1. Assign your identity access to the task hub: 
     ```bash
-    assignee=$(az ad user show --id "someone@microsoft.com" --query "id" --output tsv)
+    az upgrade
+    az extension add --name durabletask --allow-preview true
+    ```
 
-    scope="/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.DurableTask/schedulers/<scheduler-name>/taskHubs/<taskhub-name>"
+1. Create a resource group in a region where the Durable Task Scheduler is available:
 
-    az role assignment create --assignee "$assignee" --role "Durable Task Data Contributor" --scope "$scope"
+    ```bash
+    az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+    ```
+
+    ```bash
+    az group create --name my-resource-group --location <location>
+    ```
+
+1. Create a durable task scheduler resource:
+
+    ```bash
+    az durabletask scheduler create \
+        --resource-group my-resource-group \
+        --name my-scheduler \
+        --ip-allowlist '["0.0.0.0/0"]' \
+        --sku-name "Dedicated" \
+        --sku-capacity 1 \
+        --tags "{'myattribute':'myvalue'}"
+    ```
+
+1. Create a task hub within the scheduler resource:
+
+    ```bash
+    az durabletask taskhub create \
+        --resource-group my-resource-group \
+        --scheduler-name my-scheduler \
+        --name "my-taskhub"
+    ```
+
+1. Grant the current user permission to connect to the `my-taskhub` task hub:
+
+    ```bash
+    subscriptionId=$(az account show --query "id" -o tsv)
+    loggedInUser=$(az account show --query "user.name" -o tsv)
+
+    az role assignment create \
+        --assignee $loggedInUser \
+        --role "Durable Task Data Contributor" \
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/my-taskhub"
     ```
 
 ## Authentication
@@ -71,7 +100,7 @@ For production scenarios or when you're ready to deploy to Azure:
 The sample includes smart detection of the environment and configures authentication automatically:
 
 - For local development with the emulator (when endpoint is http://localhost:8080), no authentication is required.
-- For Azure deployments, DefaultAzureCredential is used, which tries multiple authentication methods:
+- For local development with a deployed scheduler, DefaultAzure authentication is used, which utilizes DefaultAzureCredential behind the scenes and tries multiple authentication methods:
   - Managed Identity
   - Environment variables (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET)
   - Azure CLI login
@@ -83,7 +112,7 @@ The connection string is constructed dynamically based on the environment:
 // For local emulator
 connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=None";
 
-// For Azure
+// For Azure deployed emulator
 connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=DefaultAzure";
 ```
 
@@ -91,36 +120,31 @@ connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authenti
 
 Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
 
-### Local Development
-
-1.  If you're using a deployed scheduler, you need set Environment Variables. Note the scheduler endpoint can be found in the Scheduler's overview tab on Azure Portal.
-
-    Bash:
+1.  If you're using a deployed scheduler, you need set Environment Variables.
     ```bash
-    export TASKHUB=<taskhubname>
-    export ENDPOINT=<schedulerEndpoint>
+    export ENDPOINT=$(az durabletask scheduler show \
+        --resource-group my-resource-group \
+        --name my-scheduler \
+        --query "properties.endpoint" \
+        --output tsv)
+
+    export TASKHUB="my-taskhub"
     ```
 
-    PowerShell:
-    ```powershell
-    $env:TASKHUB = "<taskhubname>"
-    $env:ENDPOINT = "<schedulerEndpoint>"
+1. Start the worker in a terminal:
+    ```bash
+    cd samples/durable-task-sdks/dotnet/FunctionChaining/Worker
+    dotnet run
     ```
+    You should see output indicating the worker has started and registered the orchestration and activities.
 
-1. First, start the Worker (processing component):
+1. In a new terminal, run the client:
+    > **Note:** Remember to set the environment variables again if you're using a deployed scheduler. 
 
-   ```bash
-   cd samples/durable-task-sdks/dotnet/FunctionChaining/Worker
-   dotnet run
-   ```
-
-1. In a separate terminal, run the Client (orchestration initiator):
-   > **Note:** Remember to set the environment variables again if you're using a deployed scheduler. 
-
-   ```bash
-   cd samples/durable-task-sdks/dotnet/FunctionChaining/Client
-   dotnet run
-   ```
+    ```bash
+    cd samples/durable-task-sdks/dotnet/FunctionChaining/Client
+    dotnet run
+    ```
 
 ### Deploying with Azure Developer CLI (AZD)
 

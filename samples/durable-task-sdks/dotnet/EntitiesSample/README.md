@@ -6,7 +6,7 @@ The [Durable Task SDK for .NET](https://github.com/microsoft/durabletask-dotnet)
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-- [Docker](https://www.docker.com/get-started)
+- [Docker](https://www.docker.com/get-started) installed
 
 ## Running the sample with the Durable Task Scheduler Emulator
 

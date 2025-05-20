@@ -4,86 +4,131 @@ This sample demonstrates a web application that leverages the durable task sched
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
-- Azure subscription 
+1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
+2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
+3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
-## Setup
+## Configuring Durable Task Scheduler
+
+There are two ways to run this sample:
+
+### Using the Emulator (Recommended)
+
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
+
+1. Pull the Docker Image for the Emulator:
+    ```bash
+    docker pull mcr.microsoft.com/dts/dts-emulator:latest
+    ```
+
+1. Run the Emulator:
+    ```bash
+    docker run -it -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+    ```
+Wait a few seconds for the container to be ready.
+
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
+
+### Using a Deployed Scheduler and Taskhub in Azure
+
+Local development with a deployed scheduler:
 
 1. Install the durable task scheduler CLI extension:
-   ```bash
-   az upgrade
-   az extension add --name durabletask --allow-preview true
-   ```
 
-2. Create and configure Azure resources:
-   ```bash
-   # Create resource group
-   az group create --name my-resource-group --location northcentralus
+    ```bash
+    az upgrade
+    az extension add --name durabletask --allow-preview true
+    ```
 
-   # Create scheduler
-   az durabletask scheduler create \
-       --resource-group my-resource-group \
-       --name my-scheduler \
-       --ip-allowlist '["0.0.0.0/0"]' \
-       --sku-name "Dedicated" \
-       --sku-capacity 1
+1. Create a resource group in a region where the Durable Task Scheduler is available:
 
-   # Create task hub
-   az durabletask taskhub create \
-       --resource-group my-resource-group \
-       --scheduler-name my-scheduler \
-       --name "schedule-webapp"
-   ```
+    ```bash
+    az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+    ```
 
-3. Grant permissions to your account:
-   ```bash
-   subscriptionId=$(az account show --query "id" -o tsv)
-   loggedInUser=$(az account show --query "user.name" -o tsv)
+    ```bash
+    az group create --name my-resource-group --location <location>
+    ```
 
-   az role assignment create \
-       --assignee $loggedInUser \
-       --role "Durable Task Data Contributor" \
-       --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/schedule-webapp"
-   ```
+1. Create a durable task scheduler resource:
 
-4. Configure the connection string:
+    ```bash
+    az durabletask scheduler create \
+        --resource-group my-resource-group \
+        --name my-scheduler \
+        --ip-allowlist '["0.0.0.0/0"]' \
+        --sku-name "Dedicated" \
+        --sku-capacity 1 \
+        --tags "{'myattribute':'myvalue'}"
+    ```
 
-   **PowerShell**:
-   ```powershell
-   $endpoint = az durabletask scheduler show `
-       --resource-group my-resource-group `
-       --name my-scheduler `
-       --query "properties.endpoint" `
-       --output tsv
-   $taskhub = "schedule-webapp"
-   $env:DURABLE_TASK_SCHEDULER_CONNECTION_STRING = "Endpoint=$endpoint;TaskHub=$taskhub;Authentication=DefaultAzure"
-   ```
+1. Create a task hub within the scheduler resource:
 
-   **Bash**:
-   ```bash
-   endpoint=$(az durabletask scheduler show \
-       --resource-group my-resource-group \
-       --name my-scheduler \
-       --query "properties.endpoint" \
-       --output tsv)
-   taskhub="schedule-webapp"
-   export DURABLE_TASK_SCHEDULER_CONNECTION_STRING="Endpoint=$endpoint;TaskHub=$taskhub;Authentication=DefaultAzure"
-   ```
+    ```bash
+    az durabletask taskhub create \
+        --resource-group my-resource-group \
+        --scheduler-name my-scheduler \
+        --name "my-taskhub"
+    ```
 
-## Running the Application
+1. Grant the current user permission to connect to the `my-taskhub` task hub:
 
-1. Navigate to the application directory:
-   ```bash
-   cd samples/durable-task-sdks/dotnet/ScheduleWebApp
-   ```
+    ```bash
+    subscriptionId=$(az account show --query "id" -o tsv)
+    loggedInUser=$(az account show --query "user.name" -o tsv)
 
-2. Run the application:
-   ```bash
-   dotnet run
-   ```
+    az role assignment create \
+        --assignee $loggedInUser \
+        --role "Durable Task Data Contributor" \
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/my-taskhub"
+    ```
 
-The application will start and listen on `http://localhost:5000` by default.
+## Authentication
+
+The sample includes smart detection of the environment and configures authentication automatically:
+
+- For local development with the emulator (when endpoint is http://localhost:8080), no authentication is required.
+- For local development with a deployed scheduler, DefaultAzure authentication is used, which utilizes DefaultAzureCredential behind the scenes and tries multiple authentication methods:
+  - Managed Identity
+  - Environment variables (AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_CLIENT_SECRET)
+  - Azure CLI login
+  - Visual Studio login
+  - and more
+
+The connection string is constructed dynamically based on the environment:
+```csharp
+// For local emulator
+connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=None";
+
+// For Azure deployed emulator
+connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=DefaultAzure";
+```
+
+## How to Run the Sample
+
+Once you have set up either the emulator or deployed scheduler, follow these steps to run the sample:
+
+1.  If you're using a deployed scheduler, you need to set Environment Variables.
+    ```bash
+    export ENDPOINT=$(az durabletask scheduler show \
+        --resource-group my-resource-group \
+        --name my-scheduler \
+        --query "properties.endpoint" \
+        --output tsv)
+
+    export TASKHUB="my-taskhub"
+    ```
+
+1.  Run the application
+    ```bash
+    cd samples/durable-task-sdks/dotnet/ScheduleWebApp
+    dotnet run
+    ```
+    The application will start and listen on `http://localhost:5000` by default.
+
+## Identity-based authentication
+
+Learn how to set up [identity-based authentication](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity?tabs=df&pivots=az-cli) when you deploy the app Azure.  
 
 ## API Endpoints
 
