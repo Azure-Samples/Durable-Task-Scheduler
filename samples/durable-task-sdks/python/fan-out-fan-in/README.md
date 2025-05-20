@@ -25,7 +25,7 @@ This pattern is useful for:
 
 ## Configuring Durable Task Scheduler
 
-There are two ways to run this sample:
+There are two ways to run this sample locally:
 
 ### Using the Emulator (Recommended)
 

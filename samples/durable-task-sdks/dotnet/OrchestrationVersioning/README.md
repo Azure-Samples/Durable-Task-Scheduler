@@ -11,7 +11,7 @@ This directory includes a sample .NET console app that demonstrates how to utili
 
 ## Configuring Durable Task Scheduler
 
-There are two ways to run this sample:
+There are two ways to run this sample locally: locally:
 
 ### Using the Emulator (Recommended)
 
@@ -102,7 +102,7 @@ Local development with a deployed scheduler:
     ```
 
     The `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` environment variable is used by the sample app to connect to the durable task scheduler resources. The type of credential to use is specified by the `Authentication` segment. Supported values include `DefaultAzure`, `ManagedIdentity`, `WorkloadIdentity`, `Environment`, `AzureCLI`, and `AzurePowerShell`.
-    
+
 ## Orchestration Versioning
 
 A key issue in orchestration based workflows is handling different versions of orchestrations. Without any functionality built around versioning, the issue occurs when the number or order of tasks is changed in an orchestration. During the replay of events (for any inprogress orchestrations), the history will not match and a `NonDeterministicError` will be returned as the orchestration fails. The .NET portable SDK for Durable Task now offers several options for how to handle versioning in orchestrations.

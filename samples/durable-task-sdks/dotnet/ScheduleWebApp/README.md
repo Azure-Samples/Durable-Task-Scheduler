@@ -10,7 +10,7 @@ This sample demonstrates a web application that leverages the durable task sched
 
 ## Configuring Durable Task Scheduler
 
-There are two ways to run this sample:
+There are two ways to run this sample locally: locally: 
 
 ### Using the Emulator (Recommended)
 

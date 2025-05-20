@@ -20,7 +20,7 @@ Eternal orchestrations are useful for recurring tasks, monitoring processes, or 
 
 ## Configuring Durable Task Scheduler
 
-There are two ways to run this sample:
+There are two ways to run this sample locally:
 
 ### Using the Emulator (Recommended)
 

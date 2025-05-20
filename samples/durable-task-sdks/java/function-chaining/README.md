@@ -32,7 +32,7 @@ This pattern is useful for:
 
 ## Configuring Durable Task Scheduler
 
-There are two ways to run this sample:
+There are two ways to run this sample locally:
 
 ### Using the Emulator (Recommended)
 
@@ -90,7 +90,7 @@ For production scenarios or when you're ready to deploy to Azure:
 
 ## How to Run the Sample
 
-There are two ways to run this sample: locally or deployed to Azure.
+There are two ways to run this sample locally: locally or deployed to Azure.
 
 ### Running Locally
 
