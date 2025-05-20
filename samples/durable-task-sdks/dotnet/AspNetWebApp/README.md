@@ -13,7 +13,7 @@ This directory includes a sample .NET console app that demonstrates how to use t
 
 ## Configuring Durable Task Scheduler
 
-There are two ways to run this sample locally: locally:
+There are two ways to run this sample locally:
 
 ### Using the Emulator (Recommended)
 
