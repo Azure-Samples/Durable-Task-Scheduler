@@ -25,16 +25,14 @@ From a terminal window as above, use the following steps to run the sample on yo
     ```
 
     ```bash
-    docker run -itP mcr.microsoft.com/dts/dts-emulator:latest
+    docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest    
     ```
 
 1. Set the `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` environment variable:
 
     ```bash
-    export DURABLE_TASK_SCHEDULER_CONNECTION_STRING="Endpoint=http://localhost:<port number>;TaskHub=default;Authentication=None"
+    export DURABLE_TASK_SCHEDULER_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
     ```
-
-    The *port number* is the one mapped to port `8080` on Docker. 
 
 1. Run the following command to build and run the sample:
 
@@ -136,4 +134,4 @@ From a terminal window as above, use the following steps to run the sample on yo
 
 ## View orchestrations and entities in the dashboard
 
-You can view the sample's orchestrations and entities in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:<port number>` (where *port number* is the one mapped to port 8082 in Docker) in your browser and selecting the `default` task hub.
+You can view the sample's orchestrations and entities in the Durable Task Scheduler emulator's dashboard by navigating to `http://localhost:8082` in your browser and selecting the `default` task hub.

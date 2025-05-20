@@ -30,17 +30,15 @@ There are two ways to run this sample:
 
 The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-1. Install Docker if it's not already installed.
+1. Pull the Docker Image for the Emulator:
+   ```bash
+   docker pull mcr.microsoft.com/dts/dts-emulator:latest
+   ```
 
-2. Pull the Docker Image for the Emulator:
-```bash
-docker pull mcr.microsoft.com/dts/dts-emulator:latest
-```
-
-3. Run the Emulator:
-```bash
-docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
-```
+1. Run the Emulator:
+   ```bash
+   docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+   ```
 Wait a few seconds for the container to be ready.
 
 Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
@@ -50,30 +48,23 @@ Note: The example code automatically uses the default emulator settings (endpoin
 For production scenarios or when you're ready to deploy to Azure:
 
 1. Create a Scheduler using the Azure CLI:
-```bash
-az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
-```
-
-2. Create Your Taskhub:
-```bash
-az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
-```
-
-3. Retrieve the Endpoint for the Scheduler from the Azure portal.
-
-4. Set the Environment Variables:
-
-   Bash:
    ```bash
-   export TASKHUB=<taskhubname>
-   export ENDPOINT=<taskhubEndpoint>
+   az durabletask scheduler create --resource-group <testrg> --name <testscheduler> --location <eastus> --ip-allowlist "[0.0.0.0/0]" --sku-capacity 1 --sku-name "Dedicated" --tags "{'myattribute':'myvalue'}"
    ```
 
-   PowerShell:
-   ```powershell
-   $env:TASKHUB = "<taskhubname>"
-   $env:ENDPOINT = "<taskhubEndpoint>"
+1. Create Your Taskhub:
+   ```bash
+   az durabletask taskhub create --resource-group <testrg> --scheduler-name <testscheduler> --name <testtaskhub>
    ```
+
+1. Assign your identity access to the task hub: 
+    ```bash
+    assignee=$(az ad user show --id "someone@microsoft.com" --query "id" --output tsv)
+
+    scope="/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.DurableTask/schedulers/<scheduler-name>/taskHubs/<taskhub-name>"
+
+    az role assignment create --assignee "$assignee" --role "Durable Task Data Contributor" --scope "$scope"
+    ```
 
 ## Authentication
 
@@ -90,10 +81,10 @@ The sample includes smart detection of the environment and configures authentica
 The connection string is constructed dynamically based on the environment:
 ```csharp
 // For local emulator
-connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=None";
+connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=None";
 
 // For Azure
-connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzure";
+connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=DefaultAzure";
 ```
 
 ## How to Run the Sample
@@ -102,17 +93,32 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 
 ### Local Development
 
+1.  If you're using a deployed scheduler, you need set Environment Variables. Note the scheduler endpoint can be found in the Scheduler's overview tab on Azure Portal.
+
+    Bash:
+    ```bash
+    export TASKHUB=<taskhubname>
+    export ENDPOINT=<schedulerEndpoint>
+    ```
+
+    PowerShell:
+    ```powershell
+    $env:TASKHUB = "<taskhubname>"
+    $env:ENDPOINT = "<schedulerEndpoint>"
+    ```
+
 1. First, start the Worker (processing component):
 
    ```bash
-   cd Worker
+   cd samples/durable-task-sdks/dotnet/FunctionChaining/Worker
    dotnet run
    ```
 
-2. In a separate terminal, run the Client (orchestration initiator):
+1. In a separate terminal, run the Client (orchestration initiator):
+   > **Note:** Remember to set the environment variables again if you're using a deployed scheduler. 
 
    ```bash
-   cd Client
+   cd samples/durable-task-sdks/dotnet/FunctionChaining/Client
    dotnet run
    ```
 
@@ -132,7 +138,7 @@ This sample includes an `azure.yaml` configuration file that allows you to deplo
 
 1. Navigate to the Function Chaining sample directory:
    ```bash
-   cd /path/to/Durable-Task-Scheduler/samples/durable-task-sdks/dotnet/FunctionChaining
+   cd samples/durable-task-sdks/dotnet/FunctionChaining
    ```
 
 2. Initialize the Azure Developer CLI project (only needed the first time):

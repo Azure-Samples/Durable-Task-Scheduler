@@ -60,7 +60,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az durabletask taskhub create `
         --resource-group my-resource-group `
         --scheduler-name my-scheduler `
-        --name "portable-dotnet"
+        --name "durable-task-dotnet"
     ```
 
     **Bash**:
@@ -69,10 +69,10 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az durabletask taskhub create \
         --resource-group my-resource-group \
         --scheduler-name my-scheduler \
-        --name "portable-dotnet"
+        --name "durable-task-dotnet"
     ```
 
-1. Grant the current user permission to connect to the `portable-dotnet` task hub:
+1. Grant the current user permission to connect to the `durable-task-dotnet` task hub:
 
     **PowerShell**:
 
@@ -83,7 +83,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az role assignment create `
         --assignee $loggedInUser `
         --role "Durable Task Data Contributor" `
-        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/portable-dotnet"
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/durable-task-dotnet"
     ```
 
     **Bash**:
@@ -95,7 +95,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
     az role assignment create \
         --assignee $loggedInUser \
         --role "Durable Task Data Contributor" \
-        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/portable-dotnet"
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/durable-task-dotnet"
     ```
 
     Note that it may take a minute for the role assignment to take effect.
@@ -110,7 +110,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
         --name my-scheduler `
         --query "properties.endpoint" `
         --output tsv
-    $taskhub = "portable-dotnet"
+    $taskhub = "durable-task-dotnet"
     $env:DURABLE_TASK_SCHEDULER_CONNECTION_STRING = "Endpoint=$endpoint;TaskHub=$taskhub;Authentication=DefaultAzure"
     ```
 
@@ -122,7 +122,7 @@ Before you can run the app, you need to create a durable task scheduler task hub
         --name my-scheduler \
         --query "properties.endpoint" \
         --output tsv)
-    taskhub="portable-dotnet"
+    taskhub="durable-task-dotnet"
     export DURABLE_TASK_SCHEDULER_CONNECTION_STRING="Endpoint=$endpoint;TaskHub=$taskhub;Authentication=DefaultAzure"
     ```
 
@@ -261,7 +261,7 @@ Use the following PowerShell command from a new terminal window to get the dashb
 $dashboardUrl = az durabletask taskhub show `
     --resource-group "my-resource-group" `
     --scheduler-name "my-scheduler" `
-    --name "portable-dotnet" `
+    --name "durable-task-dotnet" `
     --query "properties.dashboardUrl" `
     --output tsv
 $dashboardUrl
@@ -273,7 +273,7 @@ $dashboardUrl
 dashboardUrl=$(az durabletask taskhub show \
     --resource-group "my-resource-group" \
     --scheduler-name "my-scheduler" \
-    --name "portable-dotnet" \
+    --name "durable-task-dotnet" \
     --query "properties.dashboardUrl" \
     --output tsv)
 echo $dashboardUrl
@@ -282,7 +282,7 @@ echo $dashboardUrl
 The URL should look something like the following:
 
 ```plaintext
-https://dashboard.durabletask.io/subscriptions/{subscriptionID}/schedulers/my-scheduler/taskhubs/portable-dotnet?endpoint=https%3a%2f%2fmy-scheduler-gvdmebc6dmdj.northcentralus.durabletask.io
+https://dashboard.durabletask.io/subscriptions/{subscriptionID}/schedulers/my-scheduler/taskhubs/durable-task-dotnet?endpoint=https%3a%2f%2fmy-scheduler-gvdmebc6dmdj.northcentralus.durabletask.io
 ```
 
 Once logged in, you should see the orchestrations that were created by the sample app. Below is an example of what the dashboard might look like (note that some of the details will be different than the screenshot):
