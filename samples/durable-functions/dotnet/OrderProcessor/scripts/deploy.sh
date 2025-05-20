@@ -52,7 +52,7 @@ az storage account network-rule add \
 
 # Give some time for the rule to take effect
 echo "Waiting for network rules to apply..."
-sleep 10
+sleep 15
 
 # Upload the zip package to Azure Storage Blob container
 echo "Uploading functions.zip to Azure Storage Blob container $AZURE_STORAGE_ACCOUNT_NAME/$AZURE_STORAGE_CONTAINER_NAME/$zipFileName..."
