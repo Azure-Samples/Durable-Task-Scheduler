@@ -1,0 +1,92 @@
+# .NET build artifacts
+bin/
+obj/
+out/
+*.dll
+*.exe
+*.pdb
+*.user
+*.vscode
+*.suo
+*.nupkg
+*.userosscache
+*.sln.docstates
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+# Visual Studio files
+.vs/
+.vscode/
+*_i.c
+*_p.c
+*_h.h
+*.ilk
+*.meta
+*.obj
+*.iobj
+*.pch
+*.ipdb
+*.pgc
+*.pgd
+*.rsp
+*.sbr
+*.tlb
+*.tli
+*.tlh
+*.tmp
+*.tmp_proj
+*_wpftmp.csproj
+*.log
+*.vspscc
+*.vssscc
+.builds
+*.svclog
+*.scc
+
+# Azure Functions
+local.settings.json
+.python_packages/
+.azure-functions-core-tools/
+__pycache__/
+.functions/
+appsettings.*.json
+
+# Durable Functions specific
+durableFunctionsHub/
+DurableFunctionsHub/
+
+# Azurite artifacts
+__azurite_db*
+.azurite/
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
+
+# Environment files
+.env
+.venv/
+env/
+ENV/
+
+# JetBrains Rider
+.idea/
+*.sln.iml
+
+# macOS specific
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows specific
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Node.js (in case of JavaScript Functions)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json

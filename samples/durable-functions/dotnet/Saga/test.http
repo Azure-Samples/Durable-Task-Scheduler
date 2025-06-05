@@ -1,0 +1,22 @@
+### Start a new order processing saga
+POST http://localhost:7071/api/orders
+Content-Type: application/json
+
+{
+  "customerId": "customer123",
+  "productId": "product456",
+  "quantity": 5,
+  "amount": 100.00
+}
+
+### Check the status of an order processing saga
+# Replace {instanceId} with the actual ID returned from the start request
+GET http://localhost:7071/api/orders/{instanceId}
+
+### Terminate an order processing saga
+# Replace {instanceId} with the actual ID you want to terminate
+POST http://localhost:7071/api/orders/{instanceId}/terminate
+
+### Note about monitoring
+# When using Azurite, there's no built-in dashboard like with Durable Task Scheduler
+# Use Azure Storage Explorer to view the Azure Storage contents and monitor orchestrations
