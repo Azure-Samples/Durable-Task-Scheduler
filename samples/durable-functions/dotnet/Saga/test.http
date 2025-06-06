@@ -1,4 +1,5 @@
-### Start a new order processing saga
+# Start a new order processing workflow 
+# This will trigger the Saga pattern and show compensation in action
 POST http://localhost:7071/api/orders
 Content-Type: application/json
 
@@ -9,14 +10,11 @@ Content-Type: application/json
   "amount": 100.00
 }
 
-### Check the status of an order processing saga
-# Replace {instanceId} with the actual ID returned from the start request
-GET http://localhost:7071/api/orders/{instanceId}
+### Store the instance ID from the response above and use it below
+@instanceId = replace-with-your-instance-id
 
-### Terminate an order processing saga
-# Replace {instanceId} with the actual ID you want to terminate
-POST http://localhost:7071/api/orders/{instanceId}/terminate
+### Check the status of an order
+GET http://localhost:7071/api/orders/{{instanceId}}
 
-### Note about monitoring
-# When using Azurite, there's no built-in dashboard like with Durable Task Scheduler
-# Use Azure Storage Explorer to view the Azure Storage contents and monitor orchestrations
+### Terminate a running workflow if needed
+POST http://localhost:7071/api/orders/{{instanceId}}/terminate

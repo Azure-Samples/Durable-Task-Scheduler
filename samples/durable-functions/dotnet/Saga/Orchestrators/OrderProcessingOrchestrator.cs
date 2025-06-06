@@ -1,4 +1,5 @@
 using DurableFunctionsSaga.Models;
+using DurableFunctionsSaga.Saga;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
@@ -13,26 +14,30 @@ namespace DurableFunctionsSaga.Orchestrators
 
         public OrderProcessingOrchestrator(ILogger<OrderProcessingOrchestrator> logger)
         {
-            _logger = logger;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
+        /// <summary>
+        /// Process an order using the SAGA pattern with compensations
+        /// </summary>
         [Function(nameof(ProcessOrder))]
         public async Task<Order> ProcessOrder([OrchestrationTrigger] TaskOrchestrationContext context)
         {
             var order = context.GetInput<Order>() ?? throw new ArgumentNullException(nameof(Order));
-            var orchestrationId = context.InstanceId;
-
-            _logger.LogInformation("Starting order processing saga with ID: {OrchestrationId}", orchestrationId);
+            _logger.LogInformation("Starting order processing saga with ID: {OrchestrationId}", context.InstanceId);
+            
+            // Create compensations tracker
+            var compensations = new Compensations(context, _logger);
 
             try
             {
-                // Step 1: Send order notification
+                // Step 1: Send order notification (no compensation needed)
                 var notification = new Notification
                 {
                     OrderId = order.OrderId,
                     Message = $"Processing order {order.OrderId}"
                 };
-                notification = await context.CallActivityAsync<Notification>("NotifyActivity", notification);
+                await context.CallActivityAsync("NotifyActivity", notification);
                 
                 // Step 2: Reserve inventory
                 var inventory = new Inventory
@@ -40,9 +45,12 @@ namespace DurableFunctionsSaga.Orchestrators
                     ProductId = order.ProductId,
                     ReservedQuantity = order.Quantity
                 };
+                
+                // Register compensation BEFORE performing the operation
+                compensations.AddCompensation("ReleaseInventoryActivity", inventory);
                 inventory = await context.CallActivityAsync<Inventory>("ReserveInventoryActivity", inventory);
                 
-                // Step 3: Request order approval
+                // Step 3: Request approval (no compensation needed)
                 var approval = new Approval
                 {
                     OrderId = order.OrderId,
@@ -52,8 +60,8 @@ namespace DurableFunctionsSaga.Orchestrators
                 
                 if (!approval.IsApproved)
                 {
-                    // If not approved, cancel the order and release the inventory
-                    await context.CallActivityAsync("ReleaseInventoryActivity", inventory);
+                    // If not approved, run compensations and return
+                    await compensations.CompensateAsync();
                     order.Status = "Cancelled - Not Approved";
                     return order;
                 }
@@ -65,71 +73,52 @@ namespace DurableFunctionsSaga.Orchestrators
                     Amount = order.Amount
                 };
                 
-                try
-                {
-                    payment = await context.CallActivityAsync<Payment>("ProcessPaymentActivity", payment);
-                }
-                catch (Exception ex)
-                {
-                    // Compensation: Refund payment if needed, then release inventory
-                    _logger.LogError(ex, "Payment processing failed. Initiating compensation.");
-                    await context.CallActivityAsync("RefundPaymentActivity", payment);
-                    await context.CallActivityAsync("ReleaseInventoryActivity", inventory);
-                    order.Status = "Failed - Payment Error";
-                    return order;
-                }
+                // Register compensation BEFORE processing payment
+                compensations.AddCompensation("RefundPaymentActivity", payment);
+                payment = await context.CallActivityAsync<Payment>("ProcessPaymentActivity", payment);
                 
                 // Step 5: Update inventory (convert reserved to confirmed)
-                try
-                {
-                    inventory = await context.CallActivityAsync<Inventory>("UpdateInventoryActivity", inventory);
-                }
-                catch (Exception ex)
-                {
-                    // Compensation: Refund payment and release inventory
-                    _logger.LogError(ex, "Inventory update failed. Initiating compensation.");
-                    await context.CallActivityAsync("RefundPaymentActivity", payment);
-                    await context.CallActivityAsync("ReleaseInventoryActivity", inventory);
-                    order.Status = "Failed - Inventory Error";
-                    return order;
-                }
+                compensations.AddCompensation("RestoreInventoryActivity", inventory);
+                inventory = await context.CallActivityAsync<Inventory>("UpdateInventoryActivity", inventory);
                 
-                // Step 6: Process delivery (this will intentionally fail to demonstrate compensation)
+                // Step 6: Process delivery with retry handling
                 var delivery = new Delivery
                 {
                     OrderId = order.OrderId,
                     Address = $"Customer address for {order.CustomerId}"
                 };
                 
-                try
-                {
-                    delivery = await context.CallActivityAsync<Delivery>("DeliveryActivity", delivery);
-                    order.Status = "Completed";
-                }
-                catch (Exception ex)
-                {
-                    // Full compensation: Refund payment, restore inventory
-                    _logger.LogError(ex, "Delivery failed. Initiating full compensation.");
-                    await context.CallActivityAsync("RefundPaymentActivity", payment);
-                    await context.CallActivityAsync("RestoreInventoryActivity", inventory);
-                    order.Status = "Failed - Delivery Error";
-                }
+                // Process delivery - no retries, will directly trigger compensation when it fails
+                delivery = await context.CallActivityAsync<Delivery>("DeliveryActivity", delivery);
                 
-                // Send final notification
+                // All operations completed successfully
                 notification = new Notification
                 {
                     OrderId = order.OrderId,
-                    Message = $"Order {order.OrderId} status: {order.Status}"
+                    Message = $"Order {order.OrderId} status: Completed"
                 };
                 await context.CallActivityAsync("NotifyActivity", notification);
                 
+                order.Status = "Completed";
                 return order;
             }
             catch (Exception ex)
             {
-                // Handle any unhandled exceptions
-                _logger.LogError(ex, "Unhandled exception in order processing saga. Order: {OrderId}", order.OrderId);
-                order.Status = "Failed - System Error";
+                // An error occurred somewhere - run all compensations
+                _logger.LogError(ex, "Error in order processing saga. Running compensations. Order: {OrderId}", order.OrderId);
+                
+                // Run all compensations in LIFO order
+                await compensations.CompensateAsync();
+                
+                // Send failure notification
+                var failureNotification = new Notification
+                {
+                    OrderId = order.OrderId,
+                    Message = $"Order {order.OrderId} processing failed: {ex.Message}"
+                };
+                await context.CallActivityAsync("NotifyActivity", failureNotification);
+                
+                order.Status = $"Failed - {ex.GetType().Name}";
                 return order;
             }
         }

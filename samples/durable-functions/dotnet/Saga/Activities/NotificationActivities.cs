@@ -2,11 +2,12 @@ using DurableFunctionsSaga.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Threading.Tasks;
 
 namespace DurableFunctionsSaga.Activities
 {
+    /// <summary>
+    /// Notification-related activities
+    /// </summary>
     public class NotificationActivities
     {
         private readonly ILogger<NotificationActivities> _logger;
@@ -17,14 +18,13 @@ namespace DurableFunctionsSaga.Activities
         }
 
         [Function(nameof(NotifyActivity))]
-        public Task<Notification> NotifyActivity([ActivityTrigger] Notification notification, FunctionContext executionContext)
+        public Notification NotifyActivity([ActivityTrigger] Notification notification)
         {
-            _logger.LogInformation("Sending notification: {Message}", notification.Message);
+            _logger.LogInformation("Sending notification for order {OrderId}: {Message}", 
+                notification.OrderId, notification.Message);
             
-            // Simulate sending a notification
-            notification.Status = "Sent";
-            
-            return Task.FromResult(notification);
+            // Simulate notification sending
+            return notification;
         }
     }
 }

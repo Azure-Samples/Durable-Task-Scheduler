@@ -3,13 +3,16 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Threading.Tasks;
 
 namespace DurableFunctionsSaga.Activities
 {
+    /// <summary>
+    /// Delivery-related activities
+    /// </summary>
     public class DeliveryActivities
     {
         private readonly ILogger<DeliveryActivities> _logger;
+        private readonly Random _random = new Random();
 
         public DeliveryActivities(ILogger<DeliveryActivities> logger)
         {
@@ -17,22 +20,23 @@ namespace DurableFunctionsSaga.Activities
         }
 
         [Function(nameof(DeliveryActivity))]
-        public Task<Delivery> DeliveryActivity([ActivityTrigger] Delivery delivery, FunctionContext executionContext)
+        public Delivery DeliveryActivity([ActivityTrigger] Delivery delivery)
         {
-            _logger.LogInformation("Scheduling delivery for order {OrderId} to address: {Address}", 
+            _logger.LogInformation("Scheduling delivery for order {OrderId} to address {Address}", 
                 delivery.OrderId, delivery.Address);
             
-            // Intentionally fail to demonstrate compensation pattern
-            if (DateTime.UtcNow.Second % 2 == 0) // Fail 50% of the time
+            // Simulate a failure 50% of the time to demonstrate compensation
+            if (_random.Next(2) == 0)
             {
-                _logger.LogError("Delivery service is currently unavailable for order {OrderId}", delivery.OrderId);
-                throw new Exception("Delivery service is currently unavailable");
+                _logger.LogError("Failed to schedule delivery for order {OrderId}", delivery.OrderId);
+                throw new Exception("Delivery service unavailable - Simulated failure to demonstrate compensation");
             }
             
-            // This code will only execute if the random failure doesn't occur
-            delivery.Status = "Scheduled";
+            // Simulate successful delivery scheduling
+            delivery.IsScheduled = true;
+            delivery.TrackingNumber = Guid.NewGuid().ToString().Substring(0, 8).ToUpper();
             
-            return Task.FromResult(delivery);
+            return delivery;
         }
     }
 }

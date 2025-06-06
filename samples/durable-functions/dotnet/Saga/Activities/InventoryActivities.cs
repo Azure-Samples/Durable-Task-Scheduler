@@ -7,10 +7,12 @@ using System.Threading.Tasks;
 
 namespace DurableFunctionsSaga.Activities
 {
+    /// <summary>
+    /// Inventory-related activities
+    /// </summary>
     public class InventoryActivities
     {
         private readonly ILogger<InventoryActivities> _logger;
-        private static int _availableStock = 100; // Simulate inventory database
 
         public InventoryActivities(ILogger<InventoryActivities> logger)
         {
@@ -18,58 +20,52 @@ namespace DurableFunctionsSaga.Activities
         }
 
         [Function(nameof(ReserveInventoryActivity))]
-        public Task<Inventory> ReserveInventoryActivity([ActivityTrigger] Inventory inventory, FunctionContext executionContext)
+        public Inventory ReserveInventoryActivity([ActivityTrigger] Inventory inventory)
         {
-            if (inventory.ReservedQuantity > _availableStock)
-            {
-                _logger.LogError("Insufficient inventory. Available: {Available}, Requested: {Requested}", 
-                    _availableStock, inventory.ReservedQuantity);
-                throw new InvalidOperationException($"Insufficient inventory for product {inventory.ProductId}");
-            }
-
-            _logger.LogInformation("Reserving {Quantity} units of product {ProductId}", 
-                inventory.ReservedQuantity, inventory.ProductId);
+            _logger.LogInformation("Reserving inventory for product {ProductId}, quantity {Quantity}", 
+                inventory.ProductId, inventory.ReservedQuantity);
             
-            // Update available stock
-            _availableStock -= inventory.ReservedQuantity;
-            inventory.AvailableQuantity = _availableStock;
-
-            return Task.FromResult(inventory);
+            // Simulate inventory reservation
+            inventory.Reserved = true;
+            
+            return inventory;
         }
 
         [Function(nameof(UpdateInventoryActivity))]
-        public Task<Inventory> UpdateInventoryActivity([ActivityTrigger] Inventory inventory, FunctionContext executionContext)
+        public Inventory UpdateInventoryActivity([ActivityTrigger] Inventory inventory)
         {
-            _logger.LogInformation("Confirming reservation of {Quantity} units of product {ProductId}", 
-                inventory.ReservedQuantity, inventory.ProductId);
+            _logger.LogInformation("Updating inventory for product {ProductId}, quantity {Quantity} from reserved to confirmed", 
+                inventory.ProductId, inventory.ReservedQuantity);
             
-            // In a real system, this would convert reserved inventory to consumed inventory
+            // Simulate inventory update
+            inventory.Updated = true;
             
-            return Task.FromResult(inventory);
+            return inventory;
         }
 
         [Function(nameof(ReleaseInventoryActivity))]
-        public Task ReleaseInventoryActivity([ActivityTrigger] Inventory inventory, FunctionContext executionContext)
+        public Inventory ReleaseInventoryActivity([ActivityTrigger] Inventory inventory)
         {
-            _logger.LogInformation("Releasing reservation of {Quantity} units of product {ProductId}", 
-                inventory.ReservedQuantity, inventory.ProductId);
+            _logger.LogInformation("Compensation: Releasing reserved inventory for product {ProductId}, quantity {Quantity}", 
+                inventory.ProductId, inventory.ReservedQuantity);
             
-            // Return the reserved quantity back to available stock
-            _availableStock += inventory.ReservedQuantity;
+            // Simulate releasing inventory
+            inventory.Reserved = false;
             
-            return Task.CompletedTask;
+            return inventory;
         }
 
         [Function(nameof(RestoreInventoryActivity))]
-        public Task RestoreInventoryActivity([ActivityTrigger] Inventory inventory, FunctionContext executionContext)
+        public Inventory RestoreInventoryActivity([ActivityTrigger] Inventory inventory)
         {
-            _logger.LogInformation("Restoring {Quantity} units of product {ProductId} to inventory", 
-                inventory.ReservedQuantity, inventory.ProductId);
+            _logger.LogInformation("Compensation: Restoring inventory for product {ProductId}, quantity {Quantity} to reserved state", 
+                inventory.ProductId, inventory.ReservedQuantity);
             
-            // Add the quantity back to available stock
-            _availableStock += inventory.ReservedQuantity;
+            // Simulate restoring inventory from confirmed back to reserved
+            inventory.Updated = false;
+            inventory.Reserved = true;
             
-            return Task.CompletedTask;
+            return inventory;
         }
     }
 }

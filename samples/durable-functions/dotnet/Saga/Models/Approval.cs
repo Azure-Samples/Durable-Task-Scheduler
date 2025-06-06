@@ -2,7 +2,8 @@ namespace DurableFunctionsSaga.Models
 {
     public class Approval
     {
-        public string OrderId { get; set; } = string.Empty;
+        public required string OrderId { get; set; }
         public bool IsApproved { get; set; }
+        public string? ApprovalId { get; set; }
     }
 }

@@ -3,13 +3,16 @@ using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 using System;
-using System.Threading.Tasks;
 
 namespace DurableFunctionsSaga.Activities
 {
+    /// <summary>
+    /// Approval-related activities
+    /// </summary>
     public class ApprovalActivities
     {
         private readonly ILogger<ApprovalActivities> _logger;
+        private readonly Random _random = new Random();
 
         public ApprovalActivities(ILogger<ApprovalActivities> logger)
         {
@@ -17,20 +20,25 @@ namespace DurableFunctionsSaga.Activities
         }
 
         [Function(nameof(RequestApprovalActivity))]
-        public Task<Approval> RequestApprovalActivity([ActivityTrigger] Approval approval, FunctionContext executionContext)
+        public Approval RequestApprovalActivity([ActivityTrigger] Approval approval)
         {
             _logger.LogInformation("Requesting approval for order {OrderId}", approval.OrderId);
             
-            // Simulate approval process
-            // In a real-world scenario, this might involve human interaction or calling an external approval service
+            // Simulate approval process (approve 75% of orders)
+            approval.IsApproved = _random.Next(4) != 0;
             
-            // Auto-approve for this demo
-            approval.IsApproved = true;
+            if (approval.IsApproved)
+            {
+                approval.ApprovalId = Guid.NewGuid().ToString();
+                _logger.LogInformation("Order {OrderId} approved with approval ID {ApprovalId}", 
+                    approval.OrderId, approval.ApprovalId);
+            }
+            else
+            {
+                _logger.LogInformation("Order {OrderId} rejected", approval.OrderId);
+            }
             
-            _logger.LogInformation("Order {OrderId} has been {Status}", 
-                approval.OrderId, approval.IsApproved ? "approved" : "rejected");
-            
-            return Task.FromResult(approval);
+            return approval;
         }
     }
 }
