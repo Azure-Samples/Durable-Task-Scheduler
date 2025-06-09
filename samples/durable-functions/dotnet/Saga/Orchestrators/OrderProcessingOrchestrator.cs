@@ -10,24 +10,20 @@ namespace DurableFunctionsSaga.Orchestrators
 {
     public class OrderProcessingOrchestrator
     {
-        private readonly ILogger<OrderProcessingOrchestrator> _logger;
-
-        public OrderProcessingOrchestrator(ILogger<OrderProcessingOrchestrator> logger)
-        {
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
-
         /// <summary>
         /// Process an order using the SAGA pattern with compensations
         /// </summary>
         [Function(nameof(ProcessOrder))]
         public async Task<Order> ProcessOrder([OrchestrationTrigger] TaskOrchestrationContext context)
         {
+            // Create a replay-safe logger
+            ILogger logger = context.CreateReplaySafeLogger(nameof(OrderProcessingOrchestrator));
+            
             var order = context.GetInput<Order>() ?? throw new ArgumentNullException(nameof(Order));
-            _logger.LogInformation("Starting order processing saga with ID: {OrchestrationId}", context.InstanceId);
+            logger.LogInformation("Starting order processing saga with ID: {OrchestrationId}", context.InstanceId);
             
             // Create compensations tracker
-            var compensations = new Compensations(context, _logger);
+            var compensations = new Compensations(context, logger);
 
             try
             {
@@ -105,7 +101,7 @@ namespace DurableFunctionsSaga.Orchestrators
             catch (Exception ex)
             {
                 // An error occurred somewhere - run all compensations
-                _logger.LogError(ex, "Error in order processing saga. Running compensations. Order: {OrderId}", order.OrderId);
+                logger.LogError(ex, "Error in order processing saga. Running compensations. Order: {OrderId}", order.OrderId);
                 
                 // Run all compensations in LIFO order
                 await compensations.CompensateAsync();
