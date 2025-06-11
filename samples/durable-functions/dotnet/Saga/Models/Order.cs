@@ -1,6 +1,5 @@
 using System;
 
-using System;
 
 namespace DurableFunctionsSaga.Models
 {
