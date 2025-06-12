@@ -163,6 +163,7 @@ The emulator simulates a scheduler and taskhub in a Docker container, making it 
 5. **Monitor the logs**:
    - Watch the console output to see the workflow execution
    - In approximately 50% of runs, the delivery step will fail (by design)
+   - The approval step also fails 25% of the time (by design)
    - When it fails, you'll see the compensation actions run in reverse order
 
 ## Project Structure
