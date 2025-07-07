@@ -1,0 +1,12 @@
+name: travel-planner
+metadata:
+  template: travel-planner@0.0.1
+services:
+  api:
+    project: .
+    language: dotnet
+    host: function
+  web:
+    project: ./Frontend
+    language: js
+    host: staticwebapp

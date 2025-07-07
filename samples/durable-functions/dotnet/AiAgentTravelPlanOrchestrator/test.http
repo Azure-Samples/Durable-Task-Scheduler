@@ -1,0 +1,59 @@
+### Variables
+@baseUrl = http://localhost:7252/api
+@instanceId = {{startTravelPlanning.response.body.$.id}}
+
+### Start a new travel planning process
+# @name startTravelPlanning
+POST {{baseUrl}}/travel-planner
+Content-Type: application/json
+
+{
+    "userName": "John Doe",
+    "preferences": "I enjoy cultural experiences, historical sites, and outdoor activities. I prefer not to be rushed and would like some relaxation time. I'm interested in local cuisine and authentic experiences.",
+    "durationInDays": 7,
+    "budget": "Moderate, around $3000 total",
+    "travelDates": "May 15-22, 2025",
+    "specialRequirements": "Would prefer accommodations with free WiFi. I have a mild shellfish allergy."
+}
+
+### Check the status of a travel plan by ID
+# @name getTravelPlanStatus
+GET {{baseUrl}}/travel-planner/status/{{instanceId}}
+
+### Alternative: Check status with explicit instance ID
+GET {{baseUrl}}/travel-planner/status/{{instanceId}}
+
+### Sample request for a budget trip
+POST {{baseUrl}}/travel-planner
+Content-Type: application/json
+
+{
+    "userName": "Sarah Smith",
+    "preferences": "I'm looking for budget-friendly options, prefer nature and hiking. I don't mind hostel accommodations and public transportation.",
+    "durationInDays": 5,
+    "budget": "Budget, around $1500 total",
+    "travelDates": "June 10-15, 2025",
+    "specialRequirements": "Vegetarian food options are a must"
+}
+
+### Sample request for a luxury family trip
+POST {{baseUrl}}/travel-planner
+Content-Type: application/json
+
+{
+    "userName": "Nick Greenfield",
+    "preferences": "Looking for a family-friendly luxury vacation with activities for children ages 8 and 10. We enjoy beaches, swimming pools, and organized kids activities.",
+    "durationInDays": 10,
+    "budget": "Luxury, around $10000 total",
+    "travelDates": "July 1-11, 2025",
+    "specialRequirements": "Need connecting rooms or a family suite. One child has a peanut allergy."
+}
+
+### Approve Travel
+POST {{baseUrl}}/travel-planner/approve/{{{{instanceId}}}}
+Content-Type: application/json
+
+{
+    "approved": true,
+    "comments": "The itinerary looks great! Looking forward to the trip."
+}
