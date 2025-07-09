@@ -29,7 +29,7 @@ The workflow is coordinated by a durable orchestration that passes outputs from 
 
 The following diagram illustrates the flow of the news article generator workflow:
 
-![Agent Chaining Architecture](images/architecture.pngarchitecture.png)
+![Agent Chaining Architecture](images/architecture.png)
 
 ### Components
 
@@ -198,7 +198,7 @@ Contains shared models and data structures used by both Worker and Client:
    - The HTML file is saved to the project's `/tmp/` directory
    - File path and HTML content are returned to the client
 
-   ![sample-article](images/sample-article.png.png)
+   ![sample-article](images/sample-article.png)
 
 ## Directory Structure
 
