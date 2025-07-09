@@ -1,0 +1,21 @@
+{
+  "profiles": {
+    "AgentChainingSample (Emulator)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENDPOINT": "http://localhost:8080",
+        "TASKHUB": "agent-chaining",
+        "DOTNET_SYSTEM_NET_HTTP_SOCKETSHTTPHANDLER_HTTP2UNENCRYPTEDSUPPORT": "true",
+        "GRPC_VERBOSITY": "DEBUG",
+        "GRPC_TRACE": "api,http,channel"
+      }
+    },
+    "AgentChainingSample (Azure)": {
+      "commandName": "Project",
+      "environmentVariables": {
+        "ENDPOINT": "https://your-durability-provider.azurewebsites.net",
+        "TASKHUB": "agent-chaining"
+      }
+    }
+  }
+}
