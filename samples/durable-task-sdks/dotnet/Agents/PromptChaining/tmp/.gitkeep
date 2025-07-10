@@ -1,0 +1,2 @@
+# This file ensures the tmp directory is created
+# but the contents are ignored by Git
