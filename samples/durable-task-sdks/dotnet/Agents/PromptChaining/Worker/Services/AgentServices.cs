@@ -182,9 +182,12 @@ Provide descriptive captions that enhance understanding of the article content."
         
         if (_dalleEnabled)
         {
-            Logger.LogInformation("DALL-E image generation is enabled with Microsoft Entra ID authentication");
+            Logger.LogInformation($"DALL-E image generation is enabled with Microsoft Entra ID authentication");
+            Logger.LogInformation($"Using DALL-E endpoint: {dalleEndpoint}");
             
             // Use the DALL-E endpoint environment variable directly without modification
+            // Note: The DALLE_ENDPOINT should be the complete URL including deployment name and API version
+            // Example format: https://your-resource.openai.azure.com/openai/deployments/your-deployment-name/images/generations?api-version=2023-12-01-preview
             _dallEEndpoint = dalleEndpoint;
             
             // Create HTTP client
@@ -375,6 +378,7 @@ Respond in JSON format with the following structure:
             System.Text.Encoding.UTF8, 
             "application/json");
             
+        Logger.LogInformation($"Using DALL-E endpoint directly: {_dallEEndpoint}");
         Logger.LogInformation($"Calling DALL-E API with prompt: {prompt}");
         
         // Get an access token from Azure using DefaultAzureCredential
@@ -386,7 +390,8 @@ Respond in JSON format with the following structure:
         _httpClient.DefaultRequestHeaders.Authorization = 
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", accessToken.Token);
         
-        // Make the API call
+        // Make the API call - use the full endpoint URL directly from the environment variable
+        // The DALLE_ENDPOINT should already contain the complete URL including deployment name and API version
         var response = await _httpClient.PostAsync(_dallEEndpoint, content);
         
         // Check if the request was successful
