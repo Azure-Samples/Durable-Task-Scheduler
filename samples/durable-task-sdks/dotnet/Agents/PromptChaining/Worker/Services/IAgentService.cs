@@ -55,8 +55,8 @@ public abstract class BaseAgentService : IAgentService
     private const int MaxRetryAttempts = 3;
     private const int InitialRetryDelayMs = 1000; // Start with a 1 second delay
     
-    // Deployment name from the instructions
-    protected const string DeploymentName = "gpt-4o-mini";
+    // Deployment name from environment variable or fallback to default
+    protected readonly string DeploymentName;
 
     public string AgentId { get; set; }
     public string Endpoint { get; }
@@ -66,6 +66,10 @@ public abstract class BaseAgentService : IAgentService
         AgentId = string.Empty; // Will be set during initialization
         Endpoint = endpointUrl ?? throw new ArgumentNullException(nameof(endpointUrl));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        
+        // Get deployment name from environment variable or use fallback
+        DeploymentName = Environment.GetEnvironmentVariable("OPENAI_DEPLOYMENT_NAME") ?? "gpt-4";
+        Logger.LogInformation($"Using OpenAI deployment: {DeploymentName}");
         
         // Create credential for authentication
         Credential = new DefaultAzureCredential();
@@ -136,7 +140,7 @@ public abstract class BaseAgentService : IAgentService
                 {
                     Logger.LogInformation($"Creating new agent: {agentName}");
                     Logger.LogInformation($"Using Azure AI Projects endpoint: {Endpoint}");
-                    Logger.LogInformation($"Using model deployment: {DeploymentName}");
+                    Logger.LogInformation($"Using model deployment from env var OPENAI_DEPLOYMENT_NAME: {DeploymentName}");
                     
                     // Create a new agent
                     var agentResponse = await AgentsClient.Administration.CreateAgentAsync(
