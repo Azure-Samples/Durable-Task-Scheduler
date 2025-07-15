@@ -76,6 +76,9 @@ Create a `.env` file or set environment variables:
 # Required: Azure AI Projects endpoint
 export AGENT_CONNECTION_STRING="https://your-ai-project-endpoint.services.ai.azure.com/api/projects/your-ai-project-endpoint"
 
+# Optional: OpenAI deployment name (defaults to "gpt-4" if not specified)
+export OPENAI_DEPLOYMENT_NAME="gpt-4-turbo" # or any other model deployment name in your Azure OpenAI resource
+
 # Optional: DALL-E API endpoint for image generation with Microsoft Entra ID authentication
 # If not provided, the app will use placeholder images instead
 export DALLE_ENDPOINT="https://your-dalle-endpoint.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01"
@@ -91,12 +94,14 @@ Note: If you're using Windows Command Prompt, use `set` instead of `export`:
 
 ```cmd
 set AGENT_CONNECTION_STRING=https://your-ai-project-endpoint.services.ai.azure.com/api/projects/your-ai-project-endpoint
+set OPENAI_DEPLOYMENT_NAME=gpt-4
 ```
 
 For PowerShell:
 
 ```powershell
 $env:AGENT_CONNECTION_STRING="https://your-ai-project-endpoint.services.ai.azure.com/api/projects/your-ai-project-endpoint"
+$env:OPENAI_DEPLOYMENT_NAME="gpt-4"
 ```
 
 ### 4. Build the Project
@@ -231,6 +236,7 @@ AgentChainingSample/
 The sample uses the following environment variables:
 
 - `AGENT_CONNECTION_STRING`: (Required) The endpoint for your Azure AI Projects service
+- `OPENAI_DEPLOYMENT_NAME`: (Optional) The name of the OpenAI model deployment to use (defaults to "gpt-4" if not specified)
 - `DALLE_ENDPOINT`: (Optional) The complete endpoint URL for your Azure OpenAI DALL-E service
 - `ENDPOINT`: (Optional) The Durable Task Scheduler endpoint (defaults to `http://localhost:8080`)
 - `TASKHUB`: (Optional) The task hub name (defaults to `default`)
@@ -239,7 +245,7 @@ Note:
 - If the DALL-E endpoint is not provided, the application will use placeholder images instead of generating real ones
 - Authentication for both Azure AI Projects and DALL-E services uses DefaultAzureCredential
 - No API keys are needed as the application uses Microsoft Entra ID for authentication
-- The implementation uses the GPT-4o Mini model (`gpt-4o-mini`) by default for all agent deployments
+- The implementation defaults to the GPT-4 model if OPENAI_DEPLOYMENT_NAME is not specified
 
 ## Authentication
 
