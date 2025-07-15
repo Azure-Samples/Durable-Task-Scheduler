@@ -94,14 +94,20 @@ Note: If you're using Windows Command Prompt, use `set` instead of `export`:
 
 ```cmd
 set AGENT_CONNECTION_STRING=https://your-ai-project-endpoint.services.ai.azure.com/api/projects/your-ai-project-endpoint
-set OPENAI_DEPLOYMENT_NAME=gpt-4
+set OPENAI_DEPLOYMENT_NAME=gpt-4-turbo
+set DALLE_ENDPOINT=https://your-dalle-endpoint.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01
+set ENDPOINT=http://localhost:8080
+set TASKHUB=default
 ```
 
 For PowerShell:
 
 ```powershell
 $env:AGENT_CONNECTION_STRING="https://your-ai-project-endpoint.services.ai.azure.com/api/projects/your-ai-project-endpoint"
-$env:OPENAI_DEPLOYMENT_NAME="gpt-4"
+$env:OPENAI_DEPLOYMENT_NAME="gpt-4-turbo"
+$env:DALLE_ENDPOINT="https://your-dalle-endpoint.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01"
+$env:ENDPOINT="http://localhost:8080"
+$env:TASKHUB="default"
 ```
 
 ### 4. Build the Project
