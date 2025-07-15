@@ -4,6 +4,7 @@ using Azure.AI.Projects;
 using Azure.AI.Agents.Persistent;
 using Azure.Core;
 using Azure.Identity;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Text;
 
@@ -50,25 +51,27 @@ public abstract class BaseAgentService : IAgentService
     protected readonly AIProjectClient ProjectClient;
     protected PersistentAgentsClient AgentsClient;
     protected readonly TokenCredential Credential;
+    protected readonly IConfiguration Configuration;
     
     // Retry configuration
     private const int MaxRetryAttempts = 3;
     private const int InitialRetryDelayMs = 1000; // Start with a 1 second delay
     
-    // Deployment name from environment variable or fallback to default
+    // Deployment name from configuration or fallback to default
     protected readonly string DeploymentName;
 
     public string AgentId { get; set; }
     public string Endpoint { get; }
 
-    protected BaseAgentService(string endpointUrl, ILogger<BaseAgentService> logger)
+    protected BaseAgentService(string endpointUrl, ILogger<BaseAgentService> logger, IConfiguration configuration)
     {
         AgentId = string.Empty; // Will be set during initialization
         Endpoint = endpointUrl ?? throw new ArgumentNullException(nameof(endpointUrl));
         Logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         
-        // Get deployment name from environment variable or use fallback
-        DeploymentName = Environment.GetEnvironmentVariable("OPENAI_DEPLOYMENT_NAME") ?? "gpt-4";
+        // Get deployment name from configuration or use fallback
+        DeploymentName = Configuration["OPENAI_DEPLOYMENT_NAME"] ?? "gpt-4";
         Logger.LogInformation($"Using OpenAI deployment: {DeploymentName}");
         
         // Create credential for authentication
