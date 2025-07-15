@@ -1,0 +1,5 @@
+# AgentChainingSample
+
+worker ./Worker/Worker.csproj
+client ./Client/Client.csproj
+shared ./Shared/Shared.csproj

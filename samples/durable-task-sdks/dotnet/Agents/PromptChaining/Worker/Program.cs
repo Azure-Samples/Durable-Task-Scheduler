@@ -1,7 +1,11 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Azure.Identity;
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Worker;
 using Microsoft.DurableTask.Worker.AzureManaged;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,104 +21,56 @@ HostApplicationBuilder builder = Host.CreateApplicationBuilder();
 builder.Logging.AddConsole();
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 
-// Build a logger for startup configuration
-using ILoggerFactory loggerFactory = LoggerFactory.Create(loggingBuilder =>
+// Add configuration to services
+builder.Services.AddSingleton(builder.Configuration);
+
+// Add HttpClient factory for proper management of HTTP connections
+builder.Services.AddHttpClient();
+
+// Register named HttpClient for DALL-E with appropriate timeouts
+builder.Services.AddHttpClient("DallEClient", client =>
 {
-    loggingBuilder.AddConsole();
-    loggingBuilder.SetMinimumLevel(LogLevel.Information);
+    client.Timeout = TimeSpan.FromSeconds(120); // Increase timeout for image generation
 });
-ILogger<Program> logger = loggerFactory.CreateLogger<Program>();
 
-// Get environment variables for endpoint and taskhub with defaults
-string endpoint = Environment.GetEnvironmentVariable("ENDPOINT") ?? "http://localhost:8080";
-string taskHubName = Environment.GetEnvironmentVariable("TASKHUB") ?? "default";
+// Register services and activities with DI
+builder.Services.AddTransient<ResearchAgentService>();
+builder.Services.AddTransient<ContentGenerationAgentService>();
+builder.Services.AddTransient<ImageGenerationAgentService>();
+builder.Services.AddTransient<ResearchTopicActivity>();
+builder.Services.AddTransient<CreateArticleActivity>();
+builder.Services.AddTransient<GenerateImagesActivity>();
+builder.Services.AddTransient<AssembleFinalArticleActivity>();
 
-// Split the endpoint if it contains authentication info
-string hostAddress = endpoint;
-if (endpoint.Contains(';'))
-{
-    hostAddress = endpoint.Split(';')[0];
-}
-
-// Determine if we're connecting to the local emulator
-bool isLocalEmulator = endpoint == "http://localhost:8080";
-
-// Construct a proper connection string with authentication
-string connectionString;
-if (isLocalEmulator)
-{
-    // For local emulator, no authentication needed
-    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=None";
-    logger.LogInformation("Using local emulator with no authentication");
-}
-else
-{
-    // For Azure, use DefaultAzure authentication
-    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=DefaultAzure";
-    logger.LogInformation("Using Azure endpoint with DefaultAzure authentication");
-}
-
-logger.LogInformation("Using endpoint: {Endpoint}", endpoint);
-logger.LogInformation("Using task hub: {TaskHubName}", taskHubName);
-logger.LogInformation("Host address: {HostAddress}", hostAddress);
-logger.LogInformation("Connection string: {ConnectionString}", connectionString);
-logger.LogInformation("This worker implements a news article generator workflow with multiple specialized agents");
-
-// Create loggers for each service and activity
-var researchAgentServiceLogger = loggerFactory.CreateLogger<ResearchAgentService>();
-var contentGenerationAgentServiceLogger = loggerFactory.CreateLogger<ContentGenerationAgentService>();
-var imageGenerationAgentServiceLogger = loggerFactory.CreateLogger<ImageGenerationAgentService>();
-var researchTopicActivityLogger = loggerFactory.CreateLogger<ResearchTopicActivity>();
-var createArticleActivityLogger = loggerFactory.CreateLogger<CreateArticleActivity>();
-var generateImagesActivityLogger = loggerFactory.CreateLogger<GenerateImagesActivity>();
-var assembleFinalArticleActivityLogger = loggerFactory.CreateLogger<AssembleFinalArticleActivity>();
-var orchestrationLogger = loggerFactory.CreateLogger<ContentCreationOrchestration>();
-
-// Create service instances
-var researchAgentService = new ResearchAgentService(researchAgentServiceLogger);
-var contentGenerationAgentService = new ContentGenerationAgentService(contentGenerationAgentServiceLogger);
-var imageGenerationAgentService = new ImageGenerationAgentService(imageGenerationAgentServiceLogger);
-
-// Create activity instances
-var researchTopicActivity = new ResearchTopicActivity(researchAgentService, researchTopicActivityLogger);
-var createArticleActivity = new CreateArticleActivity(contentGenerationAgentService, createArticleActivityLogger);
-var generateImagesActivity = new GenerateImagesActivity(imageGenerationAgentService, generateImagesActivityLogger);
-var assembleFinalArticleActivity = new AssembleFinalArticleActivity(assembleFinalArticleActivityLogger);
-
-// Create orchestration instance
-var contentCreationOrchestration = new ContentCreationOrchestration(orchestrationLogger);
+// Get connection string from configuration with fallback to default local emulator connection
+string connectionString = builder.Configuration["DTS_CONNECTION_STRING"] ?? 
+                         "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
 
 // Configure services
-builder.Services.AddDurableTaskWorker()
-    .AddTasks(registry =>
+// Register tasks with DI
+builder.Services.AddDurableTaskWorker(builder =>
+{
+    builder.AddTasks(registry => 
     {
-        // Register the orchestration
-        registry.AddOrchestratorFunc<ContentCreationRequest, ContentWorkflowResult>(
-            "ContentCreationOrchestration", 
-            (ctx, input) => contentCreationOrchestration.RunAsync(ctx, input));
+        // Register specific orchestration type
+        registry.AddOrchestrator<ContentCreationOrchestration>();
         
-        // Register the activities
-        registry.AddActivityFunc<string, ResearchData>(
-            "ResearchTopicActivity", 
-            (ctx, input) => researchTopicActivity.RunAsync(input));
-            
-        registry.AddActivityFunc<(string topic, ResearchData researchData), string>(
-            "CreateArticleActivity", 
-            (ctx, input) => createArticleActivity.RunAsync(input));
-            
-        registry.AddActivityFunc<(string topic, string articleContent), List<GeneratedImage>>(
-            "GenerateImagesActivity", 
-            (ctx, input) => generateImagesActivity.RunAsync(input));
-            
-        registry.AddActivityFunc<(string articleContent, List<GeneratedImage> images), ArticleResult>(
-            "AssembleFinalArticleActivity", 
-            (ctx, input) => assembleFinalArticleActivity.RunAsync(input));
-    })
-    .UseDurableTaskScheduler(connectionString);
+        // Register specific activity types
+        registry.AddActivity<ResearchTopicActivity>();
+        registry.AddActivity<CreateArticleActivity>();
+        registry.AddActivity<GenerateImagesActivity>();
+        registry.AddActivity<AssembleFinalArticleActivity>();
+    });
+    builder.UseDurableTaskScheduler(connectionString);
+});
 
 // Build the host
 IHost host = builder.Build();
 
+// Get a proper logger from the service provider
+var logger = host.Services.GetRequiredService<ILogger<Program>>();
+logger.LogInformation("Connection string: {ConnectionString}", connectionString);
+logger.LogInformation("This worker implements a news article generator workflow with multiple specialized agents");
 logger.LogInformation("Starting Agent Chaining Sample Worker");
 
 // Start the host

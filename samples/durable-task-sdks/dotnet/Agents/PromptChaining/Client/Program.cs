@@ -2,12 +2,18 @@ using Azure.Identity;
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.AzureManaged;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using AgentChainingSample.Shared.Models;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Diagnostics;
+
+// Configure configuration
+var configuration = new ConfigurationBuilder()
+    .AddEnvironmentVariables()
+    .Build();
 
 // Configure logging
 using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
@@ -19,52 +25,24 @@ using ILoggerFactory loggerFactory = LoggerFactory.Create(builder =>
 ILogger<Program> logger = loggerFactory.CreateLogger<Program>();
 logger.LogInformation("Starting Agent Chaining Sample - Content Creation Client");
 
-// Get environment variables for endpoint and taskhub with defaults
-string endpoint = Environment.GetEnvironmentVariable("ENDPOINT") ?? "http://localhost:8080";
-string taskHubName = Environment.GetEnvironmentVariable("TASKHUB") ?? "default";
-
-// Split the endpoint if it contains authentication info
-string hostAddress = endpoint;
-if (endpoint.Contains(';'))
-{
-    hostAddress = endpoint.Split(';')[0];
-}
+// Get connection string from configuration with fallback to default local emulator connection
+string connectionString = configuration["DTS_CONNECTION_STRING"] ?? 
+                         "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
 
 // Determine if we're connecting to the local emulator
-bool isLocalEmulator = endpoint == "http://localhost:8080";
+bool isLocalEmulator = connectionString.Contains("localhost");
 
 // Enable HTTP/2 cleartext support for emulator
 if (isLocalEmulator)
 {
     AppContext.SetSwitch("System.Net.Http.SocketsHttpHandler.Http2UnencryptedSupport", true);
-}
-
-// Construct a proper connection string with authentication
-string connectionString;
-if (isLocalEmulator)
-{
-    // For local emulator, no authentication needed
-    connectionString = $"Endpoint={hostAddress};TaskHub={taskHubName};Authentication=None";
-    logger.LogInformation("Using local emulator with no authentication");
+    logger.LogInformation("Using local emulator");
 }
 else
 {
-    // For Azure, use DefaultAzure - make sure TaskHub is included
-    if (!endpoint.Contains("TaskHub="))
-    {
-        // Append the TaskHub parameter if it's not already in the connection string
-        connectionString = $"{endpoint};TaskHub={taskHubName}";
-    }
-    else
-    {
-        connectionString = endpoint;
-    }
-    logger.LogInformation("Using Azure endpoint with DefaultAzure");
+    logger.LogInformation("Using Azure endpoint with DefaultAzure authentication");
 }
 
-logger.LogInformation("Using endpoint: {Endpoint}", endpoint);
-logger.LogInformation("Using task hub: {TaskHubName}", taskHubName);
-logger.LogInformation("Host address: {HostAddress}", hostAddress);
 logger.LogInformation("Connection string: {ConnectionString}", connectionString);
 logger.LogInformation("This sample implements a news article generator workflow with multiple specialized agents");
 
@@ -72,7 +50,7 @@ logger.LogInformation("This sample implements a news article generator workflow 
 ServiceCollection services = new ServiceCollection();
 services.AddLogging(builder => builder.AddConsole());
 
-// Register the client
+// Register the client, which can be used to start orchestrations
 services.AddDurableTaskClient(options =>
 {
     options.UseDurableTaskScheduler(connectionString);

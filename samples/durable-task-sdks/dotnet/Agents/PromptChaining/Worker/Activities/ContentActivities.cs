@@ -35,7 +35,8 @@ public class ArticleResult
 /// <summary>
 /// Activity to research a topic using the research agent with web search
 /// </summary>
-public class ResearchTopicActivity
+[DurableTask]
+public class ResearchTopicActivity : TaskActivity<string, ResearchData>
 {
     private readonly ResearchAgentService _researchAgentService;
     private readonly ILogger<ResearchTopicActivity> _logger;
@@ -46,7 +47,7 @@ public class ResearchTopicActivity
         _logger = logger;
     }
 
-    public async Task<ResearchData> RunAsync(string topic)
+    public override async Task<ResearchData> RunAsync(TaskActivityContext context, string topic)
     {
         _logger.LogInformation("Researching topic using web search: {Topic}", topic);
 
@@ -73,7 +74,8 @@ public class ResearchTopicActivity
 /// <summary>
 /// Activity to create article content using the content generation agent with knowledge files
 /// </summary>
-public class CreateArticleActivity
+[DurableTask]
+public class CreateArticleActivity : TaskActivity<(string topic, ResearchData researchData), string>
 {
     private readonly ContentGenerationAgentService _contentGenerationService;
     private readonly ILogger<CreateArticleActivity> _logger;
@@ -84,7 +86,7 @@ public class CreateArticleActivity
         _logger = logger;
     }
 
-    public async Task<string> RunAsync((string topic, ResearchData researchData) input)
+    public override async Task<string> RunAsync(TaskActivityContext context, (string topic, ResearchData researchData) input)
     {
         _logger.LogInformation("Creating article for topic: {Topic}", input.topic);
 
@@ -109,7 +111,8 @@ public class CreateArticleActivity
 /// <summary>
 /// Activity to generate images using the image generation agent with DALL-E
 /// </summary>
-public class GenerateImagesActivity
+[DurableTask]
+public class GenerateImagesActivity : TaskActivity<(string topic, string articleContent), List<GeneratedImage>>
 {
     private readonly ImageGenerationAgentService _imageGenerationService;
     private readonly ILogger<GenerateImagesActivity> _logger;
@@ -120,7 +123,7 @@ public class GenerateImagesActivity
         _logger = logger;
     }
 
-    public async Task<List<GeneratedImage>> RunAsync((string topic, string articleContent) input)
+    public override async Task<List<GeneratedImage>> RunAsync(TaskActivityContext context, (string topic, string articleContent) input)
     {
         _logger.LogInformation("Generating images for article on topic: {Topic}", input.topic);
 
@@ -147,7 +150,8 @@ public class GenerateImagesActivity
 /// <summary>
 /// Activity to assemble the final article with images in HTML format and save to file
 /// </summary>
-public class AssembleFinalArticleActivity
+[DurableTask]
+public class AssembleFinalArticleActivity : TaskActivity<(string articleContent, List<GeneratedImage> images), ArticleResult>
 {
     private readonly ILogger<AssembleFinalArticleActivity> _logger;
     
@@ -156,7 +160,7 @@ public class AssembleFinalArticleActivity
         _logger = logger;
     }
 
-    public async Task<ArticleResult> RunAsync((string articleContent, List<GeneratedImage> images) input)
+    public override async Task<ArticleResult> RunAsync(TaskActivityContext context, (string articleContent, List<GeneratedImage> images) input)
     {
         _logger.LogInformation("Assembling final article with images in HTML format");
         
