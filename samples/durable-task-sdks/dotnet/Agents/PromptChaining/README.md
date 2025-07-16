@@ -1,6 +1,6 @@
 # Agent Chaining Sample with Durable Task SDK for .NET
 
-This sample demonstrates how to implement an AI-powered news article generator workflow using the Durable Task .NET SDK, Azure AI Projects, persistent agents, and DALL-E image generation. The workflow chains multiple specialized agents together to research a topic, generate content, create images, and assemble everything into a final HTML article that's saved to the project's `/tmp/` directory.
+This sample demonstrates how to implement an AI-powered news article generator workflow using the Durable Task .NET SDK, Azure AI Projects, persistent agents, and DALL-E image generation. The workflow chains multiple specialized agents together to research a topic, generate content, create images, and assemble everything into a final HTML article that's saved to the system's temporary directory or a configurable output location.
 
 ## Table of Contents
 - [Overview](#overview)
@@ -23,7 +23,7 @@ This sample implements a news article generator workflow that chains together th
 2. **Content Generation Agent**: Creates article content based on research findings
 3. **Image Generation Agent**: Generates relevant feature and supporting images for the article using DALL-E (with Microsoft Entra ID authentication)
 
-The workflow is coordinated by a durable orchestration that passes outputs from one agent to the next, eventually combining all results into a comprehensive HTML article that's saved to the project's `/tmp/` directory. The sample demonstrates how to use Microsoft Entra ID authentication with DefaultAzureCredential for secure access to Azure AI services and demonstrates agent chaining patterns using the Durable Task SDK.
+The workflow is coordinated by a durable orchestration that passes outputs from one agent to the next, eventually combining all results into a comprehensive HTML article that's saved to a configurable output location (defaulting to the system's temporary directory). The sample demonstrates how to use Microsoft Entra ID authentication with DefaultAzureCredential for secure access to Azure AI services and demonstrates agent chaining patterns using the Durable Task SDK.
 
 ## Architecture
 
@@ -137,7 +137,7 @@ Follow the prompts in the client console to enter a news topic. The system will:
 1. Research the topic using the Research Agent
 2. Generate article content using the Content Generation Agent
 3. Create images using the Image Generation Agent with DALL-E
-4. Assemble and save the final HTML article to the `/tmp/` directory
+4. Assemble and save the final HTML article to the system's temporary directory (in an "article-generator" subfolder)
 
 The client will display the research findings, article content, image details, and the path to the saved HTML file.
 
@@ -149,9 +149,13 @@ This solution follows best practices for .NET applications:
 
 - **Clean Architecture**: Separation of concerns with distinct layers
 - **Dependency Injection**: All services are registered and resolved via the DI container
-- **Modern .NET Patterns**: Uses .NET 8 features like minimal APIs and improved configuration
-- **Central Package Management**: Uses Directory.Packages.props for consistent package versioning
-- **New Solution Format**: Includes both traditional .sln and new .slnx formats
+- **Modern .NET Patterns**: Uses .NET 8 features including:
+  - Primary constructors for concise dependency injection
+  - PascalCase for named tuple elements following .NET conventions
+  - Nullable reference types for better null safety
+  - Auto-registration of tasks using the `[DurableTask]` attribute
+- **Configurable Output**: Uses system temp directory by default with option for custom paths
+- **Clean Code**: Follows consistent coding conventions and practices
 
 ### Worker Project
 
@@ -164,7 +168,7 @@ The Worker project contains:
   - `ResearchTopicActivity`: Researches the topic using the Research Agent
   - `CreateArticleActivity`: Generates article content using the Content Generation Agent
   - `GenerateImagesActivity`: Creates images using the Image Generation Agent and DALL-E
-  - `AssembleFinalArticleActivity`: Assembles the final HTML article with content and images
+  - `AssembleFinalArticleActivity`: Assembles the final HTML article with content and images and saves it to a configurable output location (defaults to system temp directory)
 - **Services**: 
   - `BaseAgentService`: Abstract base class for all agent services with common functionality
   - `ResearchAgentService`: Creates and uses an agent for topic research
@@ -224,7 +228,10 @@ Contains shared models and data structures used by both Worker and Client:
      - Article content with proper formatting
      - Strategically placed images with captions
      - Metadata section with generation details
-   - The HTML file is saved to the project's `/tmp/` directory
+   - The HTML file is saved to a configurable output location:
+     - By default, uses the system's temporary directory
+     - Creates an "article-generator" subfolder to organize output files
+     - Can be customized by providing an alternative output directory to the activity
    - File path and HTML content are returned to the client
 
    ![sample-article](images/sample-article.png)
@@ -263,7 +270,7 @@ PromptChaining/                 # Root directory for the sample
 ├── AgentChainingSample.sln     # Traditional solution file
 ├── AgentChainingSample.slnx    # New slnx format solution file (recommended)
 ├── README.md                   # This readme file
-└── tmp/                        # Directory where HTML files are saved (created at runtime)
+└── NuGet.config                # NuGet package source configuration
 ```
 
 ## Environment Variables
