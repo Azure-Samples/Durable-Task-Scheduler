@@ -36,28 +36,21 @@ public class ArticleResult
 /// Activity to research a topic using the research agent with web search
 /// </summary>
 [DurableTask]
-public class ResearchTopicActivity : TaskActivity<string, ResearchData>
+public class ResearchTopicActivity(ResearchAgentService researchAgentService, ILogger<ResearchTopicActivity> logger) 
+    : TaskActivity<string, ResearchData>
 {
-    private readonly ResearchAgentService _researchAgentService;
-    private readonly ILogger<ResearchTopicActivity> _logger;
-
-    public ResearchTopicActivity(ResearchAgentService researchAgentService, ILogger<ResearchTopicActivity> logger)
-    {
-        _researchAgentService = researchAgentService;
-        _logger = logger;
-    }
 
     public override async Task<ResearchData> RunAsync(TaskActivityContext context, string topic)
     {
-        _logger.LogInformation("Researching topic using web search: {Topic}", topic);
+        logger.LogInformation("Researching topic using web search: {Topic}", topic);
 
         try
         {
-            string researchJson = await _researchAgentService.ResearchTopicAsync(topic);
-            _logger.LogInformation("Successfully collected research data for topic: {Topic}", topic);
+            string researchJson = await researchAgentService.ResearchTopicAsync(topic);
+            logger.LogInformation("Successfully collected research data for topic: {Topic}", topic);
             
             // Clean the JSON response
-            string cleanJson = _researchAgentService.CleanJsonResponse(researchJson);
+            string cleanJson = researchAgentService.CleanJsonResponse(researchJson);
             
             // Parse the JSON into research data
             ResearchData researchData = ResearchData.FromJson(cleanJson);
@@ -65,7 +58,7 @@ public class ResearchTopicActivity : TaskActivity<string, ResearchData>
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error researching topic: {Topic}", topic);
+            logger.LogError(ex, "Error researching topic: {Topic}", topic);
             throw;
         }
     }
@@ -75,34 +68,27 @@ public class ResearchTopicActivity : TaskActivity<string, ResearchData>
 /// Activity to create article content using the content generation agent with knowledge files
 /// </summary>
 [DurableTask]
-public class CreateArticleActivity : TaskActivity<(string topic, ResearchData researchData), string>
+public class CreateArticleActivity(ContentGenerationAgentService contentGenerationService, ILogger<CreateArticleActivity> logger)
+    : TaskActivity<(string Topic, ResearchData ResearchData), string>
 {
-    private readonly ContentGenerationAgentService _contentGenerationService;
-    private readonly ILogger<CreateArticleActivity> _logger;
 
-    public CreateArticleActivity(ContentGenerationAgentService contentGenerationService, ILogger<CreateArticleActivity> logger)
+    public override async Task<string> RunAsync(TaskActivityContext context, (string Topic, ResearchData ResearchData) input)
     {
-        _contentGenerationService = contentGenerationService;
-        _logger = logger;
-    }
-
-    public override async Task<string> RunAsync(TaskActivityContext context, (string topic, ResearchData researchData) input)
-    {
-        _logger.LogInformation("Creating article for topic: {Topic}", input.topic);
+        logger.LogInformation("Creating article for topic: {Topic}", input.Topic);
 
         try
         {
             // Serialize research data back to JSON to pass to agent
-            string researchJson = System.Text.Json.JsonSerializer.Serialize(input.researchData, 
+            string researchJson = System.Text.Json.JsonSerializer.Serialize(input.ResearchData, 
                 new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
             
-            string articleContent = await _contentGenerationService.CreateArticleAsync(input.topic, researchJson);
-            _logger.LogInformation("Successfully created article content of {Length} characters", articleContent.Length);
+            string articleContent = await contentGenerationService.CreateArticleAsync(input.Topic, researchJson);
+            logger.LogInformation("Successfully created article content of {Length} characters", articleContent.Length);
             return articleContent;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating article for topic: {Topic}", input.topic);
+            logger.LogError(ex, "Error creating article for topic: {Topic}", input.Topic);
             throw;
         }
     }
@@ -112,28 +98,21 @@ public class CreateArticleActivity : TaskActivity<(string topic, ResearchData re
 /// Activity to generate images using the image generation agent with DALL-E
 /// </summary>
 [DurableTask]
-public class GenerateImagesActivity : TaskActivity<(string topic, string articleContent), List<GeneratedImage>>
+public class GenerateImagesActivity(ImageGenerationAgentService imageGenerationService, ILogger<GenerateImagesActivity> logger)
+    : TaskActivity<(string Topic, string ArticleContent), List<GeneratedImage>>
 {
-    private readonly ImageGenerationAgentService _imageGenerationService;
-    private readonly ILogger<GenerateImagesActivity> _logger;
 
-    public GenerateImagesActivity(ImageGenerationAgentService imageGenerationService, ILogger<GenerateImagesActivity> logger)
+    public override async Task<List<GeneratedImage>> RunAsync(TaskActivityContext context, (string Topic, string ArticleContent) input)
     {
-        _imageGenerationService = imageGenerationService;
-        _logger = logger;
-    }
-
-    public override async Task<List<GeneratedImage>> RunAsync(TaskActivityContext context, (string topic, string articleContent) input)
-    {
-        _logger.LogInformation("Generating images for article on topic: {Topic}", input.topic);
+        logger.LogInformation("Generating images for article on topic: {Topic}", input.Topic);
 
         try
         {
-            string imagesJson = await _imageGenerationService.GenerateImagesAsync(input.topic, input.articleContent);
-            _logger.LogInformation("Successfully generated image data");
+            string imagesJson = await imageGenerationService.GenerateImagesAsync(input.Topic, input.ArticleContent);
+            logger.LogInformation("Successfully generated image data");
             
             // Clean the JSON response
-            string cleanJson = _imageGenerationService.CleanJsonResponse(imagesJson);
+            string cleanJson = imageGenerationService.CleanJsonResponse(imagesJson);
             
             // Parse the JSON into generated images
             List<GeneratedImage> images = GeneratedImage.FromJson(cleanJson);
@@ -141,7 +120,7 @@ public class GenerateImagesActivity : TaskActivity<(string topic, string article
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error generating images for topic: {Topic}", input.topic);
+            logger.LogError(ex, "Error generating images for topic: {Topic}", input.Topic);
             throw;
         }
     }
@@ -151,23 +130,20 @@ public class GenerateImagesActivity : TaskActivity<(string topic, string article
 /// Activity to assemble the final article with images in HTML format and save to file
 /// </summary>
 [DurableTask]
-public class AssembleFinalArticleActivity : TaskActivity<(string articleContent, List<GeneratedImage> images), ArticleResult>
+public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> logger, string? outputDirectory = null)
+    : TaskActivity<(string ArticleContent, List<GeneratedImage> Images), ArticleResult>
 {
-    private readonly ILogger<AssembleFinalArticleActivity> _logger;
-    
-    public AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> logger)
-    {
-        _logger = logger;
-    }
+    // Use system temp directory by default, or the provided directory if specified
+    private readonly string _outputDirectory = outputDirectory ?? Path.GetTempPath();
 
-    public override async Task<ArticleResult> RunAsync(TaskActivityContext context, (string articleContent, List<GeneratedImage> images) input)
+    public override async Task<ArticleResult> RunAsync(TaskActivityContext context, (string ArticleContent, List<GeneratedImage> Images) input)
     {
-        _logger.LogInformation("Assembling final article with images in HTML format");
+        logger.LogInformation("Assembling final article with images in HTML format");
         
         try
         {
             // Use the original HTML content
-            string htmlContent = input.articleContent;
+            string htmlContent = input.ArticleContent;
             
             // Get existing title if any
             string title = ExtractTextBetweenTags(htmlContent, "h1");
@@ -206,9 +182,9 @@ public class AssembleFinalArticleActivity : TaskActivity<(string articleContent,
                 htmlBuilder.AppendLine(paragraphs[0]);
                 
                 // Add first image after the first paragraph
-                if (input.images.Count > 0)
+                if (input.Images.Count > 0)
                 {
-                    var image = input.images[0];
+                    var image = input.Images[0];
                     htmlBuilder.AppendLine("<div class=\"image-container\">");
                     htmlBuilder.AppendLine($"    <img src=\"{image.ImageUrl}\" alt=\"{image.Description}\">");
                     htmlBuilder.AppendLine($"    <div class=\"caption\">{image.Caption}</div>");
@@ -222,9 +198,9 @@ public class AssembleFinalArticleActivity : TaskActivity<(string articleContent,
                 }
                 
                 // Add second image before the last paragraph
-                if (input.images.Count > 1)
+                if (input.Images.Count > 1)
                 {
-                    var image = input.images[1];
+                    var image = input.Images[1];
                     htmlBuilder.AppendLine("<div class=\"image-container\">");
                     htmlBuilder.AppendLine($"    <img src=\"{image.ImageUrl}\" alt=\"{image.Description}\">");
                     htmlBuilder.AppendLine($"    <div class=\"caption\">{image.Caption}</div>");
@@ -238,9 +214,9 @@ public class AssembleFinalArticleActivity : TaskActivity<(string articleContent,
                 }
                 
                 // Add any remaining images
-                for (int i = 2; i < input.images.Count; i++)
+                for (int i = 2; i < input.Images.Count; i++)
                 {
-                    var image = input.images[i];
+                    var image = input.Images[i];
                     htmlBuilder.AppendLine("<div class=\"image-container\">");
                     htmlBuilder.AppendLine($"    <img src=\"{image.ImageUrl}\" alt=\"{image.Description}\">");
                     htmlBuilder.AppendLine($"    <div class=\"caption\">{image.Caption}</div>");
@@ -253,7 +229,7 @@ public class AssembleFinalArticleActivity : TaskActivity<(string articleContent,
                 htmlBuilder.AppendLine(htmlContent);
                 
                 // Add images at the end
-                foreach (var image in input.images)
+                foreach (var image in input.Images)
                 {
                     htmlBuilder.AppendLine("<div class=\"image-container\">");
                     htmlBuilder.AppendLine($"    <img src=\"{image.ImageUrl}\" alt=\"{image.Description}\">");
@@ -279,22 +255,21 @@ public class AssembleFinalArticleActivity : TaskActivity<(string articleContent,
             string timestamp = DateTime.UtcNow.ToString("yyyyMMddHHmmss");
             string filename = $"{sanitizedTitle}-{timestamp}.html";
             
-            // Create path to project's tmp directory
-            string projectRoot = Path.GetFullPath(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "../../../../"));
-            string tmpDirectory = Path.Combine(projectRoot, "tmp");
+            // Create subdirectory for this app's output files
+            string outputDirectory = Path.Combine(_outputDirectory, "article-generator");
             
-            // Ensure tmp directory exists
-            Directory.CreateDirectory(tmpDirectory);
+            // Ensure output directory exists
+            Directory.CreateDirectory(outputDirectory);
             
-            // Save the HTML content to the tmp directory
-            string localFilePath = Path.Combine(tmpDirectory, filename);
+            // Save the HTML content to the output directory
+            string localFilePath = Path.Combine(outputDirectory, filename);
             await File.WriteAllTextAsync(localFilePath, finalHtml);
             
-            _logger.LogInformation("HTML article saved to file: {FilePath}", localFilePath);
+            logger.LogInformation("HTML article saved to file: {FilePath}", localFilePath);
             
-            _logger.LogInformation(
+            logger.LogInformation(
                 "Successfully assembled final article in HTML format of {Length} characters with {ImageCount} images", 
-                finalHtml.Length, input.images.Count);
+                finalHtml.Length, input.Images.Count);
                 
             return new ArticleResult
             {
@@ -305,7 +280,7 @@ public class AssembleFinalArticleActivity : TaskActivity<(string articleContent,
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error assembling final article");
+            logger.LogError(ex, "Error assembling final article");
             throw;
         }
     }

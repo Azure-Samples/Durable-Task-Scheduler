@@ -33,14 +33,13 @@ builder.Services.AddHttpClient("DallEClient", client =>
     client.Timeout = TimeSpan.FromSeconds(120); // Increase timeout for image generation
 });
 
-// Register services and activities with DI
+// Register services with DI
 builder.Services.AddTransient<ResearchAgentService>();
 builder.Services.AddTransient<ContentGenerationAgentService>();
 builder.Services.AddTransient<ImageGenerationAgentService>();
-builder.Services.AddTransient<ResearchTopicActivity>();
-builder.Services.AddTransient<CreateArticleActivity>();
-builder.Services.AddTransient<GenerateImagesActivity>();
-builder.Services.AddTransient<AssembleFinalArticleActivity>();
+
+// Activities with [DurableTask] attribute are auto-registered via AddAllGeneratedTasks()
+// No need to manually register them here
 
 // Get connection string from configuration with fallback to default local emulator connection
 string connectionString = builder.Configuration["DTS_CONNECTION_STRING"] ?? 
@@ -52,14 +51,8 @@ builder.Services.AddDurableTaskWorker(builder =>
 {
     builder.AddTasks(registry => 
     {
-        // Register specific orchestration type
-        registry.AddOrchestrator<ContentCreationOrchestration>();
-        
-        // Register specific activity types
-        registry.AddActivity<ResearchTopicActivity>();
-        registry.AddActivity<CreateArticleActivity>();
-        registry.AddActivity<GenerateImagesActivity>();
-        registry.AddActivity<AssembleFinalArticleActivity>();
+        // Auto-register all tasks marked with [DurableTask] attribute
+        registry.AddAllGeneratedTasks();
     });
     builder.UseDurableTaskScheduler(connectionString);
 });

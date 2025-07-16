@@ -1,5 +1,5 @@
-# AgentChainingSample
-
-worker ./Worker/Worker.csproj
-client ./Client/Client.csproj
-shared ./Shared/Shared.csproj
+<Solution>
+  <Project Path="Client/Client.csproj" />
+  <Project Path="Shared/Shared.csproj" />
+  <Project Path="Worker/Worker.csproj" />
+</Solution>
