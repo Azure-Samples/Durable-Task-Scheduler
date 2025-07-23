@@ -8,13 +8,7 @@ namespace AgentChainingSample.Services;
 /// </summary>
 public class ResearchAgentService : BaseAgentService
 {
-    private const string AgentName = "ResearchAgent";
     private const string EndpointConfigKey = "AGENT_CONNECTION_STRING";
-    private readonly string _systemPrompt = @"You are an expert research agent specializing in news topics.
-Your task is to analyze topics, identify key facts, and organize information in a journalistic format.
-Focus on accuracy, thoroughness, and objectivity when researching any topic.";
-    
-    private bool _initialized = false;
 
     public ResearchAgentService(ILogger<ResearchAgentService> logger, IConfiguration configuration) 
         : base(configuration[EndpointConfigKey] ?? 
@@ -22,18 +16,11 @@ Focus on accuracy, thoroughness, and objectivity when researching any topic.";
               logger,
               configuration)
     {
-    }
-    
-    /// <summary>
-    /// Initializes the agent if needed
-    /// </summary>
-    private async Task InitializeAsync()
-    {
-        if (!_initialized)
-        {
-            await EnsureAgentExistsAsync(AgentName, _systemPrompt);
-            _initialized = true;
-        }
+        // Set required properties for initialization
+        this.AgentName = "ResearchAgent";
+        this._systemPrompt = @"You are an expert research agent specializing in news topics.
+Your task is to analyze topics, identify key facts, and organize information in a journalistic format.
+Focus on accuracy, thoroughness, and objectivity when researching any topic.";
     }
     
     /// <summary>
@@ -43,7 +30,6 @@ Focus on accuracy, thoroughness, and objectivity when researching any topic.";
     /// <returns>Research data in JSON format</returns>
     public async Task<string> ResearchTopicAsync(string topic)
     {
-        await InitializeAsync();
         
         string prompt = $@"Research the following news topic: '{topic}'.
 

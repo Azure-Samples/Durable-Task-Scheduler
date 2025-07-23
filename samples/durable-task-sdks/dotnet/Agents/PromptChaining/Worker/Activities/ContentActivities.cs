@@ -1,6 +1,7 @@
 using AgentChainingSample.Shared.Models;
 using AgentChainingSample.Services;
 using Microsoft.DurableTask;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
@@ -130,11 +131,11 @@ public class GenerateImagesActivity(ImageGenerationAgentService imageGenerationS
 /// Activity to assemble the final article with images in HTML format and save to file
 /// </summary>
 [DurableTask]
-public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> logger, string? outputDirectory = null)
+public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> logger, IConfiguration configuration)
     : TaskActivity<(string ArticleContent, List<GeneratedImage> Images), ArticleResult>
 {
-    // Use system temp directory by default, or the provided directory if specified
-    private readonly string _outputDirectory = outputDirectory ?? Path.GetTempPath();
+    // Use system temp directory by default, or the configured directory if specified
+    private readonly string _outputDirectory = configuration["OutputDirectory"] ?? Path.GetTempPath();
 
     public override async Task<ArticleResult> RunAsync(TaskActivityContext context, (string ArticleContent, List<GeneratedImage> Images) input)
     {

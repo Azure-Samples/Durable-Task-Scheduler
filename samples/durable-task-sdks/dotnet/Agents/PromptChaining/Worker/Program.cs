@@ -33,10 +33,12 @@ builder.Services.AddHttpClient("DallEClient", client =>
     client.Timeout = TimeSpan.FromSeconds(120); // Increase timeout for image generation
 });
 
-// Register services with DI
-builder.Services.AddTransient<ResearchAgentService>();
-builder.Services.AddTransient<ContentGenerationAgentService>();
-builder.Services.AddTransient<ImageGenerationAgentService>();
+// Register services with DI as singletons
+// These services perform initialization work that doesn't need to be repeated for each activity
+// Thread safety for initialization is handled by the BaseAgentService implementation
+builder.Services.AddSingleton<ResearchAgentService>();
+builder.Services.AddSingleton<ContentGenerationAgentService>();
+builder.Services.AddSingleton<ImageGenerationAgentService>();
 
 // Activities with [DurableTask] attribute are auto-registered via AddAllGeneratedTasks()
 // No need to manually register them here

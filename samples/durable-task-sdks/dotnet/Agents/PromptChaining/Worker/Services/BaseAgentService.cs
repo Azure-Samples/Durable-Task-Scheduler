@@ -11,40 +11,9 @@ using System.Text;
 namespace AgentChainingSample.Services;
 
 /// <summary>
-/// Interface for agent services
-/// </summary>
-public interface IAgentService
-{
-    /// <summary>
-    /// Gets the agent ID used by this service
-    /// </summary>
-    string AgentId { get; set; }
-
-    /// <summary>
-    /// Gets the endpoint URI for this agent service
-    /// </summary>
-    string Endpoint { get; }
-    
-    /// <summary>
-    /// Ensures the agent exists, creating it if necessary
-    /// </summary>
-    Task<string> EnsureAgentExistsAsync(string agentName, string systemPrompt);
-
-    /// <summary>
-    /// Gets a response from the agent
-    /// </summary>
-    Task<string> GetResponseAsync(string prompt);
-
-    /// <summary>
-    /// Cleans JSON response from markdown formatting
-    /// </summary>
-    string CleanJsonResponse(string response);
-}
-
-/// <summary>
 /// Base implementation for agent services
 /// </summary>
-public abstract class BaseAgentService : IAgentService
+public abstract class BaseAgentService
 {
     protected readonly JsonSerializerOptions JsonOptions;
     protected readonly ILogger Logger;
@@ -59,9 +28,15 @@ public abstract class BaseAgentService : IAgentService
     
     // Deployment name from configuration or fallback to default
     protected readonly string DeploymentName;
+    
+    // Initialization control
+    protected bool _initialized = false;
+    protected readonly object _initializationLock = new object();
+    protected string _systemPrompt = string.Empty;
 
     public string AgentId { get; set; }
     public string Endpoint { get; }
+    public virtual string AgentName { get; protected set; } = string.Empty;
 
     protected BaseAgentService(string endpointUrl, ILogger<BaseAgentService> logger, IConfiguration configuration)
     {
@@ -96,8 +71,147 @@ public abstract class BaseAgentService : IAgentService
         };
     }
     
+    /// <summary>
+    /// Initializes the agent if needed, ensuring it's created with the system prompt
+    /// Thread-safe implementation for concurrent access
+    /// </summary>
+    protected async Task InitializeAsync()
+    {
+        // First fast check without a lock (optimistic)
+        if (_initialized)
+            return;
+            
+        bool shouldInitialize = false;
+            
+        // Use lock only to check/update the flag
+        lock (_initializationLock)
+        {
+            // Second check inside the lock (pessimistic)
+            if (!_initialized)
+            {
+                // Mark that this thread will do the initialization
+                shouldInitialize = true;
+            }
+        }
+        
+        // If we need to initialize, do it outside the lock to avoid blocking other threads
+        if (shouldInitialize)
+        {
+            try
+            {
+                // Validate required properties
+                if (string.IsNullOrEmpty(AgentName))
+                {
+                    throw new InvalidOperationException("Agent name not set. Derived classes must set AgentName.");
+                }
+                
+                if (string.IsNullOrEmpty(_systemPrompt))
+                {
+                    throw new InvalidOperationException("System prompt not set. Derived classes must set _systemPrompt.");
+                }
+                
+                // Do the actual initialization work
+                await EnsureAgentExistsAsync(AgentName, _systemPrompt);
+                
+                // Only after successful initialization, update the flag within a lock
+                lock (_initializationLock)
+                {
+                    _initialized = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to initialize agent {AgentName}. Error: {Message}", AgentName, ex.Message);
+                throw; // Re-throw to propagate the error
+            }
+        }
+    }
 
-    
+    /// <summary>
+    /// Validates and normalizes JSON responses from agents
+    /// </summary>
+    /// <param name="response">The JSON response from an agent</param>
+    /// <returns>Validated JSON string</returns>
+    public string CleanJsonResponse(string response)
+    {
+        if (string.IsNullOrEmpty(response))
+        {
+            Logger.LogWarning("[JSON-PARSER] Response was null or empty");
+            return "{}";
+        }
+
+        Logger.LogInformation($"[JSON-PARSER] Processing response ({response.Length} chars)");
+
+        // Trim any whitespace
+        response = response.Trim();
+
+        // Simple case: Check if response is already valid JSON
+        try
+        {
+            using (JsonDocument.Parse(response))
+            {
+                Logger.LogInformation("[JSON-PARSER] Response is valid JSON");
+                return response;
+            }
+        }
+        catch (JsonException)
+        {
+            Logger.LogInformation("[JSON-PARSER] Initial JSON validation failed, attempting to extract JSON");
+        }
+
+        // Handle markdown code blocks if present
+        if (response.Contains("```"))
+        {
+            // Find start and end of code block
+            int codeBlockStart = response.IndexOf("```");
+            int codeBlockEnd = response.LastIndexOf("```");
+
+            if (codeBlockStart != codeBlockEnd) // Make sure we found both opening and closing markers
+            {
+                // Extract content between code blocks
+                int startIndex = response.IndexOf('\n', codeBlockStart) + 1;
+                int endIndex = codeBlockEnd;
+                
+                // Make sure we have valid start and end indices
+                if (startIndex > 0 && endIndex > startIndex)
+                {
+                    string codeContent = response.Substring(startIndex, endIndex - startIndex).Trim();
+                    Logger.LogInformation("[JSON-PARSER] Extracted content from code block");
+                    
+                    // Remove any language specifier like ```json
+                    if (codeContent.StartsWith("json", StringComparison.OrdinalIgnoreCase))
+                    {
+                        codeContent = codeContent.Substring(4).Trim();
+                    }
+                    
+                    response = codeContent;
+                }
+            }
+        }
+
+        // Check if response is wrapped in backticks
+        if (response.StartsWith("`") && response.EndsWith("`"))
+        {
+            response = response.Substring(1, response.Length - 2).Trim();
+            Logger.LogInformation("[JSON-PARSER] Removed backticks");
+        }
+
+        // Final validation
+        try
+        {
+            using (JsonDocument.Parse(response))
+            {
+                Logger.LogInformation("[JSON-PARSER] Successfully validated JSON");
+                return response;
+            }
+        }
+        catch (JsonException ex)
+        {
+            Logger.LogError($"[JSON-PARSER] Failed to parse JSON: {ex.Message}");
+            return "{}"; // Return empty JSON object as fallback
+        }
+    }
+
     /// <summary>
     /// Ensures the agent exists, creating it if necessary
     /// </summary>
@@ -192,93 +306,10 @@ public abstract class BaseAgentService : IAgentService
         }
     }
 
-    /// <summary>
-    /// Validates and normalizes JSON responses from agents
-    /// </summary>
-    /// <param name="response">The JSON response from an agent</param>
-    /// <returns>Validated JSON string</returns>
-    public string CleanJsonResponse(string response)
-    {
-        if (string.IsNullOrEmpty(response))
-        {
-            Logger.LogWarning("[JSON-PARSER] Response was null or empty");
-            return "{}";
-        }
-
-        Logger.LogInformation($"[JSON-PARSER] Processing response ({response.Length} chars)");
-
-        // Trim any whitespace
-        response = response.Trim();
-
-        // Simple case: Check if response is already valid JSON
-        try
-        {
-            using (JsonDocument.Parse(response))
-            {
-                Logger.LogInformation("[JSON-PARSER] Response is valid JSON");
-                return response;
-            }
-        }
-        catch (JsonException)
-        {
-            Logger.LogInformation("[JSON-PARSER] Initial JSON validation failed, attempting to extract JSON");
-        }
-
-        // Handle markdown code blocks if present
-        if (response.Contains("```"))
-        {
-            // Find start and end of code block
-            int codeBlockStart = response.IndexOf("```");
-            int codeBlockEnd = response.LastIndexOf("```");
-
-            if (codeBlockStart != codeBlockEnd) // Make sure we found both opening and closing markers
-            {
-                // Extract content between code blocks
-                int startIndex = response.IndexOf('\n', codeBlockStart) + 1;
-                int endIndex = codeBlockEnd;
-                
-                // Make sure we have valid start and end indices
-                if (startIndex > 0 && endIndex > startIndex)
-                {
-                    string codeContent = response.Substring(startIndex, endIndex - startIndex).Trim();
-                    Logger.LogInformation("[JSON-PARSER] Extracted content from code block");
-                    
-                    // Remove any language specifier like ```json
-                    if (codeContent.StartsWith("json", StringComparison.OrdinalIgnoreCase))
-                    {
-                        codeContent = codeContent.Substring(4).Trim();
-                    }
-                    
-                    response = codeContent;
-                }
-            }
-        }
-
-        // Check if response is wrapped in backticks
-        if (response.StartsWith("`") && response.EndsWith("`"))
-        {
-            response = response.Substring(1, response.Length - 2).Trim();
-            Logger.LogInformation("[JSON-PARSER] Removed backticks");
-        }
-
-        // Final validation
-        try
-        {
-            using (JsonDocument.Parse(response))
-            {
-                Logger.LogInformation("[JSON-PARSER] Successfully validated JSON");
-                return response;
-            }
-        }
-        catch (JsonException ex)
-        {
-            Logger.LogError($"[JSON-PARSER] Failed to parse JSON: {ex.Message}");
-            return "{}"; // Return empty JSON object as fallback
-        }
-    }
-
     public async Task<string> GetResponseAsync(string prompt)
     {
+        // Ensure agent is initialized before processing any requests
+        await InitializeAsync();
         
         int retryCount = 0;
         int retryDelay = InitialRetryDelayMs;
@@ -426,8 +457,7 @@ public abstract class BaseAgentService : IAgentService
     {
         // Calculate exponential backoff with jitter
         int maxJitterMs = retryDelay / 4;
-        Random random = new Random();
-        int jitter = random.Next(-maxJitterMs, maxJitterMs);
+        int jitter = Random.Shared.Next(-maxJitterMs, maxJitterMs);
         int actualDelay = retryDelay + jitter;
 
         Logger.LogInformation($"Rate limit hit for agent {AgentId}. Retrying in {actualDelay}ms (attempt {retryCount} of {MaxRetryAttempts}). Error: {errorMessage}");
@@ -438,6 +468,4 @@ public abstract class BaseAgentService : IAgentService
         // Double the delay for the next retry (exponential backoff)
         return retryDelay * 2;
     }
-
-
 }

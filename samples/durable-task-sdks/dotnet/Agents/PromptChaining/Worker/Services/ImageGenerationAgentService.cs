@@ -14,15 +14,9 @@ namespace AgentChainingSample.Services;
 /// </summary>
 public class ImageGenerationAgentService : BaseAgentService
 {
-    private const string AgentName = "ImageGenerationAgent";
     private const string EndpointConfigKey = "AGENT_CONNECTION_STRING";
     private const string DallEEndpointKey = "DALLE_ENDPOINT";
-    private readonly string _systemPrompt = @"You are an expert image specialist for news articles.
-Create detailed descriptions of images that would complement news stories.
-Focus on photorealistic, journalistically appropriate imagery and compositions.
-Provide descriptive captions that enhance understanding of the article content.";
     
-    private bool _initialized = false;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly string? _dallEEndpoint;
     private readonly bool _dalleEnabled;
@@ -37,6 +31,13 @@ Provide descriptive captions that enhance understanding of the article content."
               logger,
               configuration)
     {
+        // Set required properties for initialization
+        this.AgentName = "ImageGenerationAgent";
+        this._systemPrompt = @"You are an expert image specialist for news articles.
+Create detailed descriptions of images that would complement news stories.
+Focus on photorealistic, journalistically appropriate imagery and compositions.
+Provide descriptive captions that enhance understanding of the article content.";
+    
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         
         // Check if DALL-E endpoint is set in configuration
@@ -81,18 +82,6 @@ Provide descriptive captions that enhance understanding of the article content."
     }
     
     /// <summary>
-    /// Initializes the agent if needed
-    /// </summary>
-    private async Task InitializeAsync()
-    {
-        if (!_initialized)
-        {
-            await EnsureAgentExistsAsync(AgentName, _systemPrompt);
-            _initialized = true;
-        }
-    }
-    
-    /// <summary>
     /// Gets image descriptions from the agent and then generates actual images using DALL-E
     /// </summary>
     /// <param name="topic">The news topic</param>
@@ -100,7 +89,6 @@ Provide descriptive captions that enhance understanding of the article content."
     /// <returns>Generated image details in JSON format</returns>
     public async Task<string> GenerateImagesAsync(string topic, string articleText)
     {
-        await InitializeAsync();
         
         // Step 1: Get image descriptions from the agent
         string prompt = $@"Create descriptions for two compelling images to accompany a news article about '{topic}'.

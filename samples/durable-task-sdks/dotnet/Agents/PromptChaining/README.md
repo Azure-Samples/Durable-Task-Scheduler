@@ -141,6 +141,15 @@ Follow the prompts in the client console to enter a news topic. The system will:
 
 The client will display the research findings, article content, image details, and the path to the saved HTML file.
 
+### Viewing the Generated Article
+
+When the workflow completes, the client will output the full path to the generated HTML file, which will look something like:
+- Windows: `C:\Users\<username>\AppData\Local\Temp\article-generator\article-title-20250723154612.html`
+- macOS: `/var/folders/xx/xxxxxx/T/article-generator/article-title-20250723154612.html`
+- Linux: `/tmp/article-generator/article-title-20250723154612.html`
+
+Open this file in any web browser to view the complete article with text and images.
+
 ## Implementation Details
 
 ### Solution Structure
@@ -171,6 +180,8 @@ The Worker project contains:
   - `AssembleFinalArticleActivity`: Assembles the final HTML article with content and images and saves it to a configurable output location (defaults to system temp directory)
 - **Services**: 
   - `BaseAgentService`: Abstract base class for all agent services with common functionality
+    - Thread-safe initialization using double-check locking pattern
+    - Common methods for agent creation, management, and response handling
   - `ResearchAgentService`: Creates and uses an agent for topic research
   - `ContentGenerationAgentService`: Creates and uses an agent for article generation
   - `ImageGenerationAgentService`: Creates agent for image descriptions and integrates with DALL-E API
@@ -231,8 +242,13 @@ Contains shared models and data structures used by both Worker and Client:
    - The HTML file is saved to a configurable output location:
      - By default, uses the system's temporary directory
      - Creates an "article-generator" subfolder to organize output files
-     - Can be customized by providing an alternative output directory to the activity
+     - Can be customized by setting the "OutputDirectory" in configuration
    - File path and HTML content are returned to the client
+   - **Viewing the Generated Article**:
+     - The client application displays the full file path to the generated HTML file
+     - Open the file in any web browser to view the complete article with images
+     - On Windows, you can find the file in a path like: `C:\Users\<username>\AppData\Local\Temp\article-generator\`
+     - On macOS/Linux, look in: `/tmp/article-generator/` or `/var/folders/.../T/article-generator/`
 
    ![sample-article](images/sample-article.png)
 
@@ -253,11 +269,10 @@ PromptChaining/                 # Root directory for the sample
 │   ├── Orchestrations/        # Orchestration implementations
 │   │   └── ContentCreationOrchestration.cs
 │   ├── Services/              # Agent service implementations
-│   │   ├── IAgentService.cs         # Base interface and implementation
+│   │   ├── BaseAgentService.cs      # Base abstract class for agent services
 │   │   ├── ResearchAgentService.cs  # Research agent implementation
 │   │   ├── ContentGenerationAgentService.cs  # Content generation implementation
 │   │   ├── ImageGenerationAgentService.cs    # Image generation implementation
-│   │   ├── AgentServices.cs         # Contains common code
 │   │   └── Models/                  # Service models
 │   │       └── DalleModels.cs       # DALL-E API response models
 │   ├── Program.cs             # Worker setup and configuration
@@ -273,9 +288,9 @@ PromptChaining/                 # Root directory for the sample
 └── NuGet.config                # NuGet package source configuration
 ```
 
-## Environment Variables
+## Environment Variables and Configuration
 
-The sample uses the following environment variables:
+The sample uses the following environment variables and configuration values:
 
 - `AGENT_CONNECTION_STRING`: (Required) The endpoint for your Azure AI Projects service
   - Format: `https://<resource-name>.services.ai.azure.com/api/projects/<project-id>`
@@ -285,6 +300,8 @@ The sample uses the following environment variables:
   - Format: `https://<resource-name>.openai.azure.com/openai/deployments/dall-e-3/images/generations?api-version=2024-02-01`
   - This is different from the AGENT_CONNECTION_STRING and points to your Azure OpenAI resource
 - `DTS_CONNECTION_STRING`: (Optional) The complete connection string to the Durable Task Scheduler service (defaults to `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`)
+- `OutputDirectory`: (Optional) Configuration value to specify where generated HTML files should be saved (defaults to system's temporary directory)
+  - Can be set in appsettings.json or as an environment variable
 
 Note: 
 - If the DALL-E endpoint is not provided, the application will use placeholder images instead of generating real ones

@@ -8,13 +8,7 @@ namespace AgentChainingSample.Services;
 /// </summary>
 public class ContentGenerationAgentService : BaseAgentService
 {
-    private const string AgentName = "ContentGenerationAgent";
     private const string EndpointConfigKey = "AGENT_CONNECTION_STRING";
-    private readonly string _systemPrompt = @"You are an expert news article writer with knowledge of journalistic standards.
-Write professional articles with compelling headlines, strong leads, and proper sourcing.
-Follow AP style guidelines, inverted pyramid structure, and maintain journalistic integrity.";
-    
-    private bool _initialized = false;
 
     public ContentGenerationAgentService(ILogger<ContentGenerationAgentService> logger, IConfiguration configuration) 
         : base(configuration[EndpointConfigKey] ?? 
@@ -22,18 +16,11 @@ Follow AP style guidelines, inverted pyramid structure, and maintain journalisti
               logger,
               configuration)
     {
-    }
-    
-    /// <summary>
-    /// Initializes the agent if needed
-    /// </summary>
-    private async Task InitializeAsync()
-    {
-        if (!_initialized)
-        {
-            await EnsureAgentExistsAsync(AgentName, _systemPrompt);
-            _initialized = true;
-        }
+        // Set required properties for initialization
+        this.AgentName = "ContentGenerationAgent";
+        this._systemPrompt = @"You are an expert news article writer with knowledge of journalistic standards.
+Write professional articles with compelling headlines, strong leads, and proper sourcing.
+Follow AP style guidelines, inverted pyramid structure, and maintain journalistic integrity.";
     }
     
     /// <summary>
@@ -44,7 +31,6 @@ Follow AP style guidelines, inverted pyramid structure, and maintain journalisti
     /// <returns>Complete news article</returns>
     public async Task<string> CreateArticleAsync(string topic, string researchJson)
     {
-        await InitializeAsync();
         
         string prompt = $@"Write a professional news article about '{topic}' using the following research data:
 
