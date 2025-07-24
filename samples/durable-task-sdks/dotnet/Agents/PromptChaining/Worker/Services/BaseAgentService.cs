@@ -7,6 +7,7 @@ using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using System.Text;
+using System.Threading;
 
 namespace AgentChainingSample.Services;
 
@@ -31,7 +32,7 @@ public abstract class BaseAgentService
     
     // Initialization control
     protected bool _initialized = false;
-    protected readonly object _initializationLock = new object();
+    protected readonly SemaphoreSlim _initializationSemaphore = new SemaphoreSlim(1, 1);
     protected string _systemPrompt = string.Empty;
 
     public string AgentId { get; set; }
@@ -73,57 +74,52 @@ public abstract class BaseAgentService
     
     /// <summary>
     /// Initializes the agent if needed, ensuring it's created with the system prompt
-    /// Thread-safe implementation for concurrent access
+    /// Thread-safe implementation for concurrent access that makes all threads wait for initialization
     /// </summary>
     protected async Task InitializeAsync()
     {
-        // First fast check without a lock (optimistic)
+        // Fast check without taking the semaphore (optimistic)
         if (_initialized)
             return;
-            
-        bool shouldInitialize = false;
-            
-        // Use lock only to check/update the flag
-        lock (_initializationLock)
-        {
-            // Second check inside the lock (pessimistic)
-            if (!_initialized)
-            {
-                // Mark that this thread will do the initialization
-                shouldInitialize = true;
-            }
-        }
         
-        // If we need to initialize, do it outside the lock to avoid blocking other threads
-        if (shouldInitialize)
+        // Acquire the semaphore - this ensures only one thread performs initialization
+        // while all other threads wait for it to complete
+        await _initializationSemaphore.WaitAsync();
+        
+        try
         {
-            try
+            // Check again in case another thread completed initialization while we were waiting
+            if (_initialized)
+                return;
+                
+            // Validate required properties
+            if (string.IsNullOrEmpty(AgentName))
             {
-                // Validate required properties
-                if (string.IsNullOrEmpty(AgentName))
-                {
-                    throw new InvalidOperationException("Agent name not set. Derived classes must set AgentName.");
-                }
-                
-                if (string.IsNullOrEmpty(_systemPrompt))
-                {
-                    throw new InvalidOperationException("System prompt not set. Derived classes must set _systemPrompt.");
-                }
-                
-                // Do the actual initialization work
-                await EnsureAgentExistsAsync(AgentName, _systemPrompt);
-                
-                // Only after successful initialization, update the flag within a lock
-                lock (_initializationLock)
-                {
-                    _initialized = true;
-                }
+                throw new InvalidOperationException("Agent name not set. Derived classes must set AgentName.");
             }
-            catch (Exception ex)
+            
+            if (string.IsNullOrEmpty(_systemPrompt))
             {
-                Logger.LogError(ex, "Failed to initialize agent {AgentName}. Error: {Message}", AgentName, ex.Message);
-                throw; // Re-throw to propagate the error
+                throw new InvalidOperationException("System prompt not set. Derived classes must set _systemPrompt.");
             }
+            
+            // Do the actual initialization work
+            await EnsureAgentExistsAsync(AgentName, _systemPrompt);
+            
+            // Mark initialization as complete
+            _initialized = true;
+            
+            Logger.LogInformation("Agent {AgentName} successfully initialized", AgentName);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize agent {AgentName}. Error: {Message}", AgentName, ex.Message);
+            throw; // Re-throw to propagate the error
+        }
+        finally
+        {
+            // Always release the semaphore, even if an exception occurred
+            _initializationSemaphore.Release();
         }
     }
 
