@@ -43,6 +43,7 @@ public class ContentCreationOrchestration : TaskOrchestrator<ContentCreationRequ
         var articleResult = await context.CallActivityAsync<ArticleResult>(
             nameof(AssembleFinalArticleActivity), 
 <<<<<<< HEAD
+<<<<<<< HEAD
             (articleContent, generatedImages, context.InstanceId));
         
         logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
@@ -54,6 +55,13 @@ public class ContentCreationOrchestration : TaskOrchestrator<ContentCreationRequ
         logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
         logger.LogInformation("Article saved to file: {FilePath}", articleResult.FilePath);
 >>>>>>> 21471c1 (Address PR feedback)
+=======
+            (articleContent, generatedImages, context.InstanceId));
+        
+        logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
+        logger.LogInformation("Article saved to file: {FilePath}", articleResult.FilePath);
+        logger.LogInformation("Article endpoint: {Endpoint}", articleResult.ArticleEndpoint);
+>>>>>>> c34d9d0 (Added Bicep)
 
         // 5. Return the complete workflow result
         return new ContentWorkflowResult
