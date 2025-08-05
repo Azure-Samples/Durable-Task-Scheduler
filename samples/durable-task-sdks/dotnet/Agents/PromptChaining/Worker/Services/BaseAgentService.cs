@@ -50,8 +50,22 @@ public abstract class BaseAgentService
         DeploymentName = Configuration["OPENAI_DEPLOYMENT_NAME"] ?? "gpt-4";
         Logger.LogInformation($"Using OpenAI deployment: {DeploymentName}");
         
-        // Create credential for authentication
-        Credential = new DefaultAzureCredential();
+        // Create credential for authentication with specific client ID if available
+        var clientId = Configuration["AGENT_CONNECTION_STRING__clientId"] ?? Configuration["AZURE_CLIENT_ID"];
+        if (!string.IsNullOrEmpty(clientId))
+        {
+            Logger.LogInformation($"Using managed identity with client ID: {clientId}");
+            var defaultCredentialOptions = new DefaultAzureCredentialOptions
+            {
+                ManagedIdentityClientId = clientId
+            };
+            Credential = new DefaultAzureCredential(defaultCredentialOptions);
+        }
+        else
+        {
+            Logger.LogInformation("Using default Azure credential without specific client ID");
+            Credential = new DefaultAzureCredential();
+        }
         
         Logger.LogInformation($"Initializing Azure AI Projects client with endpoint: {Endpoint}");
         

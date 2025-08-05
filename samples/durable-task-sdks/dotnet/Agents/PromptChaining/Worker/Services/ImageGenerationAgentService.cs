@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
-using AgentChainingSample.Shared.Models;
+using AgentChainingSample.Worker.Models;
 using Azure.Identity;
 using Azure.Core;
 using System.Collections.Generic;

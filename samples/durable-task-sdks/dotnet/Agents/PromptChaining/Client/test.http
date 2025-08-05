@@ -1,0 +1,57 @@
+# HTTP REST Client test file for Agent Chaining Sample
+# Update the baseUrl and instanceId variables below with your actual deployment values
+
+@baseUrl = https://your-app-name.region.azurecontainerapps.io
+@instanceId = your-instance-id-here
+
+### Health check
+GET {{baseUrl}}/health
+
+### Get root page
+GET {{baseUrl}}/
+
+### Create a new content generation request
+POST {{baseUrl}}/api/content
+Content-Type: application/json
+
+{
+  "topic": "The Rise of Artificial Intelligence in Healthcare",
+  "requestId": "{{$guid}}"
+}
+
+### Get all active orchestrations
+GET {{baseUrl}}/api/content
+
+### Get status of a specific orchestration
+# Replace the instanceId with a real ID from a previous request
+# The response will now include an "ArticleEndpoint" property with a direct URL to view the article
+GET {{baseUrl}}/api/content/{{instanceId}}
+
+### View the generated document in browser (NEW!)
+# Replace the instanceId with a real ID from a completed request
+GET {{baseUrl}}/api/content/{{instanceId}}/document
+
+### Download the generated document as HTML file (NEW!)
+# Replace the instanceId with a real ID from a completed request
+GET {{baseUrl}}/api/content/{{instanceId}}/download
+
+### Wait for orchestration to complete (with timeout)
+# Replace the instanceId with a real ID from a previous request
+GET {{baseUrl}}/api/content/{{instanceId}}/wait?timeoutSeconds=60
+
+### Create another content generation request
+POST {{baseUrl}}/api/content
+Content-Type: application/json
+
+{
+  "topic": "Future of Sustainable Energy",
+  "requestId": "{{$guid}}"
+}
+
+### Create content about current technology trends
+POST {{baseUrl}}/api/content
+Content-Type: application/json
+
+{
+  "topic": "Latest Trends in Quantum Computing"
+}
