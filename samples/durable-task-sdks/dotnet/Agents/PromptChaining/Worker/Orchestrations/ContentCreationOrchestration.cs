@@ -42,26 +42,11 @@ public class ContentCreationOrchestration : TaskOrchestrator<ContentCreationRequ
         // 4. Assemble the final article with content and images and save to file in the project's tmp directory
         var articleResult = await context.CallActivityAsync<ArticleResult>(
             nameof(AssembleFinalArticleActivity), 
-<<<<<<< HEAD
-<<<<<<< HEAD
             (articleContent, generatedImages, context.InstanceId));
         
         logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
         logger.LogInformation("Article saved to file: {FilePath}", articleResult.FilePath);
         logger.LogInformation("Article endpoint: {Endpoint}", articleResult.ArticleEndpoint);
-=======
-            (articleContent, generatedImages));
-        
-        logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
-        logger.LogInformation("Article saved to file: {FilePath}", articleResult.FilePath);
->>>>>>> 21471c1 (Address PR feedback)
-=======
-            (articleContent, generatedImages, context.InstanceId));
-        
-        logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
-        logger.LogInformation("Article saved to file: {FilePath}", articleResult.FilePath);
-        logger.LogInformation("Article endpoint: {Endpoint}", articleResult.ArticleEndpoint);
->>>>>>> c34d9d0 (Added Bicep)
 
         // 5. Return the complete workflow result
         return new ContentWorkflowResult
