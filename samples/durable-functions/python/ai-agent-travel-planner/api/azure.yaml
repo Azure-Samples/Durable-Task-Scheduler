@@ -1,0 +1,12 @@
+name: travel-planner-python
+metadata:
+  template: travel-planner-python@0.0.1
+services:
+  api:
+    project: .
+    language: python
+    host: function
+  web:
+    project: ../../../dotnet/AiAgentTravelPlanOrchestrator/Frontend
+    language: js
+    host: staticwebapp

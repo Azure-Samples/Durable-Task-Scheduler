@@ -1,0 +1,31 @@
+### AI Agent Travel Planner - API Test File
+### Use this with VS Code REST Client extension or any HTTP client
+### Make sure the Azure Functions app is running on localhost:7071
+
+@baseUrl = http://localhost:7071/api
+@contentType = application/json
+
+### Step 1: Create Travel Plan
+POST {{baseUrl}}/travel-planner
+Content-Type: {{contentType}}
+
+{
+  "userName": "Test User",
+  "preferences": "Beach vacation with cultural experiences and great food",
+  "durationInDays": 7,
+  "budget": "$3000-$5000",
+  "travelDates": "July 15-22, 2025",
+  "specialRequirements": "Vegetarian dining options preferred"
+}
+
+### Step 2: Check Status (replace YOUR_INSTANCE_ID with the ID from step 1 response)
+GET {{baseUrl}}/travel-planner/status/YOUR_INSTANCE_ID_HERE
+
+### Step 3: Approve Travel Plan (replace YOUR_INSTANCE_ID with the ID from step 1 response)
+POST {{baseUrl}}/travel-planner/approve/YOUR_INSTANCE_ID_HERE
+Content-Type: {{contentType}}
+
+{
+  "approved": true,
+  "comments": "The plan looks great! Please proceed with booking."
+}
