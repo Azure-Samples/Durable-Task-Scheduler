@@ -405,3 +405,16 @@ samples/durable-task-sdks/java/**/build/
 samples/durable-task-sdks/java/**/*.class
 samples/durable-task-sdks/java/**/.gradle/
 samples/durable-task-sdks/java/**/out/
+
+# Azure Functions Azurite local storage (generated files)
+**/__azurite_db_*.json
+**/AzuriteConfig
+
+# Python virtual environments and cache
+**/__pycache__/
+**/venv/
+**/.venv/
+
+# Local settings files that might contain secrets (but preserve template files in samples)
+# Note: Sample local.settings.json files are kept as templates with safe defaults
+local.settings.json

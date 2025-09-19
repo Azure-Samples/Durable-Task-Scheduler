@@ -31,314 +31,210 @@ HTTP Start → Monitoring Orchestrator
 
 ## Prerequisites
 
-1. **Azure Storage Emulator** (Azurite) or **Azure Storage Account**
-2. **Azure Functions Core Tools** v4.x
-3. **Python** 3.8 or higher
+1. [Python 3.8+](https://www.python.org/downloads/)
+2. [Azure Functions Core Tools](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local) v4.x
+3. [Docker](https://www.docker.com/products/docker-desktop/) (for running the Durable Task Scheduler) installed
 
-## Setup Instructions
+## Configuring Durable Task Scheduler
 
-### 1. Install Dependencies
+There are two ways to run this sample locally:
 
-```bash
-# Navigate to the monitoring sample directory
-cd samples/durable-functions/python/monitoring
+### Using the Emulator (Recommended)
 
-# Create and activate virtual environment (recommended)
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+The emulator simulates a scheduler and taskhub in a Docker container, making it ideal for development and learning.
 
-# Install required packages
-pip install -r requirements.txt
-```
+1. Pull the Docker Image for the Emulator:
+  ```bash
+  docker pull mcr.microsoft.com/dts/dts-emulator:latest
+  ```
 
-### 2. Start Storage Emulator
+1. Run the Emulator:
+  ```bash
+  docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+  ```
+Wait a few seconds for the container to be ready.
 
-**Option A: Using Azurite (Recommended)**
-```bash
-# Install Azurite globally
-npm install -g azurite
+Note: The example code automatically uses the default emulator settings (endpoint: http://localhost:8080, taskhub: default). You don't need to set any environment variables.
 
-# Start Azurite
-azurite --silent --location ./azurite --debug ./azurite/debug.log
-```
+### Using a Deployed Scheduler and Taskhub in Azure
 
-**Option B: Using Azure Storage**
-Update `local.settings.json` with your storage connection string:
-```json
-{
-  "Values": {
-    "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=<account>;AccountKey=<key>;EndpointSuffix=core.windows.net"
-  }
-}
-```
+Local development with a deployed scheduler:
 
-### 3. Start the Function App
+1. Install the durable task scheduler CLI extension:
 
-```bash
-# Start the Azure Functions runtime
-func start
-```
+    ```bash
+    az upgrade
+    az extension add --name durabletask --allow-preview true
+    ```
 
-The function app will start on `http://localhost:7071`
+1. Create a resource group in a region where the Durable Task Scheduler is available:
 
-## Usage Examples
+    ```bash
+    az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+    ```
 
-### 1. Start Job Monitoring (Default Configuration)
+    ```bash
+    az group create --name my-resource-group --location <location>
+    ```
+1. Create a durable task scheduler resource:
 
-**Basic Job Monitoring:**
-```bash
-curl -X POST http://localhost:7071/api/start_monitoring_job \
-  -H "Content-Type: application/json"
-```
+    ```bash
+    az durabletask scheduler create \
+        --resource-group my-resource-group \
+        --name my-scheduler \
+        --ip-allowlist '["0.0.0.0/0"]' \
+        --sku-name "Dedicated" \
+        --sku-capacity 1 \
+        --tags "{'myattribute':'myvalue'}"
+    ```
 
-**Expected Response:**
-```json
-{
-  "id": "abc123def456",
-  "statusQueryGetUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456?taskHub=default",
-  "sendEventPostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456/raiseEvent/{eventName}?taskHub=default",
-  "terminatePostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456/terminate?reason={text}&taskHub=default",
-  "purgeHistoryDeleteUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456?taskHub=default"
-}
-```
+1. Create a task hub within the scheduler resource:
 
-### 2. Start Job Monitoring with Custom Parameters
+    ```bash
+    az durabletask taskhub create \
+        --resource-group my-resource-group \
+        --scheduler-name my-scheduler \
+        --name "my-taskhub"
+    ```
 
-**With Custom Job Configuration:**
-```bash
-curl -X POST http://localhost:7071/api/start_monitoring_job \
-  -H "Content-Type: application/json" \
-  -d '{
-    "job_id": "my-custom-job-123",
-    "polling_interval_seconds": 10,
-    "timeout_seconds": 60
-  }'
-```
+1. Grant the current user permission to connect to the `my-taskhub` task hub:
 
-### 3. Check Orchestration Status
+    ```bash
+    subscriptionId=$(az account show --query "id" -o tsv)
+    loggedInUser=$(az account show --query "user.name" -o tsv)
 
-```bash
-curl -X GET "http://localhost:7071/runtime/webhooks/durabletask/instances/{instanceId}?taskHub=default"
-```
+    az role assignment create \
+        --assignee $loggedInUser \
+        --role "Durable Task Data Contributor" \
+        --scope "/subscriptions/$subscriptionId/resourceGroups/my-resource-group/providers/Microsoft.DurableTask/schedulers/my-scheduler/taskHubs/my-taskhub"
+    ```
 
-**Sample Status Response (In Progress):**
-```json
-{
-  "name": "monitoring_job_orchestrator",
-  "instanceId": "abc123def456",
-  "runtimeStatus": "Running",
-  "input": {
-    "job_id": "job-uuid-12345",
-    "polling_interval_seconds": 5,
-    "timeout_seconds": 30
-  },
-  "customStatus": {
-    "job_id": "job-uuid-12345",
-    "status": "Running",
-    "check_count": 2,
-    "last_check_time": "2025-09-19T18:05:15.123Z"
-  },
-  "output": null,
-  "createdTime": "2025-09-19T18:05:00Z",
-  "lastUpdatedTime": "2025-09-19T18:05:15Z"
-}
-```
+## How to Run the Sample
 
-### 4. Get Job Status Directly
+Once you have set up the Durable Task Scheduler, follow these steps to run the sample:
 
-```bash
-curl -X GET "http://localhost:7071/api/job_status/{jobId}"
-```
+1. First, activate your Python virtual environment (if you're using one):
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows, use: venv\Scripts\activate
+   ```
 
-**Sample Job Status Response:**
-```json
-{
-  "job_id": "job-uuid-12345",
-  "status": "Running",
-  "progress_percent": 75,
-  "estimated_completion": "2025-09-19T18:15:00Z",
-  "last_updated": "2025-09-19T18:05:30.456Z",
-  "details": "Processing batch 3 of 4"
-}
-```
+2. Install the required packages:
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-## How the Pattern Works
+3. Start the Azure Functions runtime:
+   ```bash
+   func start
+   ```
+   
+   You should see output indicating the functions have loaded successfully.
 
-### 1. Job Status Polling
-- The orchestrator periodically calls the `check_job_status` activity
-- Each check simulates querying an external service or API
-- Job status progresses from "Unknown" → "Running" → "Completed"
+4. Start job monitoring by sending a POST request:
+   ```bash
+   # Basic job monitoring with default configuration
+   curl -X POST http://localhost:7071/api/start_monitoring_job \
+     -H "Content-Type: application/json" \
+     -d '{}'
 
-### 2. Activity-based Delays
-- Uses `wait_for_interval` activity to wait between status checks
-- Configurable polling interval (default: 5 seconds)
-- Note: Uses activity function instead of `create_timer()` to avoid timer configuration issues in Python SDK
+   # Job monitoring with custom parameters
+   curl -X POST http://localhost:7071/api/start_monitoring_job \
+     -H "Content-Type: application/json" \
+     -d '{
+       "job_id": "my-custom-job-123",
+       "polling_interval_seconds": 10,
+       "timeout_seconds": 60
+     }'
+   ```
 
-### 3. Custom Status Updates
-- Current job status is exposed via `set_custom_status()`
-- Clients can query orchestration status to see job progress
-- Real-time visibility into monitoring state
+5. Check orchestration status using the `statusQueryGetUri` from the response:
+   ```bash
+   curl -X GET "http://localhost:7071/runtime/webhooks/durabletask/instances/{instanceId}"
+   ```
 
-### 4. Timeout Handling
-- Monitoring stops if timeout period is reached
-- Job status is set to "Timeout" if not completed in time
-- Prevents infinite monitoring loops
+6. Optionally, check job status directly:
+   ```bash
+   curl -X GET "http://localhost:7071/api/job_status/{jobId}"
+   ```
 
-## Sample Outputs
+## Understanding the Output
 
-### Completed Job Monitoring Result
+When you run the sample, you'll see the following behavior:
 
-```json
-{
-  "job_id": "job-uuid-12345",
-  "final_status": "Completed",
-  "checks_performed": 4,
-  "monitoring_duration_seconds": 15.6
-}
-```
+1. **Initial Response**: The HTTP trigger returns management URLs immediately:
+   ```json
+   {
+     "id": "abc123def456",
+     "statusQueryGetUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456",
+     "sendEventPostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456/raiseEvent/{eventName}",
+     "terminatePostUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456/terminate?reason={text}",
+     "purgeHistoryDeleteUri": "http://localhost:7071/runtime/webhooks/durabletask/instances/abc123def456"
+   }
+   ```
 
-### Timed Out Job Monitoring Result
+2. **Orchestration Status During Monitoring**: While the job is being monitored, status checks will show:
+   ```json
+   {
+     "name": "monitoring_job_orchestrator",
+     "instanceId": "abc123def456",
+     "runtimeStatus": "Running",
+     "input": {
+       "job_id": "job-uuid-12345",
+       "polling_interval_seconds": 5,
+       "timeout_seconds": 30
+     },
+     "customStatus": {
+       "job_id": "job-uuid-12345",
+       "status": "Running",
+       "check_count": 3,
+       "last_check_time": "2025-09-19T18:05:15.123Z"
+     }
+   }
+   ```
 
-```json
-{
-  "job_id": "job-uuid-67890",
-  "final_status": "Timeout",
-  "checks_performed": 6,
-  "monitoring_duration_seconds": 30.0
-}
-```
+3. **Completed Job Monitoring Result**: When the job completes successfully:
+   ```json
+   {
+     "job_id": "job-uuid-12345",
+     "final_status": "Completed",
+     "checks_performed": 4,
+     "monitoring_duration_seconds": 15.6
+   }
+   ```
 
-### Custom Status During Monitoring
+4. **Timeout Scenario**: If the job doesn't complete within the specified timeout:
+   ```json
+   {
+     "job_id": "job-uuid-67890",
+     "final_status": "Timeout",
+     "checks_performed": 6,
+     "monitoring_duration_seconds": 30.0
+   }
+   ```
 
-```json
-{
-  "job_id": "job-uuid-12345",
-  "status": "Running", 
-  "check_count": 3,
-  "last_check_time": "2025-09-19T18:05:15.123Z"
-}
-```
+5. **Monitoring Pattern Benefits**:
+   - Provides real-time visibility into job progress via custom status
+   - Prevents infinite waiting with built-in timeout handling
+   - Uses configurable polling intervals to balance responsiveness and resource usage
+   - Handles external services that don't support callbacks or webhooks
 
-## Configuration Options
+## Dashboard Review
 
-### Workflow Configuration
-- **workflow_type**: Type of workflow being monitored (string)
-- **batch_size**: Total number of items to process (integer, default: 100)
-- **failure_rate**: Simulated failure rate for demo (float, 0.0-1.0, default: 0.1)
-- **enable_monitoring**: Enable/disable monitoring features (boolean, default: true)
+You can monitor the orchestration execution through the Durable Task Scheduler dashboard:
 
-### Alert Thresholds
-- **Success Rate Alert**: Triggered when success rate < 90%
-- **Performance Alert**: Based on processing time deviations
-- **Error Rate Alert**: When error rate exceeds configured threshold
+1. Navigate to `http://localhost:8082` in your browser
+2. You'll see a list of task hubs - select the "default" hub  
+3. Click on your orchestration instance to see:
+   - Real-time custom status updates showing job monitoring progress
+   - Timeline of periodic `check_job_status` activity executions
+   - Activity-based delays between status checks (using `wait_for_interval`)
+   - How the monitoring pattern continues until job completion or timeout
 
-## Monitoring Best Practices
+The dashboard is particularly useful for this pattern because it shows how the orchestration maintains state between periodic checks, demonstrating the monitoring pattern's ability to track long-running external operations over time.
 
-### 1. **Use Custom Status Effectively**
-```python
-# Update custom status with meaningful progress information
-context.set_custom_status({
-    "current_phase": "processing",
-    "progress": {"completed": 50, "total": 100},
-    "metrics": {"success_rate": 95.5}
-})
-```
+## Learn More
 
-### 2. **Implement Structured Logging**
-```python
-logging.info(f"Batch {batch_num} completed", extra={
-    "workflow_id": workflow_id,
-    "batch_number": batch_num,
-    "items_processed": processed_count,
-    "processing_time": processing_time
-})
-```
-
-### 3. **Track Key Metrics**
-- Processing throughput (items/second)
-- Success/failure rates
-- Resource utilization
-- Duration and timing metrics
-
-### 4. **Configure Appropriate Alerts**
-- Set meaningful thresholds
-- Include actionable information
-- Route to appropriate teams
-- Provide context for quick resolution
-
-## Integration Examples
-
-### Application Insights Integration
-```python
-# Add Application Insights logging
-import logging
-from opencensus.ext.azure.log_exporter import AzureLogHandler
-
-# Configure Application Insights
-logging.getLogger().addHandler(AzureLogHandler(
-    connection_string="InstrumentationKey=your-key"
-))
-```
-
-### Event Grid Integration
-Configure in `host.json` to publish orchestration events:
-```json
-{
-  "extensions": {
-    "durableTask": {
-      "notifications": {
-        "eventGrid": {
-          "topicEndpoint": "https://your-topic.eventgrid.azure.net/",
-          "keySettingName": "EventGridKey"
-        }
-      }
-    }
-  }
-}
-```
-
-## Troubleshooting
-
-### Common Issues
-
-1. **Timer Configuration Errors**
-   - Error: "replay schema version >= V3 is being used, but timer properties are not defined"
-   - Solution: This sample uses activity functions (`wait_for_interval`) instead of `create_timer()` to avoid known timer issues in the Python SDK
-   - This is a temporary workaround until the SDK timer configuration is fixed
-
-2. **Storage Connection Issues**
-   - Ensure Durable Task Scheduler is running on http://localhost:8080
-   - Check `local.settings.json` has correct `DURABLE_TASK_SCHEDULER_CONNECTION_STRING`
-   - Verify `TASKHUB_NAME` is set to "default"
-
-3. **Job Status Not Updating**
-   - Verify `set_custom_status()` calls in orchestrator
-   - Check that `check_job_status` activity is being called successfully
-   - Monitor logs for activity execution
-
-### Debug Logs
-
-Enable detailed logging in `host.json`:
-```json
-{
-  "logging": {
-    "logLevel": {
-      "DurableTask.Core": "Information",
-      "DurableTask.AzureStorage": "Information"
-    }
-  }
-}
-```
-
-## Related Samples
-
-- **[Function Chaining](../function-chaining/)**: Basic orchestration pattern
-- **[Fan-out/Fan-in](../fan-out-fan-in/)**: Parallel processing with aggregation
-- **[Human Interaction](../human-interaction/)**: External event handling
-- **[Eternal Orchestrations](../eternal-orchestrations/)**: Long-running workflows
-
-## Additional Resources
-
-- [Durable Functions Monitoring Documentation](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-monitor)
-- [Azure Functions Python Developer Guide](https://docs.microsoft.com/azure/azure-functions/functions-reference-python)
-- [Application Insights for Azure Functions](https://docs.microsoft.com/azure/azure-functions/functions-monitoring)
+- [Monitoring Pattern in Durable Functions](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-monitor)
+- [Durable Task Scheduler Overview](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler)
+- [Durable Functions Python Developer Guide](https://docs.microsoft.com/azure/azure-functions/durable/durable-functions-python)
