@@ -68,7 +68,7 @@ resource imageGenAiServices 'Microsoft.CognitiveServices/accounts@2025-04-01-pre
       ipRules: []
     }    
     publicNetworkAccess: 'Enabled'
-    disableLocalAuth: false
+    disableLocalAuth: true
   }
 } 
 
@@ -118,7 +118,7 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2025-04-01-preview' = 
     }    
     publicNetworkAccess: 'Enabled'
     // API-key based auth is not supported for the Agent service
-    disableLocalAuth: false
+    disableLocalAuth: true
   }
 }
 resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2025-04-01-preview'= if(!aiServiceExists){
@@ -170,8 +170,7 @@ resource aiSearch 'Microsoft.Search/searchServices@2024-06-01-preview' = if(!acs
     type: 'SystemAssigned'
   }
   properties: {
-    disableLocalAuth: false
-    authOptions: { aadOrApiKey: { aadAuthFailureMode: 'http401WithBearerChallenge'}}
+    disableLocalAuth: true
     encryptionWithCmk: {
       enforcement: 'Unspecified'
     }

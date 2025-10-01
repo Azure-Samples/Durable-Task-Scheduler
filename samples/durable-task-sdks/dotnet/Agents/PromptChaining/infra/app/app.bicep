@@ -12,7 +12,6 @@ param taskHubName string
 param agentConnectionString string = ''
 param openAiEndpoint string = ''
 param openAiDeploymentName string = 'gpt-4o-mini'
-param openAiApiKey string = ''
 // New parameters using direct naming convention
 param AGENT_CONNECTION_STRING string = ''
 param OPENAI_DEPLOYMENT_NAME string = 'gpt-4o-mini'
@@ -115,10 +114,6 @@ module containerAppsApp '../core/host/container-app.bicep' = {
       {
         name: 'AZURE_OPENAI_ENDPOINT'
         value: !empty(openAiEndpoint) ? openAiEndpoint : ''
-      }
-      {
-        name: 'OPENAI_API_KEY'
-        value: !empty(openAiApiKey) ? openAiApiKey : ''
       }
       {
         name: 'DALLE_ENDPOINT'

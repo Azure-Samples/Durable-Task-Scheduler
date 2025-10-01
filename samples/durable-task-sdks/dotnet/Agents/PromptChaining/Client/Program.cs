@@ -11,26 +11,8 @@ var builder = WebApplication.CreateBuilder(args);
 // Add services to the container
 builder.Services.AddEndpointsApiExplorer();
 
-// Get connection string from configuration with fallback to default local emulator connection
-string connectionString = builder.Configuration["ENDPOINT"] ??
-                         builder.Configuration["DTS_CONNECTION_STRING"] ?? 
-                         "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
-
-// If we have the endpoint but not a full connection string, construct it
-if (connectionString.StartsWith("Endpoint=") && !connectionString.Contains("TaskHub="))
-{
-    string taskHub = builder.Configuration["TASKHUB"] ?? builder.Configuration["TASKHUB_NAME"] ?? "default";
-    string clientId = builder.Configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"] ?? "";
-    
-    if (!string.IsNullOrEmpty(clientId))
-    {
-        connectionString = $"{connectionString};Authentication=ManagedIdentity;ClientID={clientId};TaskHub={taskHub}";
-    }
-    else
-    {
-        connectionString = $"{connectionString};TaskHub={taskHub}";
-    }
-}
+// Get connection string from configuration
+string connectionString = BuildConnectionString(builder.Configuration);
 
 // Determine if we're connecting to the local emulator
 bool isLocalEmulator = connectionString.Contains("localhost");
@@ -306,4 +288,35 @@ try
 catch (Exception ex)
 {
     logger.LogError(ex, "Error starting client application");
+}
+
+/// <summary>
+/// Builds a connection string for the Durable Task Scheduler from configuration values.
+/// </summary>
+/// <param name="configuration">The configuration object containing connection settings.</param>
+/// <returns>A properly formatted connection string.</returns>
+static string BuildConnectionString(IConfiguration configuration)
+{
+    // Get connection string from configuration with fallback to default local emulator connection
+    string connectionString = configuration["ENDPOINT"] ??
+                             configuration["DTS_CONNECTION_STRING"] ?? 
+                             "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+
+    // If we have the endpoint but not a full connection string, construct it
+    if (connectionString.StartsWith("Endpoint=") && !connectionString.Contains("TaskHub="))
+    {
+        string taskHub = configuration["TASKHUB"] ?? configuration["TASKHUB_NAME"] ?? "default";
+        string clientId = configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"] ?? "";
+        
+        if (!string.IsNullOrEmpty(clientId))
+        {
+            connectionString = $"{connectionString};Authentication=ManagedIdentity;ClientID={clientId};TaskHub={taskHub}";
+        }
+        else
+        {
+            connectionString = $"{connectionString};TaskHub={taskHub}";
+        }
+    }
+
+    return connectionString;
 }
