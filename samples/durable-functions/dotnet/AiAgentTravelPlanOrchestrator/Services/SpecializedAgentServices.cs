@@ -13,8 +13,8 @@ public class DestinationRecommenderService
     private readonly JsonSerializerOptions _jsonOptions;
 
     private const string Instructions = @"You are a travel destination expert who recommends destinations based on user preferences.
-Based on the user's preferences, budget, duration, travel dates, and special requirements, recommend 3 travel destinations.
-Provide a detailed explanation for each recommendation highlighting why it matches the user's preferences.";
+    Based on the user's preferences, budget, duration, travel dates, and special requirements, recommend 3 travel destinations.
+    Provide a detailed explanation for each recommendation highlighting why it matches the user's preferences.";
 
     public DestinationRecommenderService(IChatClient chatClient, ILogger<DestinationRecommenderService> logger)
     {
@@ -42,12 +42,12 @@ Provide a detailed explanation for each recommendation highlighting why it match
         try
         {
             var prompt = $@"Based on the following preferences, recommend 3 travel destinations:
-User: {request.UserName}
-Preferences: {request.Preferences}
-Duration: {request.DurationInDays} days
-Budget: {request.Budget}
-Travel Dates: {request.TravelDates}
-Special Requirements: {request.SpecialRequirements}";
+                        User: {request.UserName}
+                        Preferences: {request.Preferences}
+                        Duration: {request.DurationInDays} days
+                        Budget: {request.Budget}
+                        Travel Dates: {request.TravelDates}
+                        Special Requirements: {request.SpecialRequirements}";
 
             var response = await _agent.RunAsync(prompt);
             return JsonSerializer.Deserialize<DestinationRecommendations>(response.Text ?? "{}", _jsonOptions) 
@@ -89,11 +89,10 @@ public class ItineraryPlannerService
         try
         {
             var prompt = $@"Create {request.DurationInDays}-day itinerary for {request.DestinationName}.
-Dates: {request.TravelDates}
-Budget: {request.Budget}
-Requirements: {request.SpecialRequirements}
-
-Keep descriptions brief and focused on essential details.";
+                        Dates: {request.TravelDates}
+                        Budget: {request.Budget}
+                        Requirements: {request.SpecialRequirements}
+                        Keep descriptions brief and focused on essential details.";
 
             var response = await _agent.RunAsync(prompt);
             
@@ -129,7 +128,7 @@ public class LocalRecommendationsService
     private readonly JsonSerializerOptions _jsonOptions;
 
     private const string Instructions = @"You are a local expert who provides recommendations for restaurants and attractions.
-Provide specific recommendations with practical details like operating hours, pricing, and tips.";
+    Provide specific recommendations with practical details like operating hours, pricing, and tips.";
 
     public LocalRecommendationsService(IChatClient chatClient, ILogger<LocalRecommendationsService> logger)
     {
@@ -157,10 +156,10 @@ Provide specific recommendations with practical details like operating hours, pr
         try
         {
             var prompt = $@"Provide local recommendations for {request.DestinationName}:
-Duration: {request.DurationInDays} days
-Preferred Cuisine: {request.PreferredCuisine}
-Include Hidden Gems: {request.IncludeHiddenGems}
-Family Friendly: {request.FamilyFriendly}";
+                        Duration: {request.DurationInDays} days
+                        Preferred Cuisine: {request.PreferredCuisine}
+                        Include Hidden Gems: {request.IncludeHiddenGems}
+                        Family Friendly: {request.FamilyFriendly}";
 
             var response = await _agent.RunAsync(prompt);
             return JsonSerializer.Deserialize<LocalRecommendations>(response.Text ?? "{}", _jsonOptions) 
