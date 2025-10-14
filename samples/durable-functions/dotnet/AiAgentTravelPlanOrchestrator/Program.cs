@@ -8,7 +8,7 @@ using Microsoft.Extensions.AI;
 using Azure.Identity;
 using Azure.AI.OpenAI;
 using OpenAI.Chat;
-using TravelPlannerFunctions.Services;
+using TravelPlannerFunctions.Agents;
 using System.ClientModel;
 
 var host = new HostBuilder()
@@ -42,9 +42,9 @@ var host = new HostBuilder()
         });
         
         // Register the specialized agent services
-        services.AddSingleton<DestinationRecommenderService>();
-        services.AddSingleton<ItineraryPlannerService>();
-        services.AddSingleton<LocalRecommendationsService>();
+        services.AddSingleton<DestinationRecommenderAgent>();
+        services.AddSingleton<ItineraryPlannerAgent>();
+        services.AddSingleton<LocalRecommendationsAgent>();
 
         services.AddAzureClients(clientBuilder =>
         {

@@ -4,19 +4,19 @@ using Microsoft.Extensions.AI;
 using Microsoft.Agents.AI;
 using TravelPlannerFunctions.Models;
 
-namespace TravelPlannerFunctions.Services;
+namespace TravelPlannerFunctions.Agents;
 
-public class DestinationRecommenderService
+public class DestinationRecommenderAgent
 {
     private readonly AIAgent _agent;
-    private readonly ILogger<DestinationRecommenderService> _logger;
+    private readonly ILogger<DestinationRecommenderAgent> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
     private const string Instructions = @"You are a travel destination expert who recommends destinations based on user preferences.
     Based on the user's preferences, budget, duration, travel dates, and special requirements, recommend 3 travel destinations.
     Provide a detailed explanation for each recommendation highlighting why it matches the user's preferences.";
 
-    public DestinationRecommenderService(IChatClient chatClient, ILogger<DestinationRecommenderService> logger)
+    public DestinationRecommenderAgent(IChatClient chatClient, ILogger<DestinationRecommenderAgent> logger)
     {
         _logger = logger;
         _agent = new ChatClientAgent(chatClient, new ChatClientAgentOptions
@@ -61,14 +61,14 @@ public class DestinationRecommenderService
     }
 }
 
-public class ItineraryPlannerService
+public class ItineraryPlannerAgent
 {
     private readonly AIAgent _agent;
-    private readonly ILogger<ItineraryPlannerService> _logger;
+    private readonly ILogger<ItineraryPlannerAgent> _logger;
 
     private const string Instructions = "You are a travel itinerary planner. Create concise day-by-day travel plans with key activities and timing.";
 
-    public ItineraryPlannerService(IChatClient chatClient, ILogger<ItineraryPlannerService> logger)
+    public ItineraryPlannerAgent(IChatClient chatClient, ILogger<ItineraryPlannerAgent> logger)
     {
         _logger = logger;
         _agent = new ChatClientAgent(chatClient, new ChatClientAgentOptions
@@ -121,16 +121,16 @@ public class ItineraryPlannerService
     }
 }
 
-public class LocalRecommendationsService
+public class LocalRecommendationsAgent
 {
     private readonly AIAgent _agent;
-    private readonly ILogger<LocalRecommendationsService> _logger;
+    private readonly ILogger<LocalRecommendationsAgent> _logger;
     private readonly JsonSerializerOptions _jsonOptions;
 
     private const string Instructions = @"You are a local expert who provides recommendations for restaurants and attractions.
     Provide specific recommendations with practical details like operating hours, pricing, and tips.";
 
-    public LocalRecommendationsService(IChatClient chatClient, ILogger<LocalRecommendationsService> logger)
+    public LocalRecommendationsAgent(IChatClient chatClient, ILogger<LocalRecommendationsAgent> logger)
     {
         _logger = logger;
         _agent = new ChatClientAgent(chatClient, new ChatClientAgentOptions

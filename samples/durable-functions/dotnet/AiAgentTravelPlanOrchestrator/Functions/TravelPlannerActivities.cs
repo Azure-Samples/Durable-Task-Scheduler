@@ -1,7 +1,7 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using TravelPlannerFunctions.Models;
-using TravelPlannerFunctions.Services;
+using TravelPlannerFunctions.Agents;
 using Azure.Storage.Blobs;
 using System.Text;
 
@@ -10,17 +10,17 @@ namespace TravelPlannerFunctions.Functions;
 public class TravelPlannerActivities
 {
     private readonly ILogger _logger;
-    private readonly DestinationRecommenderService _destinationService;
-    private readonly ItineraryPlannerService _itineraryService;
-    private readonly LocalRecommendationsService _localRecommendationsService;
+    private readonly DestinationRecommenderAgent _destinationService;
+    private readonly ItineraryPlannerAgent _itineraryService;
+    private readonly LocalRecommendationsAgent _localRecommendationsService;
     private readonly BlobServiceClient _blobServiceClient;
 
     public TravelPlannerActivities(
         ILoggerFactory loggerFactory,
         BlobServiceClient blobServiceClient,
-        DestinationRecommenderService destinationRecommenderService,
-        ItineraryPlannerService itineraryPlannerService,
-        LocalRecommendationsService localRecommendationsService)
+        DestinationRecommenderAgent destinationRecommenderService,
+        ItineraryPlannerAgent itineraryPlannerService,
+        LocalRecommendationsAgent localRecommendationsService)
     {
         _logger = loggerFactory.CreateLogger<TravelPlannerActivities>();
         _blobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
