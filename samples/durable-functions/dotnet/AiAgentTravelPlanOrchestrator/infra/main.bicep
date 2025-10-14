@@ -6,7 +6,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
-@allowed(['westus2', 'eastus', 'eastus2'])
+@allowed(['westus2', 'eastus', 'eastus2', 'westus'])
 @metadata({
   azd: {
     type: 'location'
@@ -84,10 +84,10 @@ param modelFormat string = 'OpenAI'
 param modelVersion string = '2024-07-18'
 
 @description('Model deployment SKU name')
-param modelSkuName string = 'GlobalStandard'
+param modelSkuName string = 'Standard'
 
 @description('Model deployment capacity')
-param modelCapacity int = 50
+param modelCapacity int = 10
 
 @description('Model deployment location. If you want to deploy an Azure AI resource/model in different location than the rest of the resources created.')
 param modelLocation string = location
@@ -100,15 +100,6 @@ param aiSearchServiceResourceId string = ''
 
 @description('The Ai Storage Account full ARM Resource ID. This is an optional field, and if not provided, the resource will be created.')
 param aiStorageAccountResourceId string = ''
-
-@description('The agent ID of the destination recommender agent')
-param destinationRecommenderAgentId string = 'agent-destination-recommender-agent'
-
-@description('The agent ID of the itinerary planner agent')
-param itineraryPlannerAgentId string = 'agent-itinerary-planner-agent'
-
-@description('The agent ID of the local recommendations agent')
-param localRecommendationsAgentId string = 'agent-local-recommendations-agent'
 
 // Variables
 var abbrs = loadJsonContent('./abbreviations.json')
@@ -144,7 +135,7 @@ module webapp './app/staticwebapp.bicep' = {
   scope: rg
   params: {
     name: !empty(webAppName) ? webAppName : '${abbrs.webStaticSites}web-${resourceToken}'
-    location: location
+    location: 'westus2'
     tags: union(tags, { 'azd-service-name': 'web' })
     backendResourceId: api.outputs.Service_API_ID
     userAssignedIdentityId: apiUserAssignedIdentity.outputs.identityId
@@ -185,7 +176,7 @@ module appServicePlan './core/host/appservice-plan.bicep' = {
   scope: rg
   params: {
     name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
-    location: location
+    location: 'westus'
     tags: tags
     sku: {
       tier: 'Basic'
@@ -210,20 +201,16 @@ module api './app/api.bicep' = {
     allowedOrigins: [ webUri ]
     appSettings: {
       // https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-configure-managed-identity
-      // These would be needed if running outside of cloud
+      // Storage account connection using managed identity
       AzureWebJobsStorage__blobServiceUri: 'https://${storage.outputs.name}.blob.core.windows.net'
       AzureWebJobsStorage__queueServiceUri: 'https://${storage.outputs.name}.queue.core.windows.net'
       AzureWebJobsStorage__tableServiceUri: 'https://${storage.outputs.name}.blob.core.windows.net'
-      AZURE_TENANT_ID: tenant().tenantId
-      AZURE_CLIENT_ID: apiUserAssignedIdentity.outputs.identityClientId
+      // Note: AZURE_TENANT_ID and AZURE_CLIENT_ID are NOT needed - DefaultAzureCredential automatically discovers the managed identity
       DURABLE_TASK_SCHEDULER_CONNECTION_STRING: 'Endpoint=${dts.outputs.dts_URL};Authentication=ManagedIdentity;ClientID=${apiUserAssignedIdentity.outputs.identityClientId}'
       TASKHUB_NAME: dts.outputs.TASKHUB_NAME
-      DESTINATION_RECOMMENDER_CONNECTION: aiProject.outputs.projectConnectionString 
-      ITINERARY_PLANNER_CONNECTION: aiProject.outputs.projectConnectionString
-      LOCAL_RECOMMENDATIONS_CONNECTION: aiProject.outputs.projectConnectionString
-      DESTINATION_RECOMMENDER_AGENT_ID: destinationRecommenderAgentId
-      ITINERARY_PLANNER_AGENT_ID: itineraryPlannerAgentId
-      LOCAL_RECOMMENDATIONS_AGENT_ID: localRecommendationsAgentId
+      // Azure OpenAI configuration for the application
+      AZURE_OPENAI_ENDPOINT: aiDependencies.outputs.aiservicesTarget
+      AZURE_OPENAI_DEPLOYMENT_NAME: modelName
     }
     virtualNetworkSubnetId: skipVnet ? '' : serviceVirtualNetwork.outputs.appSubnetID
   }
@@ -239,7 +226,7 @@ module aiDependencies './agent/standard-dependent-resources.bicep' = {
   scope: rg
   name: 'dependencies-${name}-${resourceToken}'
   params: {
-    location: location
+    location: modelLocation  // Use modelLocation for AI resources
     storageName: 'st${resourceToken}'
     keyvaultName: 'kv-${name}${resourceToken}'
     aiServicesName: '${aiServicesName}${resourceToken}'
@@ -272,7 +259,7 @@ module aiHub './agent/standard-ai-hub.bicep' = {
     aiHubName: '${name}${uniqueSuffix}'
     aiHubFriendlyName: aiHubFriendlyName
     aiHubDescription: aiHubDescription
-    location: location
+    location: modelLocation  // Use modelLocation for AI resources
     tags: tags
     capabilityHostName: '${name}${uniqueSuffix}${capabilityHostName}'
 
@@ -333,6 +320,21 @@ module aiSearchRoleAssignments './agent/ai-search-role-assignments.bicep' = {
     aiProjectPrincipalId: aiProject.outputs.aiProjectPrincipalId
     aiProjectId: aiProject.outputs.aiProjectResourceId
   }
+}
+
+// Allow the Function App's managed identity to access AI Services
+module aiServiceRoleAssignmentFunctionApp './app/ai-service-access.bicep' = {
+  scope: rg
+  name: 'aiServiceRoleAssignmentFunctionApp-${resourceToken}'
+  params: {
+    aiServicesName: aiDependencies.outputs.aiServicesName
+    principalId: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+  dependsOn: [
+    aiDependencies
+    apiUserAssignedIdentity
+  ]
 }
 
 var storageBlobDataContributorRole  = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Owner role
@@ -531,8 +533,7 @@ module dts './app/dts.bicep' = {
 // App outputs
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
 output AZURE_LOCATION string = location
-output AZURE_TENANT_ID string = tenant().tenantId
-output AZURE_CLIENT_ID string = apiUserAssignedIdentity.outputs.identityClientId
+// Note: AZURE_TENANT_ID and AZURE_CLIENT_ID outputs removed - not needed with DefaultAzureCredential
 output SERVICE_API_NAME string = api.outputs.SERVICE_API_NAME
 output SERVICE_API_URI string = api.outputs.SERVICE_API_URI
 output AZURE_FUNCTION_APP_NAME string = api.outputs.SERVICE_API_NAME
@@ -542,9 +543,5 @@ output PRE_STATIC_WEB_APP_URI string = webAppName
 output RESOURCE_GROUP string = rg.name
 output PROJECT_CONNECTION_STRING string = aiProject.outputs.projectConnectionString
 output STORAGE_CONNECTION__queueServiceUri string = 'https://${storage.outputs.name}.queue.${environment().suffixes.storage}'
-
-// Agent outputs
-output DESTINATION_RECOMMENDER_AGENT_ID string = destinationRecommenderAgentId
-output ITINERARY_PLANNER_AGENT_ID string = itineraryPlannerAgentId
-output LOCAL_RECOMMENDATIONS_AGENT_ID string = localRecommendationsAgentId
-output AGENT_CONNECTION_STRING string = aiProject.outputs.projectConnectionString
+output AZURE_OPENAI_ENDPOINT string = aiDependencies.outputs.aiservicesTarget
+output AZURE_OPENAI_DEPLOYMENT_NAME string = modelName

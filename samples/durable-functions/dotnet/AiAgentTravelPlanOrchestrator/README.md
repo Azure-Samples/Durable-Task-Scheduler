@@ -1,10 +1,10 @@
 # AI Agent Orchestrator - Travel Planner
 
-A sophisticated travel planning application that leverages Azure AI Agents and Durable Functions to create comprehensive travel plans through a coordinated workflow of specialized AI agents.
+A sophisticated travel planning application that leverages the Microsoft Agent Framework and Azure Durable Functions to create comprehensive travel plans through a coordinated workflow of specialized AI agents.
 
 ## Overview
 
-The AI Agent Orchestrator Travel Planner demonstrates an agentic workflow using specialized AI agents and Azure Durable Functions to create personalized travel experiences. Each agent specializes in a specific aspect of travel planning, working together to produce a comprehensive travel plan that users can review and approve.
+The AI Agent Orchestrator Travel Planner demonstrates an agentic workflow using specialized AI agents built with the [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) and coordinated by Azure Durable Functions to create personalized travel experiences. Each agent specializes in a specific aspect of travel planning, working together to produce a comprehensive travel plan that users can review and approve.
 
 ## Architecture
 
@@ -15,12 +15,26 @@ The AI Agent Orchestrator Travel Planner demonstrates an agentic workflow using 
 1. **Frontend Interface**: React-based web application for user interaction
 2. **HTTP Trigger API**: Entry point for client requests
 3. **Durable Functions Orchestrator**: Coordinates the workflow between specialized agents
-4. **Specialized AI Agents**:
+4. **Specialized AI Agents** (built with Microsoft Agent Framework):
    - Destination Recommender Agent
    - Itinerary Planner Agent
    - Local Recommendations Agent
 5. **Blob Storage**: Stores generated travel plans
 6. **Approval System**: Human-in-the-loop verification before booking
+
+## Microsoft Agent Framework
+
+This application uses the **Microsoft Agent Framework**, the next-generation unified framework that combines the best of Semantic Kernel and AutoGen. The framework provides:
+
+- **Simplified Agent Creation**: Build agents with minimal boilerplate using `ChatClientAgent`
+- **Flexible Model Support**: Works with Azure OpenAI, OpenAI, and other providers via `IChatClient`
+- **Built-in Orchestration**: Compose agents into workflows with explicit control
+- **Production Ready**: Enterprise-grade features including telemetry, hosting, and state management
+
+For more information:
+- [Framework Introduction](https://devblogs.microsoft.com/dotnet/introducing-microsoft-agent-framework-preview/)
+- [Framework Documentation](https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview)
+- [Migration Guide](./MIGRATION_GUIDE.md) - Details on migrating from Azure.AI.Projects
 
 ## Why Agentic Workflow with Durable Functions?
 
@@ -85,7 +99,7 @@ Upon successful booking, the user receives a final confirmation with all travel 
   - Azure Functions resource
   - Azure Storage Account
   - Azure Durable Task resource
-  - Azure AI Projects with configured agents
+  - Azure OpenAI or Azure AI Inference endpoint
 
 ## Setting Up Locally
 
@@ -108,24 +122,26 @@ Create a `local.settings.json` file in the root directory with the following con
     "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:32768;Authentication=None",
     "TASKHUB_NAME": "default",
-    "AZURE_TENANT_ID": "<your tenant id>",
-    "AZURE_CLIENT_ID": "<your client id>",
-    "DESTINATION_RECOMMENDER_CONNECTION": "<PROJECT_CONNECTION_STRING>",
-    "ITINERARY_PLANNER_CONNECTION": "<PROJECT_CONNECTION_STRING>",
-    "LOCAL_RECOMMENDATIONS_CONNECTION": "<PROJECT_CONNECTION_STRING>",
-    "DESTINATION_RECOMMENDER_AGENT_ID": "<DESTINATION_RECOMMENDER_AGENT_ID>",
-    "ITINERARY_PLANNER_AGENT_ID": "<ITINERARY_PLANNER_AGENT_ID>",
-    "LOCAL_RECOMMENDATIONS_AGENT_ID": "<LOCAL_RECOMMENDATIONS_AGENT_ID>"
+    "AZURE_OPENAI_ENDPOINT": "https://<your-endpoint>.openai.azure.com/",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini"
   },
   "Host": {
-    "LocalHttpPort": 7252,
+    "LocalHttpPort": 7071,
     "CORS": "*",
     "CORSCredentials": false
   }
 }
 ```
 
-Replace the placeholder values with your actual connection strings and agent IDs.
+**Key Configuration:**
+- `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint URL
+- `AZURE_OPENAI_DEPLOYMENT_NAME`: The model deployment name (e.g., "gpt-4o-mini", "gpt-4")
+
+**Authentication:** The application uses `DefaultAzureCredential` which automatically handles authentication:
+- **Local development**: Uses Azure CLI (`az login`) or VS Code authentication
+- **Azure deployment**: Uses the Function App's managed identity
+
+Make sure you're logged in locally with `az login` before running the application.
 
 ### 3. Set Up Azure Storage Emulator
 

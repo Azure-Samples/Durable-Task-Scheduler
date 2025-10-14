@@ -1,6 +1,6 @@
 ### Variables
-@baseUrl = http://localhost:7252/api
-@instanceId = {{startTravelPlanning.response.body.$.id}}
+@baseUrl = http://localhost:7071/api
+@instanceId = bf3749cd188b4e3cbd05801955505fc1
 
 ### Start a new travel planning process
 # @name startTravelPlanning
@@ -10,7 +10,7 @@ Content-Type: application/json
 {
     "userName": "John Doe",
     "preferences": "I enjoy cultural experiences, historical sites, and outdoor activities. I prefer not to be rushed and would like some relaxation time. I'm interested in local cuisine and authentic experiences.",
-    "durationInDays": 7,
+    "durationInDays": 3,
     "budget": "Moderate, around $3000 total",
     "travelDates": "May 15-22, 2025",
     "specialRequirements": "Would prefer accommodations with free WiFi. I have a mild shellfish allergy."
@@ -50,7 +50,7 @@ Content-Type: application/json
 }
 
 ### Approve Travel
-POST {{baseUrl}}/travel-planner/approve/{{{{instanceId}}}}
+POST {{baseUrl}}/travel-planner/approve/bf3749cd188b4e3cbd05801955505fc1
 Content-Type: application/json
 
 {

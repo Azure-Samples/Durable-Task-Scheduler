@@ -4,9 +4,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.AI;
 using Azure.Identity;
+using Azure.AI.OpenAI;
+using OpenAI.Chat;
 using TravelPlannerFunctions.Services;
-using Azure.AI.Projects;
+using System.ClientModel;
 
 var host = new HostBuilder()
     .ConfigureFunctionsWebApplication()
@@ -16,48 +19,39 @@ var host = new HostBuilder()
         services.ConfigureFunctionsApplicationInsights();
         services.AddLogging();
         
-        services.AddSingleton<DestinationRecommenderService>((serviceProvider) =>
+        // Configure the shared IChatClient for all agents
+        services.AddSingleton<IChatClient>(serviceProvider =>
         {
-            
             var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            var destinationConnectionString = configuration["DESTINATION_RECOMMENDER_CONNECTION"] ?? throw new InvalidOperationException("Destination recommender connection string is not configured");
-            var logger = loggerFactory.CreateLogger<DestinationRecommenderService>();
-            return new DestinationRecommenderService(destinationConnectionString, loggerFactory.CreateLogger<DestinationRecommenderService>());
+            
+            // Get Azure OpenAI connection information from environment
+            var endpoint = configuration["AZURE_OPENAI_ENDPOINT"] 
+                ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT environment variable is not configured");
+            var deploymentName = configuration["AZURE_OPENAI_DEPLOYMENT_NAME"] ?? "gpt-4o-mini";
+            
+            // Use DefaultAzureCredential which automatically handles:
+            // - Local development: Azure CLI, VS Code, or interactive browser auth
+            // - Azure deployment: Managed Identity
+            var credential = new DefaultAzureCredential();
+
+            // Create AzureOpenAIClient and wrap it as IChatClient
+            var azureClient = new AzureOpenAIClient(new Uri(endpoint), credential);
+            var chatClient = azureClient.GetChatClient(deploymentName);
+
+            return chatClient.AsIChatClient();
         });
         
-        services.AddSingleton<ItineraryPlannerService>((serviceProvider) =>
-        {
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            var itineraryConnectionString = configuration["ITINERARY_PLANNER_CONNECTION"] ?? throw new InvalidOperationException("Itinerary planner connection string is not configured");
-            var logger = loggerFactory.CreateLogger<ItineraryPlannerService>();
-            return new ItineraryPlannerService(itineraryConnectionString, loggerFactory.CreateLogger<ItineraryPlannerService>());
-        });
-
-        services.AddSingleton<LocalRecommendationsService>((serviceProvider) =>
-        {
-            var configuration = serviceProvider.GetRequiredService<IConfiguration>();
-            var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
-            var localRecommendationsConnectionString = configuration["LOCAL_RECOMMENDATIONS_CONNECTION"] ?? throw new InvalidOperationException("Local recommendations connection string is not configured");
-            var logger = loggerFactory.CreateLogger<LocalRecommendationsService>();
-            return new LocalRecommendationsService(localRecommendationsConnectionString, loggerFactory.CreateLogger<LocalRecommendationsService>());
-        });
+        // Register the specialized agent services
+        services.AddSingleton<DestinationRecommenderService>();
+        services.AddSingleton<ItineraryPlannerService>();
+        services.AddSingleton<LocalRecommendationsService>();
 
         services.AddAzureClients(clientBuilder =>
         {
-            var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
-            var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
-
-            ArgumentNullException.ThrowIfNullOrEmpty(nameof(tenantId), "AZURE_TENANT_ID environment variable is not set.");
-            ArgumentNullException.ThrowIfNullOrEmpty(nameof(clientId), "AZURE_CLIENT_ID environment variable is not set.");
-
-            // Use the same credentials for all clients. 
-            clientBuilder.UseCredential(new DefaultAzureCredential(new DefaultAzureCredentialOptions
-            {
-                TenantId = tenantId,
-                ManagedIdentityClientId = clientId
-            }));
+            // Use DefaultAzureCredential which automatically handles:
+            // - Local development: Azure CLI, VS Code, or interactive browser auth
+            // - Azure deployment: Managed Identity
+            clientBuilder.UseCredential(new DefaultAzureCredential());
 
             // If running in local development with Azurite emulator
             var connectionString = Environment.GetEnvironmentVariable("AzureWebJobsStorage");

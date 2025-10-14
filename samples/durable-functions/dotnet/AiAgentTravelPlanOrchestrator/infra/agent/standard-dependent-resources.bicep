@@ -94,6 +94,7 @@ resource aiServices 'Microsoft.CognitiveServices/accounts@2024-06-01-preview' = 
   properties: {
     customSubDomainName: toLower('${(aiServicesName)}')
     publicNetworkAccess: 'Enabled'
+    disableLocalAuth: true // Required by policy - use managed identity only
   }
 }
 resource modelDeployment 'Microsoft.CognitiveServices/accounts/deployments@2024-06-01-preview'= if(!aiServiceExists){
