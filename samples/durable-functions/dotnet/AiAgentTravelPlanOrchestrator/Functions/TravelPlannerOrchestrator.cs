@@ -2,6 +2,8 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.DurableTask;
+using Microsoft.DurableTask.Agents;
+using Microsoft.Agents.AI;
 using Microsoft.Extensions.Logging;
 using TravelPlannerFunctions.Models;
 
@@ -33,6 +35,16 @@ public class TravelPlannerOrchestrator
             progress = 0
         });
 
+        // Get the durable agents for the travel planning workflow
+        DurableAIAgent destinationAgent = context.GetAgent("DestinationRecommenderAgent");
+        DurableAIAgent itineraryAgent = context.GetAgent("ItineraryPlannerAgent");
+        DurableAIAgent localRecommendationsAgent = context.GetAgent("LocalRecommendationsAgent");
+
+        // Create new threads for each agent
+        AgentThread destinationThread = destinationAgent.GetNewThread();
+        AgentThread itineraryThread = itineraryAgent.GetNewThread();
+        AgentThread localThread = localRecommendationsAgent.GetNewThread();
+
         // Step 1: Get destination recommendations
         logger.LogInformation("Step 1: Requesting destination recommendations");
         context.SetCustomStatus(new {
@@ -41,9 +53,17 @@ public class TravelPlannerOrchestrator
             progress = 10
         });
         
-        var destinationRecommendations = await context.CallActivityAsync<DestinationRecommendations>(
-            nameof(TravelPlannerActivities.GetDestinationRecommendations),
-            travelRequest);
+        var destinationPrompt = $@"Based on the following preferences, recommend 3 travel destinations:
+                                User: {travelRequest.UserName}
+                                Preferences: {travelRequest.Preferences}
+                                Duration: {travelRequest.DurationInDays} days
+                                Budget: {travelRequest.Budget}
+                                Travel Dates: {travelRequest.TravelDates}
+                                Special Requirements: {travelRequest.SpecialRequirements}";
+
+        var destinationRecommendations = await destinationAgent.RunAsync<DestinationRecommendations>(
+            destinationPrompt,
+            destinationThread);
             
         if (destinationRecommendations.Recommendations.Count == 0)
         {
@@ -66,16 +86,16 @@ public class TravelPlannerOrchestrator
             progress = 30,
             destination = topDestination.DestinationName
         });
-        var itineraryRequest = new TravelItineraryRequest(
-            topDestination.DestinationName,
-            travelRequest.DurationInDays,
-            travelRequest.Budget,
-            travelRequest.TravelDates,
-            travelRequest.SpecialRequirements);
+        
+        var itineraryPrompt = $@"Create a {travelRequest.DurationInDays}-day itinerary for {topDestination.DestinationName}.
+                            Dates: {travelRequest.TravelDates}
+                            Budget: {travelRequest.Budget}
+                            Requirements: {travelRequest.SpecialRequirements}
+                            Keep descriptions brief and focused on essential details.";
             
-        var itinerary = await context.CallActivityAsync<TravelItinerary>(
-            nameof(TravelPlannerActivities.CreateItinerary),
-            itineraryRequest);
+        var itinerary = await itineraryAgent.RunAsync<TravelItinerary>(
+            itineraryPrompt,
+            itineraryThread);
 
         // Step 3: Get local recommendations
         logger.LogInformation("Step 3: Getting local recommendations for {DestinationName}", topDestination.DestinationName);
@@ -85,16 +105,16 @@ public class TravelPlannerOrchestrator
             progress = 50,
             destination = topDestination.DestinationName
         });
-        var localRecommendationsRequest = new LocalRecommendationsRequest(
-            topDestination.DestinationName,
-            travelRequest.DurationInDays,
-            "Any", // Default value for preferred cuisine
-            true,  // Include hidden gems
-            travelRequest.SpecialRequirements.Contains("family", StringComparison.OrdinalIgnoreCase)); // Check if family-friendly
+        
+        var localPrompt = $@"Provide local recommendations for {topDestination.DestinationName}:
+                        Duration: {travelRequest.DurationInDays} days
+                        Preferred Cuisine: Any
+                        Include Hidden Gems: true
+                        Family Friendly: {travelRequest.SpecialRequirements.Contains("family", StringComparison.OrdinalIgnoreCase)}";
             
-        var localRecommendations = await context.CallActivityAsync<LocalRecommendations>(
-            nameof(TravelPlannerActivities.GetLocalRecommendations),
-            localRecommendationsRequest);
+        var localRecommendations = await localRecommendationsAgent.RunAsync<LocalRecommendations>(
+            localPrompt,
+            localThread);
 
         // Combine all results into a comprehensive travel plan
         var travelPlan = new TravelPlan(destinationRecommendations, itinerary, localRecommendations);

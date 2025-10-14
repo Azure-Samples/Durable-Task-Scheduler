@@ -2,7 +2,7 @@
   "profiles": {
     "TravelPlannerFunctions": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7252",
+      "commandLineArgs": "--port 7071",
       "launchBrowser": false,
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
@@ -16,9 +16,9 @@
     },
     "TravelPlannerFunctions-Debug": {
       "commandName": "Project",
-      "commandLineArgs": "--port 7252",
+      "commandLineArgs": "--port 7071",
       "launchBrowser": true,
-      "launchUrl": "http://localhost:7252/api/travel-planner",
+      "launchUrl": "http://localhost:7071/api/travel-planner",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DOTNET_ENVIRONMENT": "Development",

@@ -1,7 +1,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using TravelPlannerFunctions.Models;
-using TravelPlannerFunctions.Agents;
 using Azure.Storage.Blobs;
 using System.Text;
 
@@ -10,88 +9,14 @@ namespace TravelPlannerFunctions.Functions;
 public class TravelPlannerActivities
 {
     private readonly ILogger _logger;
-    private readonly DestinationRecommenderAgent _destinationService;
-    private readonly ItineraryPlannerAgent _itineraryService;
-    private readonly LocalRecommendationsAgent _localRecommendationsService;
     private readonly BlobServiceClient _blobServiceClient;
 
     public TravelPlannerActivities(
         ILoggerFactory loggerFactory,
-        BlobServiceClient blobServiceClient,
-        DestinationRecommenderAgent destinationRecommenderService,
-        ItineraryPlannerAgent itineraryPlannerService,
-        LocalRecommendationsAgent localRecommendationsService)
+        BlobServiceClient blobServiceClient)
     {
         _logger = loggerFactory.CreateLogger<TravelPlannerActivities>();
         _blobServiceClient = blobServiceClient ?? throw new ArgumentNullException(nameof(blobServiceClient));
-        _destinationService = destinationRecommenderService ?? throw new ArgumentNullException(nameof(destinationRecommenderService));
-        _itineraryService = itineraryPlannerService ?? throw new ArgumentNullException(nameof(itineraryPlannerService));
-        _localRecommendationsService = localRecommendationsService ?? throw new ArgumentNullException(nameof(localRecommendationsService));
-    }
-
-    [Function(nameof(GetDestinationRecommendations))]
-    public async Task<DestinationRecommendations> GetDestinationRecommendations(
-        [ActivityTrigger] TravelRequest request)
-    {
-        _logger.LogInformation("Getting destination recommendations for user {UserName}", request.UserName);
-        try
-        {
-            var recommendations = await _destinationService.GetDestinationRecommendationsAsync(request);
-            _logger.LogInformation("Generated {Count} destination recommendations", recommendations.Recommendations.Count);
-            return recommendations;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting destination recommendations");
-            return new DestinationRecommendations(new List<DestinationRecommendation>());
-        }
-    }
-
-    [Function(nameof(CreateItinerary))]
-    public async Task<TravelItinerary> CreateItinerary(
-        [ActivityTrigger] TravelItineraryRequest request)
-    {
-        _logger.LogInformation("Creating itinerary for {DestinationName}", request.DestinationName);
-        try
-        {
-            var itinerary = await _itineraryService.CreateItineraryAsync(request);
-            _logger.LogInformation("Generated itinerary with {Count} days", itinerary.DailyPlan.Count);
-            return itinerary;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating itinerary");
-            return new TravelItinerary(
-                request.DestinationName,
-                request.TravelDates,
-                new List<ItineraryDay>(),
-                "0",
-                "Error generating itinerary"
-            );
-        }
-    }
-
-    [Function(nameof(GetLocalRecommendations))]
-    public async Task<LocalRecommendations> GetLocalRecommendations(
-        [ActivityTrigger] LocalRecommendationsRequest request)
-    {
-        _logger.LogInformation("Getting local recommendations for {DestinationName}", request.DestinationName);
-        try
-        {
-            var recommendations = await _localRecommendationsService.GetLocalRecommendationsAsync(request);
-            _logger.LogInformation("Generated {AttractionCount} attractions and {RestaurantCount} restaurants", 
-                recommendations.Attractions.Count, recommendations.Restaurants.Count);
-            return recommendations;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting local recommendations");
-            return new LocalRecommendations(
-                new List<Attraction>(),
-                new List<Restaurant>(),
-                "Error generating local recommendations"
-            );
-        }
     }
 
     [Function(nameof(SaveTravelPlanToBlob))]
