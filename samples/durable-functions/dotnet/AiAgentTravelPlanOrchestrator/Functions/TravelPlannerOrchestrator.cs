@@ -1,11 +1,13 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.DurableTask;
-using Microsoft.DurableTask.Agents;
 using Microsoft.Agents.AI;
 using Microsoft.Extensions.Logging;
 using TravelPlannerFunctions.Models;
+using Microsoft.Agents.AI.Hosting.AzureFunctions;
+using Microsoft.Agents.AI.DurableTask;
+using Microsoft.DurableTask;
+using Microsoft.DurableTask.Client;
 
 namespace TravelPlannerFunctions.Functions;
 
@@ -61,9 +63,11 @@ public class TravelPlannerOrchestrator
                                 Travel Dates: {travelRequest.TravelDates}
                                 Special Requirements: {travelRequest.SpecialRequirements}";
 
-        var destinationRecommendations = await destinationAgent.RunAsync<DestinationRecommendations>(
+        var destinationResponse = await destinationAgent.RunAsync<DestinationRecommendations>(
             destinationPrompt,
             destinationThread);
+        
+        var destinationRecommendations = destinationResponse.Result;
             
         if (destinationRecommendations.Recommendations.Count == 0)
         {
@@ -91,11 +95,41 @@ public class TravelPlannerOrchestrator
                             Dates: {travelRequest.TravelDates}
                             Budget: {travelRequest.Budget}
                             Requirements: {travelRequest.SpecialRequirements}
-                            Keep descriptions brief and focused on essential details.";
+                            
+                            CRITICAL: Keep ALL descriptions under 50 characters. Include only 2-4 activities per day.
+                            Use short names and abbreviated formats.
+                            
+                            IMPORTANT: Determine the local currency for {topDestination.DestinationName} and use the currency converter 
+                            tool to provide costs in both the user's budget currency and the destination's local currency.";
             
-        var itinerary = await itineraryAgent.RunAsync<TravelItinerary>(
-            itineraryPrompt,
-            itineraryThread);
+        TravelItinerary itinerary;
+        try
+        {
+            logger.LogInformation("Calling itinerary agent with prompt length: {Length}", itineraryPrompt.Length);
+            
+            var itineraryResponse = await itineraryAgent.RunAsync<TravelItinerary>(
+                itineraryPrompt,
+                itineraryThread);
+            
+            if (itineraryResponse == null || itineraryResponse.Result == null)
+            {
+                throw new InvalidOperationException("Agent returned null response");
+            }
+            
+            itinerary = itineraryResponse.Result;
+            logger.LogInformation("Successfully received itinerary for {Destination}", itinerary.DestinationName);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error getting itinerary from agent for {Destination}. Error: {Error}", 
+                topDestination.DestinationName, ex.Message);
+            throw new InvalidOperationException(
+                $"Failed to generate itinerary for {topDestination.DestinationName}. " +
+                $"The AI agent returned an invalid or empty response. Please try again.", ex);
+        }
+
+        // Validate and correct the cost calculation
+        itinerary = ValidateAndFixCostCalculation(itinerary, logger);
 
         // Step 3: Get local recommendations
         logger.LogInformation("Step 3: Getting local recommendations for {DestinationName}", topDestination.DestinationName);
@@ -112,9 +146,11 @@ public class TravelPlannerOrchestrator
                         Include Hidden Gems: true
                         Family Friendly: {travelRequest.SpecialRequirements.Contains("family", StringComparison.OrdinalIgnoreCase)}";
             
-        var localRecommendations = await localRecommendationsAgent.RunAsync<LocalRecommendations>(
+        var localRecommendationsResponse = await localRecommendationsAgent.RunAsync<LocalRecommendations>(
             localPrompt,
             localThread);
+        
+        var localRecommendations = localRecommendationsResponse.Result;
 
         // Combine all results into a comprehensive travel plan
         var travelPlan = new TravelPlan(destinationRecommendations, itinerary, localRecommendations);
@@ -240,5 +276,95 @@ public class TravelPlannerOrchestrator
             new TravelItinerary("None", "N/A", new List<ItineraryDay>(), "0", "No itinerary available"),
             new LocalRecommendations(new List<Attraction>(), new List<Restaurant>(), "No recommendations available")
         );
+    }
+
+    private TravelItinerary ValidateAndFixCostCalculation(TravelItinerary itinerary, ILogger logger)
+    {
+        try
+        {
+            // Extract all activity costs and sum them up
+            decimal totalCost = 0;
+            string? localCurrency = null;
+            string? userCurrency = null;
+            decimal exchangeRate = 1.0m;
+
+            foreach (var day in itinerary.DailyPlan)
+            {
+                foreach (var activity in day.Activities)
+                {
+                    var cost = activity.EstimatedCost;
+                    if (string.IsNullOrEmpty(cost) || 
+                        cost.Equals("Free", StringComparison.OrdinalIgnoreCase) || 
+                        cost.Equals("Varies", StringComparison.OrdinalIgnoreCase) ||
+                        cost.Equals("0", StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+
+                    // Parse cost string like "500 JPY (3.26 USD)" or "25 EUR"
+                    var match = System.Text.RegularExpressions.Regex.Match(cost, @"(\d+(?:\.\d+)?)\s*([A-Z]{3})");
+                    if (match.Success)
+                    {
+                        if (decimal.TryParse(match.Groups[1].Value, out decimal amount))
+                        {
+                            totalCost += amount;
+                            if (localCurrency == null)
+                            {
+                                localCurrency = match.Groups[2].Value;
+                            }
+                        }
+
+                        // Try to extract the converted currency for exchange rate calculation
+                        var convertedMatch = System.Text.RegularExpressions.Regex.Match(cost, @"\((\d+(?:\.\d+)?)\s*([A-Z]{3})\)");
+                        if (convertedMatch.Success && userCurrency == null)
+                        {
+                            userCurrency = convertedMatch.Groups[2].Value;
+                            if (decimal.TryParse(convertedMatch.Groups[1].Value, out decimal convertedAmount) && amount > 0)
+                            {
+                                exchangeRate = convertedAmount / amount;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Calculate the corrected total cost
+            var correctedLocalCost = Math.Round(totalCost, 2);
+            var correctedUserCost = Math.Round(totalCost * exchangeRate, 2);
+
+            // Format the corrected cost string
+            string correctedCostString;
+            if (!string.IsNullOrEmpty(userCurrency) && localCurrency != userCurrency)
+            {
+                correctedCostString = $"{correctedLocalCost:N0} {localCurrency} ({correctedUserCost:N2} {userCurrency})";
+            }
+            else
+            {
+                correctedCostString = $"{correctedLocalCost:N0} {localCurrency ?? "USD"}";
+            }
+
+            // Log the correction if there was a discrepancy
+            if (itinerary.EstimatedTotalCost != correctedCostString)
+            {
+                logger.LogWarning(
+                    "Cost calculation corrected. Agent calculated: {AgentCost}, Actual sum: {CorrectedCost}",
+                    itinerary.EstimatedTotalCost,
+                    correctedCostString);
+            }
+
+            // Return a new itinerary with the corrected cost
+            return new TravelItinerary(
+                itinerary.DestinationName,
+                itinerary.TravelDates,
+                itinerary.DailyPlan,
+                correctedCostString,
+                itinerary.AdditionalNotes
+            );
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error validating cost calculation, using agent's original value");
+            return itinerary;
+        }
     }
 }

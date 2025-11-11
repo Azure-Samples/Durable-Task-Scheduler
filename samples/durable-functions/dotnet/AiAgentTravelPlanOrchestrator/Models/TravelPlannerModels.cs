@@ -122,3 +122,19 @@ public record BookingConfirmation(
     string ConfirmationDetails,
     DateTime BookingDate
 );
+
+// Currency Converter Models
+public record CurrencyConversion(
+    string FromCurrency,
+    string ToCurrency,
+    decimal OriginalAmount,
+    decimal ConvertedAmount,
+    decimal ExchangeRate,
+    DateTime Timestamp
+);
+
+public record ExchangeRateResponse(
+    string BaseCode,
+    Dictionary<string, decimal> ConversionRates,
+    long TimeLastUpdateUnix
+);

@@ -8,6 +8,52 @@ import './progress-tracker.css';
 // Get API URL from environment variables
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:7071/api';
 
+// Helper function to format cost with currency conversion information
+const formatCostWithCurrencyInfo = (costString) => {
+  if (!costString || costString === "Cost not available") {
+    return "**Cost not available**";
+  }
+  
+  // Check if the cost contains two currencies (indicating conversion)
+  const hasCurrencyConversion = costString.includes('(') && costString.includes(')');
+  
+  if (hasCurrencyConversion) {
+    // Extract the two currency values
+    // Example: "116 EUR (134.56 USD)" - local currency first, budget currency in parentheses
+    const match = costString.match(/([^(]+)\(([^)]+)\)/);
+    
+    if (match) {
+      const localCost = match[1].trim();
+      const budgetCost = match[2].trim();
+      
+      return `**${localCost}**\n\n💱 _Original budget currency: ${budgetCost}_`;
+    }
+  }
+  
+  // If no conversion, just return the cost as-is
+  return `**${costString}**`;
+};
+
+// Helper function to format activity cost inline (cleaner for activity lists)
+const formatActivityCost = (costString) => {
+  if (!costString || costString === "Cost not available" || costString === "Free" || costString === "Varies") {
+    return costString;
+  }
+  
+  // Check for nested currency format: "35 EUR (40 USD)"
+  const nestedMatch = costString.match(/(.+?)\s*\((.+?)\)/);
+  
+  if (nestedMatch) {
+    const primaryCost = nestedMatch[1].trim();
+    const convertedCost = nestedMatch[2].trim();
+    
+    // Format as: "35 EUR · $40 USD" with a bullet separator for cleaner inline display
+    return `${primaryCost} · ${convertedCost}`;
+  }
+  
+  return costString;
+};
+
 const ChatInterface = () => {
   // Travel request state
   const [travelRequest, setTravelRequest] = useState({
@@ -410,6 +456,10 @@ const ChatInterface = () => {
     });
     
     // Format the full travel plan content
+    const hasCurrencyConversion = estimatedTotalCost && 
+                                   estimatedTotalCost.includes('(') && 
+                                   estimatedTotalCost.includes(')');
+    
     let resultContent = `
 # Your Travel Plan is Ready for Review!
 
@@ -439,8 +489,8 @@ ${dailyPlan.length > 0
         const location = act.Location || act.location;
         const cost = act.EstimatedCost || act.estimatedCost;
         
-        return `* ${time}: ${name} at ${location} (${cost})`;
-      }).join('\n')}`;
+        return `* **${time}**: ${name} at ${location}\n  _Cost: ${formatActivityCost(cost)}_`;
+      }).join('\n\n')}`;
     }).join('\n\n')
   : "Daily itinerary being finalized."
 }
@@ -449,7 +499,7 @@ ${dailyPlan.length > 0
 ${localRecommendationsContent || "Local recommendations being prepared."}
 
 ## Total Estimated Cost
-${estimatedTotalCost}
+${formatCostWithCurrencyInfo(estimatedTotalCost)}
 
 ## Next Steps
 Please review this travel plan and click "Yes, Book My Trip!" below if you'd like to proceed with booking, or "No, I Need Changes" if you'd like to make modifications.
