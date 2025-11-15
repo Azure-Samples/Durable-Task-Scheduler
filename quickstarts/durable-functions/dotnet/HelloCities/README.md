@@ -69,9 +69,9 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
 > **Note:** If you open this repo in GitHub CodeSpaces, the `azd` tooling is already installed.
 
 1. Find the regions where the Durable Task Scheduler is available:
-   ```bash
-  az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
-  ```
+    ```bash
+    az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+    ```
 
 1. Navigate to `quickstarts/hello_cities` and run the following command to provision:
 
