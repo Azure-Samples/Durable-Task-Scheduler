@@ -1,5 +1,5 @@
 using AgentChainingSample.Activities;
-using AgentChainingSample.Shared.Models;
+using AgentChainingSample.Worker.Models;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Logging;
 
@@ -42,10 +42,11 @@ public class ContentCreationOrchestration : TaskOrchestrator<ContentCreationRequ
         // 4. Assemble the final article with content and images and save to file in the project's tmp directory
         var articleResult = await context.CallActivityAsync<ArticleResult>(
             nameof(AssembleFinalArticleActivity), 
-            (articleContent, generatedImages));
+            (articleContent, generatedImages, context.InstanceId));
         
         logger.LogInformation("Final article assembled. Length: {Length} characters", articleResult.HtmlContent.Length);
         logger.LogInformation("Article saved to file: {FilePath}", articleResult.FilePath);
+        logger.LogInformation("Article endpoint: {Endpoint}", articleResult.ArticleEndpoint);
 
         // 5. Return the complete workflow result
         return new ContentWorkflowResult
@@ -57,6 +58,7 @@ public class ContentCreationOrchestration : TaskOrchestrator<ContentCreationRequ
             FinalArticle = articleResult.HtmlContent,
             ArticleFilePath = articleResult.FilePath,
             ArticleBlobUrl = articleResult.BlobUrl,
+            ArticleEndpoint = articleResult.ArticleEndpoint,
             CompletedTimestamp = DateTime.UtcNow
         };
     }

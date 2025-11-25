@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace AgentChainingSample.Shared.Models;
+namespace AgentChainingSample.Client.Models;
 
 /// <summary>
 /// Request to initiate the news article generation workflow
@@ -63,6 +63,11 @@ public class ContentWorkflowResult
     /// URL to the article in blob storage (kept for compatibility, always empty)
     /// </summary>
     public string ArticleBlobUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The URL endpoint to view the article online
+    /// </summary>
+    public string ArticleEndpoint { get; set; } = string.Empty;
 
     /// <summary>
     /// Workflow completion timestamp

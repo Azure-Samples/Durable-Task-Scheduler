@@ -9,10 +9,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using AgentChainingSample.Services;
+// Force rebuild timestamp: 2025-01-06 10:26
 using AgentChainingSample.Activities;
 using AgentChainingSample.Orchestrations;
-using AgentChainingSample.Shared.Models;
+using AgentChainingSample.Services;
+using AgentChainingSample.Worker.Models;
 
 // Configure the host builder
 HostApplicationBuilder builder = Host.CreateApplicationBuilder();
@@ -43,9 +44,8 @@ builder.Services.AddSingleton<ImageGenerationAgentService>();
 // Activities with [DurableTask] attribute are auto-registered via AddAllGeneratedTasks()
 // No need to manually register them here
 
-// Get connection string from configuration with fallback to default local emulator connection
-string connectionString = builder.Configuration["DTS_CONNECTION_STRING"] ?? 
-                         "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+// Get connection string from configuration
+string connectionString = BuildConnectionString(builder.Configuration);
 
 // Configure services
 // Register tasks with DI
@@ -64,8 +64,23 @@ IHost host = builder.Build();
 
 // Get a proper logger from the service provider
 var logger = host.Services.GetRequiredService<ILogger<Program>>();
-logger.LogInformation("Connection string: {ConnectionString}", connectionString);
+// Log the constructed connection string with sensitive info redacted
+string managedIdentityClientId = builder.Configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"] ?? "";
+string logConnectionString = !string.IsNullOrEmpty(managedIdentityClientId) ? 
+    connectionString.Replace(managedIdentityClientId, "[REDACTED]") : 
+    connectionString;
+logger.LogInformation("Connection string: {ConnectionString}", logConnectionString);
+logger.LogInformation("TaskHub: {TaskHub}", builder.Configuration["TASKHUB"] ?? builder.Configuration["TASKHUB_NAME"] ?? "default");
 logger.LogInformation("This worker implements a news article generator workflow with multiple specialized agents");
+
+// Log OpenAI configuration
+logger.LogInformation("Azure OpenAI Endpoint: {Endpoint}", builder.Configuration["AZURE_OPENAI_ENDPOINT"] ?? "Not set");
+logger.LogInformation("Azure OpenAI Deployment: {Deployment}", builder.Configuration["OPENAI_DEPLOYMENT_NAME"] ?? "gpt-4 (default)");
+logger.LogInformation("DALL-E Endpoint: {DalleEndpoint}", !string.IsNullOrEmpty(builder.Configuration["DALLE_ENDPOINT"]) ? 
+    "Configured" : "Not set - will use placeholder images");
+logger.LogInformation("Agent Connection String: {AgentConnectionString}", !string.IsNullOrEmpty(builder.Configuration["AGENT_CONNECTION_STRING"]) ? 
+    "Configured" : "Not set - required for agent functionality");
+
 logger.LogInformation("Starting Agent Chaining Sample Worker");
 
 // Start the host
@@ -88,3 +103,34 @@ else
 
 // Stop the host
 await host.StopAsync();
+
+/// <summary>
+/// Builds a connection string for the Durable Task Scheduler from configuration values.
+/// </summary>
+/// <param name="configuration">The configuration object containing connection settings.</param>
+/// <returns>A properly formatted connection string.</returns>
+static string BuildConnectionString(IConfiguration configuration)
+{
+    // Get connection string from configuration with fallback to default local emulator connection
+    string connectionString = configuration["ENDPOINT"] ??
+                             configuration["DTS_CONNECTION_STRING"] ?? 
+                             "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
+
+    // If we have the endpoint but not a full connection string, construct it
+    if (connectionString.StartsWith("Endpoint=") && !connectionString.Contains("TaskHub="))
+    {
+        string taskHub = configuration["TASKHUB"] ?? configuration["TASKHUB_NAME"] ?? "default";
+        string clientId = configuration["AZURE_MANAGED_IDENTITY_CLIENT_ID"] ?? "";
+        
+        if (!string.IsNullOrEmpty(clientId))
+        {
+            connectionString = $"{connectionString};Authentication=ManagedIdentity;ClientID={clientId};TaskHub={taskHub}";
+        }
+        else
+        {
+            connectionString = $"{connectionString};TaskHub={taskHub}";
+        }
+    }
+
+    return connectionString;
+}
