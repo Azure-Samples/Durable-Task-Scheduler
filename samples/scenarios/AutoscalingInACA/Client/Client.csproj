@@ -8,9 +8,9 @@
     <UserSecretsId>b2f26a38-2066-4051-916a-b21af6b0f10e</UserSecretsId>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.13.1" />
+    <PackageReference Include="Azure.Identity" Version="1.17.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.67.0" />
-    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.10.0-preview.1" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.17.1" />
     <PackageReference Include="Microsoft.DurableTask.Generators" Version="1.0.0-preview.1" OutputItemType="Analyzer" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="8.0.1" />
   </ItemGroup>

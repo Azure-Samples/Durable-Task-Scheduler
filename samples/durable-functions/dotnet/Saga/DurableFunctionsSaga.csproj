@@ -18,7 +18,7 @@
     <PackageReference Include="Contrib.Grpc.Core.M1" Version="2.41.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.70.0" />
     <PackageReference Include="Microsoft.DurableTask.Client" Version="1.10.0" />
-    <PackageReference Include="Azure.Identity" Version="1.11.4" />
+    <PackageReference Include="Azure.Identity" Version="1.17.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
