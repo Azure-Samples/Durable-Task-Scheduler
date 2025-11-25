@@ -1,33 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <AzureFunctionsVersion>v4</AzureFunctionsVersion>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <UserSecretsId>d4943956-792a-4904-bde8-73e50218d33b</UserSecretsId>
     <!-- analyzer bugs -->
-    <NoWarn>$(NoWarn);DURABLE2001;NU1605</NoWarn>
+    <NoWarn>$(NoWarn);DURABLE2001;NU1605;DURABLE2002</NoWarn>
   </PropertyGroup>
 
   <!-- Public packages -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Azure.Identity" Version="1.14.1" />
+    <PackageReference Include="Azure.Identity" Version="1.17.1" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.24.1" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.22.0" />
 
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="1.9.0" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged" Version="0.4.4-alpha" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged" Version="1.0.1" />
     
-    <!-- Durable Agents packages from local source -->
-    <PackageReference Include="Microsoft.Agents.AI.DurableTask" Version="0.0.100-alpha" />
-    <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureFunctions" Version="0.0.100-alpha" />
+    <!-- Durable Agents packages - aligned versions -->
+    <PackageReference Include="Microsoft.Agents.AI.DurableTask" Version="1.0.0-preview.251114.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureFunctions" Version="1.0.0-preview.251114.1" />
 
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.0.2" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" Version="5.5.2" />
-    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.5" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage.Queues" Version="5.5.3" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.0.7" />
 
     <PackageReference Include="Microsoft.ApplicationInsights.WorkerService" Version="2.23.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.ApplicationInsights" Version="2.0.0" />
@@ -35,7 +35,7 @@
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.12.0" />
     
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.*" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.5.0-beta.1" />
     <PackageReference Include="Microsoft.Extensions.AI" Version="9.*-*" />
     <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.*-*" />
   </ItemGroup>
@@ -43,7 +43,7 @@
   <!-- Private packages -->
   <ItemGroup>
     <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.*" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.*" />
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251114.1" />
   </ItemGroup>
 
   <!-- Local project reference for Durable Agents -->
