@@ -9,11 +9,13 @@ using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.AI;
 using OpenAI;
 using TravelPlannerFunctions.Tools;
+using Microsoft.Azure.Functions.Worker;
+using Microsoft.Extensions.Logging;
 
 string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")
     ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT is not set.");
 string deploymentName = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT_NAME")
-    ?? "gpt-4o-mini";
+    ?? "gpt-5-mini";
 
 // Build the Functions application with the agents registered.
 FunctionsApplicationBuilder builder = FunctionsApplication
@@ -162,8 +164,19 @@ FunctionsApplicationBuilder builder = FunctionsApplication
     });
 
 // Configure additional services
-builder.Services.AddApplicationInsightsTelemetryWorkerService();
-// builder.Services.ConfigureFunctionsApplicationInsights(); // Not available in FunctionsApplication builder pattern
+builder.Services.AddApplicationInsightsTelemetryWorkerService().ConfigureFunctionsApplicationInsights();
+builder.Logging.Services.Configure<LoggerFilterOptions>(options =>
+    {
+        // The Application Insights SDK adds a default logging filter that instructs ILogger to capture only Warning and more severe logs. Application Insights requires an explicit override.
+        // Log levels can also be configured using appsettings.json. For more information, see https://learn.microsoft.com/azure/azure-monitor/app/worker-service#ilogger-logs
+        LoggerFilterRule? defaultRule = options.Rules.FirstOrDefault(rule => rule.ProviderName
+            == "Microsoft.Extensions.Logging.ApplicationInsights.ApplicationInsightsLoggerProvider");
+        if (defaultRule is not null)
+        {
+            options.Rules.Remove(defaultRule);
+        }
+    });
+
 
 builder.Services.AddAzureClients(clientBuilder =>
 {

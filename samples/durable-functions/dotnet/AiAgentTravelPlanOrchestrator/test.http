@@ -1,6 +1,6 @@
 ### Variables
 @baseUrl = http://localhost:7071/api
-@instanceId = bf3749cd188b4e3cbd05801955505fc1
+@instanceId = 92039571df854b878548781122fe5643
 
 ### Start a new travel planning process
 # @name startTravelPlanning
@@ -50,7 +50,7 @@ Content-Type: application/json
 }
 
 ### Approve Travel
-POST {{baseUrl}}/travel-planner/approve/bf3749cd188b4e3cbd05801955505fc1
+POST {{baseUrl}}/travel-planner/approve/{{instanceId}}
 Content-Type: application/json
 
 {

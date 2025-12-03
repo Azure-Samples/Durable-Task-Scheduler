@@ -10,3 +10,39 @@ services:
     project: ./Frontend
     language: js
     host: staticwebapp
+    hooks:
+      prepackage:
+        posix:
+          shell: sh
+          interactive: true
+          run: |
+            # Clean previous build
+            rm -rf build
+            # Set the API URL from azd environment
+            API_URL="${SERVICE_API_URI}/api"
+            echo "SERVICE_API_URI from azd: ${SERVICE_API_URI}"
+            echo "Setting REACT_APP_API_URL to: ${API_URL}"
+            # Update .env.production file
+            echo "REACT_APP_API_URL=${API_URL}" > .env.production
+            cat .env.production
+            # Export as environment variable for the build
+            export REACT_APP_API_URL="${API_URL}"
+            npm install && npm run build
+          continueOnError: false
+        windows:
+          shell: pwsh
+          interactive: true
+          run: |
+            # Clean previous build
+            Remove-Item -Path build -Recurse -Force -ErrorAction SilentlyContinue
+            # Set the API URL from azd environment
+            $API_URL = "${SERVICE_API_URI}/api"
+            Write-Host "SERVICE_API_URI from azd: ${SERVICE_API_URI}"
+            Write-Host "Setting REACT_APP_API_URL to: $API_URL"
+            # Update .env.production file
+            "REACT_APP_API_URL=$API_URL" | Out-File -FilePath .env.production -Encoding utf8
+            Get-Content .env.production
+            # Set as environment variable for the build
+            $env:REACT_APP_API_URL = $API_URL
+            npm install; npm run build
+          continueOnError: false
