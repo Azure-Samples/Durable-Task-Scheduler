@@ -135,7 +135,7 @@ Create a `local.settings.json` file in the root directory with the following con
 
 **Key Configuration:**
 - `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint URL
-- `AZURE_OPENAI_DEPLOYMENT_NAME`: The model deployment name (e.g., "gpt-4o-mini", "gpt-4")
+- `AZURE_OPENAI_DEPLOYMENT_NAME`: The model deployment name (e.g., "gpt-5-mini", "gpt-5")
 
 **Authentication:** The application uses `DefaultAzureCredential` which automatically handles authentication:
 - **Local development**: Uses Azure CLI (`az login`) or VS Code authentication
@@ -295,12 +295,23 @@ Update your `.env.production` file in `Frontend` directory so that it points to 
 #### Bash
 
 ```bash
-STATIC_WEB_APP_URI=$(azd env get-value STATIC_WEB_APP_URI)
-echo "REACT_APP_API_URL=$STATIC_WEB_APP_URI/api" > ./Frontend/.env.production
+API_URL=$(azd env get-value SERVICE_API_URI)
+echo "REACT_APP_API_URL=$API_URL/api" > ./Frontend/.env.production
 
 # Redeploy the build bundle. 
 azd package web
 azd deploy web
+```
+
+**Note:** If `azd deploy web` times out with "WaitingForDeployment" error, use the SWA CLI alternative:
+
+```bash
+# Get deployment token
+DEPLOYMENT_TOKEN=$(az staticwebapp secrets list --name <your-swa-name> --resource-group <your-rg-name> --query 'properties.apiKey' -o tsv)
+
+# Deploy using SWA CLI
+cd Frontend
+npx @azure/static-web-apps-cli deploy build --deployment-token "$DEPLOYMENT_TOKEN" --env production
 ```
 
 #### PowerShell
@@ -312,6 +323,17 @@ $staticWebAppUri = azd env get-value STATIC_WEB_APP_URI
 # Redeploy the build bundle. 
 azd package web
 azd deploy web
+```
+
+**Note:** If `azd deploy web` times out with "WaitingForDeployment" error, use the SWA CLI alternative:
+
+```PowerShell
+# Get deployment token
+$deploymentToken = az staticwebapp secrets list --name <your-swa-name> --resource-group <your-rg-name> --query 'properties.apiKey' -o tsv
+
+# Deploy using SWA CLI
+cd Frontend
+npx @azure/static-web-apps-cli deploy build --deployment-token "$deploymentToken" --env production
 ```
 
 ## Clean up

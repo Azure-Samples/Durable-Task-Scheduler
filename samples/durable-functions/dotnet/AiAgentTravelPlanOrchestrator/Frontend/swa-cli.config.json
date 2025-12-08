@@ -4,7 +4,7 @@
     "frontend": {
       "appLocation": ".",
       "outputLocation": "build",
-      "appBuildCommand": "npm run build",
+      "appBuildCommand": "npm install && npm run build",
       "run": "npm start",
       "appDevserverUrl": "http://localhost:3000"
     }

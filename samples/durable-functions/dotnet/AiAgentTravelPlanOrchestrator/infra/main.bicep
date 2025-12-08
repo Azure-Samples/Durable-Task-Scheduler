@@ -6,7 +6,6 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources')
-@allowed(['westus2', 'eastus', 'eastus2', 'westus'])
 @metadata({
   azd: {
     type: 'location'
@@ -44,20 +43,29 @@ param vNetName string = ''
 @description('Disable local authentication for Azure Monitor')
 param disableLocalAuth bool = true
 
-@description('Id of the user or app to assign application roles')
-param principalId string = ''
+@description('Name of the Durable Task Scheduler')
+param dtsName string = ''
 
-@description('Name for the AI resource and used to derive name of dependent resources.')
-param aiHubName string = 'hub-demo'
+@description('Name of the task hub')
+param taskHubName string = ''
+
+@description('Durable Task Scheduler SKU name')
+param dtsSkuName string = 'Dedicated'
+
+@description('Durable Task Scheduler SKU capacity')
+param dtsCapacity int = 1
+
+@description('Name of the web service')
+param webServiceName string = ''
+
+@description('Id of the user or app to assign application roles')
+param principalId string = deployer().objectId
 
 @description('Friendly name for your Hub resource')
 param aiHubFriendlyName string = 'Agents Hub resource'
 
 @description('Description of your Azure AI resource displayed in AI studio')
 param aiHubDescription string = 'This is an example AI resource for use in Azure AI Studio.'
-
-@description('Name for the AI project resources.')
-param aiProjectName string = 'project-demo'
 
 @description('Friendly name for your Azure AI resource')
 param aiProjectFriendlyName string = 'Agents Project resource'
@@ -68,23 +76,20 @@ param aiProjectDescription string = 'This is an example AI Project resource for 
 @description('Name of the Azure AI Search account')
 param aiSearchName string = 'agentaisearch'
 
-@description('Name for capabilityHost.')
-param capabilityHostName string = 'caphost1'
-
 @description('Name of the Azure AI Services account')
 param aiServicesName string = 'agentaiservices'
 
 @description('Model name for deployment')
-param modelName string = 'gpt-4o-mini'
+param modelName string = 'gpt-5-mini'
 
 @description('Model format for deployment')
 param modelFormat string = 'OpenAI'
 
 @description('Model version for deployment')
-param modelVersion string = '2024-07-18'
+param modelVersion string = '2025-08-07'
 
 @description('Model deployment SKU name')
-param modelSkuName string = 'Standard'
+param modelSkuName string = 'S0'
 
 @description('Model deployment capacity')
 param modelCapacity int = 10
@@ -104,23 +109,19 @@ param aiStorageAccountResourceId string = ''
 // Variables
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, rg.id, environmentName, location))
+var aiResourceToken = toLower(uniqueString(subscription().id, rg.id, environmentName, modelLocation))
 var tags = { 'azd-env-name': environmentName }
 var functionAppName = !empty(apiServiceName) ? apiServiceName : '${abbrs.webSitesFunctions}api-${resourceToken}'
 var deploymentStorageContainerName = 'app-package-${take(functionAppName, 32)}-${take(toLower(uniqueString(functionAppName, resourceToken)), 7)}'
-var name = toLower('${aiHubName}')
-var projectName = toLower('${aiProjectName}')
-param dtsSkuName string = 'Dedicated'
-param dtsCapacity int = 1
-param dtsName string = ''
-param taskHubName string = ''
+var name = 'hub'
+var projectName = 'proj'
 // Define the web app name first so we can construct the URL
 var webAppName = !empty(webServiceName) ? webServiceName : '${abbrs.webStaticSites}web-${resourceToken}'
 // Pre-compute the expected web URI for CORS settings
 var webUri = 'https://${webAppName}.azurestaticapps.net'
-param webServiceName string = ''
 
 // Create a short, unique suffix, that will be unique to each resource group
-var uniqueSuffix = toLower(uniqueString(subscription().id, rg.id, location))
+var aiUniqueSuffix = toLower(uniqueString(subscription().id, rg.id, modelLocation))
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2025-04-01' = {
@@ -129,388 +130,616 @@ resource rg 'Microsoft.Resources/resourceGroups@2025-04-01' = {
   tags: tags
 }
 
-// The application frontend webapp
-module webapp './app/staticwebapp.bicep' = {
+// The application frontend webapp using AVM
+module webapp 'br/public:avm/res/web/static-site:0.9.3' = {
   name: 'webapp-${resourceToken}'
   scope: rg
   params: {
-    name: !empty(webAppName) ? webAppName : '${abbrs.webStaticSites}web-${resourceToken}'
-    location: 'westus2'
+    name: webAppName
+    location: location
     tags: union(tags, { 'azd-service-name': 'web' })
-    backendResourceId: api.outputs.Service_API_ID
-    userAssignedIdentityId: apiUserAssignedIdentity.outputs.identityId
+    sku: 'Standard'
+    managedIdentities: {
+      userAssignedResourceIds: [apiUserAssignedIdentity.outputs.resourceId]
+    }
   }
 }
 
-// User assigned managed identity to be used by the function app to reach storage and service bus
-module apiUserAssignedIdentity './core/identity/user-assigned-identity.bicep' = {
+// User assigned managed identity using AVM
+module apiUserAssignedIdentity 'br/public:avm/res/managed-identity/user-assigned-identity:0.4.0' = {
   name: 'apiUserAssignedIdentity-${resourceToken}'
   scope: rg
   params: {
+    name: !empty(apiUserAssignedIdentityName) ? apiUserAssignedIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}api-${resourceToken}'
     location: location
     tags: tags
-    identityName: !empty(apiUserAssignedIdentityName) ? apiUserAssignedIdentityName : '${abbrs.managedIdentityUserAssignedIdentities}api-${resourceToken}'
   }
 }
 
-//  Backing storage for Azure functions backend processor
-module storage 'core/storage/storage-account.bicep' = {
+// Backing storage for Azure functions using AVM
+module storage 'br/public:avm/res/storage/storage-account:0.29.0' = {
   scope: rg
   name: 'storage-${resourceToken}'
   params: {
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
     location: location
     tags: tags
-    containers: [
-      {name: deploymentStorageContainerName}
-     ]
-     networkAcls: skipVnet ? {} : {
-        defaultAction: 'Deny'
+    kind: 'StorageV2'
+    skuName: 'Standard_LRS'
+    allowSharedKeyAccess: false
+    blobServices: {
+      containers: [
+        { name: deploymentStorageContainerName }
+      ]
+    }
+    publicNetworkAccess: skipVnet ? 'Enabled' : 'Disabled'
+    networkAcls: skipVnet ? {
+        defaultAction: 'Allow'
+        bypass: 'AzureServices'
+      } : {
+      defaultAction: 'Deny'
+      bypass: 'AzureServices'
+    }
+    roleAssignments: [
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' // Storage Blob Data Owner
+        principalType: 'ServicePrincipal'
       }
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
+        principalType: 'ServicePrincipal'
+      }
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // Storage Table Data Contributor
+        principalType: 'ServicePrincipal'
+      }
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: '974c5e8b-45b9-4653-ba55-5f855dd0fb88' // Storage Queue Data Contributor
+        principalType: 'ServicePrincipal'
+      }
+      {
+        principalId: principalId
+        roleDefinitionIdOrName: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b' // Storage Blob Data Owner
+        principalType: 'User'
+      }
+      {
+        principalId: principalId
+        roleDefinitionIdOrName: 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Contributor
+        principalType: 'User'
+      }
+      {
+        principalId: principalId
+        roleDefinitionIdOrName: '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // Storage Table Data Contributor
+        principalType: 'User'
+      }
+      {
+        principalId: principalId
+        roleDefinitionIdOrName: '974c5e8b-45b9-4653-ba55-5f855dd0fb88' // Storage Queue Data Contributor
+        principalType: 'User'
+      }
+    ]
   }
 }
 
-// The application backend is a function app
-module appServicePlan './core/host/appservice-plan.bicep' = {
+// App Service Plan using AVM - Flex Consumption
+module appServicePlan 'br/public:avm/res/web/serverfarm:0.5.0' = {
   name: 'appserviceplan-${resourceToken}'
   scope: rg
   params: {
     name: !empty(appServicePlanName) ? appServicePlanName : '${abbrs.webServerFarms}${resourceToken}'
-    location: 'westus'
+    location: location
     tags: tags
-    sku: {
-      tier: 'Basic'
-      name: 'B1'
-    }
+    skuName: 'FC1' // Flex Consumption
+    reserved: true
   }
 }
 
-module api './app/api.bicep' = {
+// Function App using AVM - Flex Consumption
+module api 'br/public:avm/res/web/site:0.19.3' = {
   name: 'api-${resourceToken}'
   scope: rg
   params: {
     name: functionAppName
     location: location
     tags: union(tags, { 'azd-service-name': 'api' })
-    serviceName: 'api'
-    applicationInsightsName: monitoring.outputs.applicationInsightsName
-    appServicePlanId: appServicePlan.outputs.id
-    storageAccountName: storage.outputs.name
-    identityId: apiUserAssignedIdentity.outputs.identityId
-    identityClientId: apiUserAssignedIdentity.outputs.identityClientId
-    allowedOrigins: [ webUri ]
-    appSettings: {
-      // https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-configure-managed-identity
-      // Storage account connection using managed identity
-      AzureWebJobsStorage__blobServiceUri: 'https://${storage.outputs.name}.blob.core.windows.net'
-      AzureWebJobsStorage__queueServiceUri: 'https://${storage.outputs.name}.queue.core.windows.net'
-      AzureWebJobsStorage__tableServiceUri: 'https://${storage.outputs.name}.blob.core.windows.net'
-      // Note: AZURE_TENANT_ID and AZURE_CLIENT_ID are NOT needed - DefaultAzureCredential automatically discovers the managed identity
-      DURABLE_TASK_SCHEDULER_CONNECTION_STRING: 'Endpoint=${dts.outputs.dts_URL};Authentication=ManagedIdentity;ClientID=${apiUserAssignedIdentity.outputs.identityClientId}'
-      TASKHUB_NAME: dts.outputs.TASKHUB_NAME
-      // Azure OpenAI configuration for the application
-      AZURE_OPENAI_ENDPOINT: aiDependencies.outputs.aiservicesTarget
-      AZURE_OPENAI_DEPLOYMENT_NAME: modelName
+    kind: 'functionapp,linux'
+    serverFarmResourceId: appServicePlan.outputs.resourceId
+    managedIdentities: {
+      userAssignedResourceIds: [apiUserAssignedIdentity.outputs.resourceId]
     }
-    virtualNetworkSubnetId: skipVnet ? '' : serviceVirtualNetwork.outputs.appSubnetID
+    functionAppConfig: {
+      deployment: {
+        storage: {
+          type: 'blobContainer'
+          value: 'https://${storage.outputs.name}.blob.${environment().suffixes.storage}/${deploymentStorageContainerName}'
+          authentication: {
+            type: 'UserAssignedIdentity'
+            userAssignedIdentityResourceId: apiUserAssignedIdentity.outputs.resourceId
+          }
+        }
+      }
+      scaleAndConcurrency: {
+        instanceMemoryMB: 2048
+        maximumInstanceCount: 100
+      }
+      runtime: {
+        name: 'dotnet-isolated'
+        version: '9.0'
+      }
+    }
+    virtualNetworkSubnetResourceId: skipVnet ? '' : '${serviceVirtualNetwork!.outputs.resourceId}/subnets/app-subnet'
+    diagnosticSettings: [
+      {
+        workspaceResourceId: logAnalytics.outputs.resourceId
+      }
+    ]
+    siteConfig: {
+      alwaysOn: false
+      cors: {
+        allowedOrigins: [ webUri, webapp.outputs.defaultHostname ]
+      }
+      appSettings: [
+        { name: 'AzureWebJobsStorage__credential', value: 'managedidentity' }
+        { name: 'AzureWebJobsStorage__clientId', value: apiUserAssignedIdentity.outputs.clientId }
+        { name: 'AzureWebJobsStorage__blobServiceUri', value: 'https://${storage.outputs.name}.blob.${environment().suffixes.storage}' }
+        { name: 'AzureWebJobsStorage__queueServiceUri', value: 'https://${storage.outputs.name}.queue.${environment().suffixes.storage}' }
+        { name: 'AzureWebJobsStorage__tableServiceUri', value: 'https://${storage.outputs.name}.table.${environment().suffixes.storage}' }
+        { name: 'AzureWebJobsStorage__accountName', value: storage.outputs.name }
+        { name: 'DURABLE_TASK_SCHEDULER_CONNECTION_STRING', value: 'Endpoint=${dts.outputs.dts_URL};Authentication=ManagedIdentity;ClientID=${apiUserAssignedIdentity.outputs.clientId}' }
+        { name: 'TASKHUB_NAME', value: dts.outputs.TASKHUB_NAME }
+        { name: 'AZURE_OPENAI_ENDPOINT', value: aiServiceExists ? reference(aiServiceAccountResourceId, '2023-05-01').endpoint : aiServices!.outputs.endpoint }
+        { name: 'AZURE_OPENAI_DEPLOYMENT_NAME', value: modelName }
+        { name: 'AZURE_CLIENT_ID', value: apiUserAssignedIdentity.outputs.clientId }
+        { name: 'APPLICATIONINSIGHTS_AUTHENTICATION_STRING', value: 'ClientId=${apiUserAssignedIdentity.outputs.clientId};Authorization=AAD' }
+        { name: 'APPLICATIONINSIGHTS_CONNECTION_STRING', value: monitoring.outputs.connectionString }
+      ]
+    }
   }
   dependsOn: [
-    storage
-    appServicePlan
-    apiUserAssignedIdentity
+    storageQueueRoleApi  // Waits for queue role which includes AI Project reference
   ]
 }
 
-// Dependent resources for the Azure Machine Learning workspace
-module aiDependencies './agent/standard-dependent-resources.bicep' = {
+// AI-specific dependent resources using AVM modules
+var aiStorageExists = aiStorageAccountResourceId != ''
+var aiServiceExists = aiServiceAccountResourceId != ''
+var acsExists = aiSearchServiceResourceId != ''
+var aiStorageName = 'stai${aiResourceToken}'
+var aiServiceName = '${aiServicesName}${aiResourceToken}'
+var aiSearchNameFinal = '${aiSearchName}${aiResourceToken}'
+
+// AI Storage Account using AVM (if not provided)
+module aiStorage 'br/public:avm/res/storage/storage-account:0.29.0' = if (!aiStorageExists) {
   scope: rg
-  name: 'dependencies-${name}-${resourceToken}'
+  name: 'aiStorage-${aiResourceToken}'
   params: {
-    location: modelLocation  // Use modelLocation for AI resources
-    storageName: 'st${resourceToken}'
-    keyvaultName: 'kv-${name}${resourceToken}'
-    aiServicesName: '${aiServicesName}${resourceToken}'
-    aiSearchName: '${aiSearchName}${resourceToken}'
+    name: aiStorageName
+    location: modelLocation
     tags: tags
-
-    // Model deployment parameters
-    modelName: modelName
-    modelFormat: modelFormat
-    modelVersion: modelVersion
-    modelSkuName: modelSkuName
-    modelCapacity: modelCapacity  
-    modelLocation: modelLocation
-
-    aiServiceAccountResourceId: aiServiceAccountResourceId
-    aiSearchServiceResourceId: aiSearchServiceResourceId
-    aiStorageAccountResourceId: aiStorageAccountResourceId
+    kind: 'StorageV2'
+    skuName: 'Standard_LRS'
+    minimumTlsVersion: 'TLS1_2'
+    allowBlobPublicAccess: false
+    publicNetworkAccess: 'Enabled'
+    allowSharedKeyAccess: false
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Allow'
     }
-
-  dependsOn: [
-    storage
-  ]
-}
-
-module aiHub './agent/standard-ai-hub.bicep' = {
-  scope: rg
-  name: '${name}-${resourceToken}'
-  params: {
-    // workspace organization
-    aiHubName: '${name}${uniqueSuffix}'
-    aiHubFriendlyName: aiHubFriendlyName
-    aiHubDescription: aiHubDescription
-    location: modelLocation  // Use modelLocation for AI resources
-    tags: tags
-    capabilityHostName: '${name}${uniqueSuffix}${capabilityHostName}'
-
-    aiSearchName: aiDependencies.outputs.aiSearchName
-    aiSearchId: aiDependencies.outputs.aisearchID
-
-    aiServicesName: aiDependencies.outputs.aiServicesName
-    aiServicesId: aiDependencies.outputs.aiservicesID
-    aiServicesTarget: aiDependencies.outputs.aiservicesTarget
-    
-    keyVaultId: aiDependencies.outputs.keyvaultId
-    storageAccountId: aiDependencies.outputs.storageId
   }
-  dependsOn: [
-    storage
-    aiDependencies
-  ]
 }
 
-module aiProject './agent/standard-ai-project.bicep' = {
+// Key Vault using AVM
+module aiKeyVault 'br/public:avm/res/key-vault/vault:0.9.0' = {
+  scope: rg
+  name: 'aiKeyVault-${aiResourceToken}'
+  params: {
+    name: 'kv-${name}${resourceToken}'
+    location: modelLocation
+    tags: tags
+    sku: 'standard'
+    enableVaultForDeployment: false
+    enableVaultForDiskEncryption: false
+    enableVaultForTemplateDeployment: false
+    enableSoftDelete: true
+    enableRbacAuthorization: true
+    softDeleteRetentionInDays: 7
+    networkAcls: {
+      bypass: 'AzureServices'
+      defaultAction: 'Deny'
+    }
+  }
+}
+
+// AI Services (Cognitive Services) using AVM with model deployment
+module aiServices 'br/public:avm/res/cognitive-services/account:0.9.2' = if (!aiServiceExists) {
+  scope: rg
+  name: 'aiServices-${aiResourceToken}'
+  params: {
+    name: aiServiceName
+    location: modelLocation
+    tags: tags
+    kind: 'AIServices'
+    customSubDomainName: toLower(aiServiceName)
+    publicNetworkAccess: 'Enabled'
+    disableLocalAuth: true
+    sku: modelSkuName
+    deployments: [
+      {
+        name: modelName
+        model: {
+          format: modelFormat
+          name: modelName
+          version: modelVersion
+        }
+        sku: {
+          name: 'GlobalStandard'
+          capacity: modelCapacity
+        }
+      }
+    ]
+    roleAssignments: [
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User
+        principalType: 'ServicePrincipal'
+      }
+    ]
+  }
+}
+
+// AI Search using AVM
+module aiSearch 'br/public:avm/res/search/search-service:0.9.2' = if (!acsExists) {
+  scope: rg
+  name: 'aiSearch-${aiResourceToken}'
+  params: {
+    name: aiSearchNameFinal
+    location: modelLocation
+    tags: tags
+    sku: 'standard'
+    authOptions: {
+      aadOrApiKey: {
+        aadAuthFailureMode: 'http401WithBearerChallenge'
+      }
+    }
+    disableLocalAuth: false
+    hostingMode: 'default'
+    partitionCount: 1
+    replicaCount: 1
+    semanticSearch: 'disabled'
+  }
+}
+
+// AI Hub using AVM
+module aiHub 'br/public:avm/res/machine-learning-services/workspace:0.13.0' = {
+  scope: rg
+  name: '${name}-${aiResourceToken}'
+  params: {
+    name: '${name}${aiUniqueSuffix}'
+    friendlyName: aiHubFriendlyName
+    description: aiHubDescription
+    location: modelLocation
+    tags: tags
+    kind: 'Hub'
+    sku: 'Basic'
+    associatedStorageAccountResourceId: aiStorageExists ? aiStorageAccountResourceId : aiStorage!.outputs.resourceId
+    associatedKeyVaultResourceId: aiKeyVault.outputs.resourceId
+    connections: [
+      {
+        name: '${name}${aiUniqueSuffix}-ai'
+        category: 'AIServices'
+        target: aiServiceExists ? reference(aiServiceAccountResourceId, '2023-05-01').endpoint : aiServices!.outputs.endpoint
+        isSharedToAll: true
+        connectionProperties: {
+          authType: 'AAD'
+        }
+        metadata: {
+          ApiType: 'Azure'
+          ResourceId: aiServiceExists ? aiServiceAccountResourceId : aiServices!.outputs.resourceId
+          location: modelLocation
+        }
+      }
+      {
+        name: '${name}${aiUniqueSuffix}-search'
+        category: 'CognitiveSearch'
+        target: 'https://${acsExists ? split(aiSearchServiceResourceId, '/')[8] : aiSearchNameFinal}.search.windows.net'
+        isSharedToAll: true
+        connectionProperties: {
+          authType: 'AAD'
+        }
+        metadata: {
+          ApiType: 'Azure'
+          ResourceId: acsExists ? aiSearchServiceResourceId : aiSearch!.outputs.resourceId
+          location: modelLocation
+        }
+      }
+    ]
+  }
+}
+
+// Variables for project capability host connections
+var projectConnectionString = '${location}.api.azureml.ms;${subscription().subscriptionId};${rg.name};${projectName}${aiUniqueSuffix}'
+
+// AI Project using AVM
+module aiProject 'br/public:avm/res/machine-learning-services/workspace:0.13.0' = {
   scope: rg
   name: '${projectName}-${resourceToken}-deployment'
   params: {
-    // workspace organization
-    aiProjectName: '${projectName}${uniqueSuffix}'
-    aiProjectFriendlyName: aiProjectFriendlyName
-    aiProjectDescription: aiProjectDescription
-    location: location
-    tags: tags
-    
-    // dependent resources
-    capabilityHostName: '${projectName}${uniqueSuffix}${capabilityHostName}'
-
-    aiHubId: aiHub.outputs.aiHubID
-    acsConnectionName: aiHub.outputs.acsConnectionName
-    aoaiConnectionName: aiHub.outputs.aoaiConnectionName
-  }
-  dependsOn:[
-    storage
-  ]
-}
-
-module aiServiceRoleAssignments './agent/ai-service-role-assignments.bicep' = {
-  scope: rg
-  name: 'aiserviceroleassignments${projectName}-${resourceToken}'
-  params: {
-    aiServicesName: aiDependencies.outputs.aiServicesName
-    aiProjectPrincipalId: aiProject.outputs.aiProjectPrincipalId
-    aiProjectId: aiProject.outputs.aiProjectResourceId
+    name: '${projectName}${aiUniqueSuffix}'
+    friendlyName: aiProjectFriendlyName
+    description: aiProjectDescription
+    location: modelLocation
+    tags: union(tags, {
+      ProjectConnectionString: projectConnectionString
+    })
+    kind: 'Project'
+    sku: 'Basic'
+    hubResourceId: aiHub.outputs.resourceId
+    managedIdentities: {
+      systemAssigned: true
+    }
+    roleAssignments: [
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: '64702f94-c441-49e6-a78b-ef80e0188fee' // Azure AI Developer
+        principalType: 'ServicePrincipal'
+      }
+    ]
   }
 }
 
-module aiSearchRoleAssignments './agent/ai-search-role-assignments.bicep' = {
+// AI Services role assignments for AI Project using AVM pattern
+module aiServiceRoleAssignment1 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!aiServiceExists) {
+  name: 'aiServiceRole1-${aiResourceToken}'
   scope: rg
-  name: 'aisearchroleassignments${projectName}-${resourceToken}'
   params: {
-    aiSearchName: aiDependencies.outputs.aiSearchName
-    aiProjectPrincipalId: aiProject.outputs.aiProjectPrincipalId
-    aiProjectId: aiProject.outputs.aiProjectResourceId
-  }
-}
-
-// Allow the Function App's managed identity to access AI Services
-module aiServiceRoleAssignmentFunctionApp './app/ai-service-access.bicep' = {
-  scope: rg
-  name: 'aiServiceRoleAssignmentFunctionApp-${resourceToken}'
-  params: {
-    aiServicesName: aiDependencies.outputs.aiServicesName
-    principalId: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalId: aiProject.outputs.systemAssignedMIPrincipalId!
+    roleDefinitionId: '25fbc0a9-bd7c-42a3-aa1a-3b75d497ee68' // Cognitive Services Contributor
     principalType: 'ServicePrincipal'
+    resourceId: aiServices!.outputs.resourceId
   }
-  dependsOn: [
-    aiDependencies
-    apiUserAssignedIdentity
-  ]
 }
 
-var storageBlobDataContributorRole  = 'ba92f5b4-2d11-453d-a403-e96b0029c9fe' // Storage Blob Data Owner role
-
-// Allow access from api to storage account using a managed identity
-module storageRoleAssignmentApi 'app/storage-Access.bicep' = {
+module aiServiceRoleAssignment2 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!aiServiceExists) {
   scope: rg
-  name: 'storageRoleAssignmentApi-${resourceToken}'
+  name: 'aiServiceRole2-${aiResourceToken}'
   params: {
-    storageAccountName: storage.outputs.name
-    roleDefinitionID: storageBlobDataContributorRole
-    principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalId: aiProject.outputs.systemAssignedMIPrincipalId!
+    roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User
     principalType: 'ServicePrincipal'
+    resourceId: aiServices!.outputs.resourceId
   }
 }
 
-// Allow access from user to storage account
-module storageRoleAssignmentUser 'app/storage-Access.bicep' = {
+module aiServiceRoleAssignment3 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!aiServiceExists) {
   scope: rg
-  name: 'storageRoleAssignmentUser-${resourceToken}'
+  name: 'aiServiceRole3-${aiResourceToken}'
   params: {
-    storageAccountName: storage.outputs.name
-    roleDefinitionID: storageBlobDataContributorRole
-    principalID: principalId
+    principalId: aiProject.outputs.systemAssignedMIPrincipalId!
+    roleDefinitionId: 'a97b65f3-24c7-4388-baec-2e87135dc908' // Cognitive Services User
+    principalType: 'ServicePrincipal'
+    resourceId: aiServices!.outputs.resourceId
+  }
+}
+
+// Role assignment for deployer/user principal to access Azure OpenAI
+module aiServiceRoleAssignmentUser 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!aiServiceExists) {
+  scope: rg
+  name: 'aiServiceRoleUser-${aiResourceToken}'
+  params: {
+    principalId: principalId
+    roleDefinitionId: '5e0bd9bd-7b93-4f28-af87-19fc36ad61bd' // Cognitive Services OpenAI User
     principalType: 'User'
+    resourceId: aiServices!.outputs.resourceId
   }
 }
 
-var storageQueueDataContributorRoleDefinitionId  = '974c5e8b-45b9-4653-ba55-5f855dd0fb88' // Storage Queue Data Contributor
-
-module storageQueueDataContributorRoleAssignmentprocessor 'app/storage-Access.bicep' = {
+// AI Search role assignments for AI Project using AVM pattern
+module aiSearchRoleAssignment1 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!acsExists) {
   scope: rg
-  name: 'storageQueueDataContributorRoleAssignmentprocessor-${resourceToken}'
+  name: 'aiSearchRole1-${aiResourceToken}'
   params: {
-    storageAccountName: storage.outputs.name
-    roleDefinitionID: storageQueueDataContributorRoleDefinitionId
-    principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalId: aiProject.outputs.systemAssignedMIPrincipalId!
+    roleDefinitionId: '8ebe5a00-799e-43f5-93ac-243d3dce84a7' // Search Index Data Contributor
     principalType: 'ServicePrincipal'
+    resourceId: aiSearch!.outputs.resourceId
   }
 }
 
-// Allow access from AI project to storage account using a managed identity
-module storageQueueDataContributorRoleAssignmentAIProject 'app/storage-Access.bicep' = {
+module aiSearchRoleAssignment2 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!acsExists) {
   scope: rg
-  name: 'storageQueueDataContributorRoleAssignmentAIProject-${resourceToken}'
+  name: 'aiSearchRole2-${aiResourceToken}'
   params: {
-    storageAccountName: storage.outputs.name
-    roleDefinitionID: storageQueueDataContributorRoleDefinitionId
-    principalID: aiProject.outputs.aiProjectPrincipalId
+    principalId: aiProject.outputs.systemAssignedMIPrincipalId!
+    roleDefinitionId: '7ca78c08-252a-4471-8644-bb5ff32d4ba0' // Search Service Contributor
     principalType: 'ServicePrincipal'
+    resourceId: aiSearch!.outputs.resourceId
   }
 }
 
-module storageQueueDataContributorRoleAssignmentUserIdentityprocessor 'app/storage-Access.bicep' = {
+// Role assignment for deployer/user principal to access AI Search
+module aiSearchRoleAssignmentUser 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = if (!acsExists) {
   scope: rg
-  name: 'storageQueueDataContributorRole-${resourceToken}'
+  name: 'aiSearchRoleUser-${aiResourceToken}'
   params: {
-    storageAccountName: storage.outputs.name
-    roleDefinitionID: storageQueueDataContributorRoleDefinitionId
-    principalID: principalId
+    principalId: principalId
+    roleDefinitionId: '8ebe5a00-799e-43f5-93ac-243d3dce84a7' // Search Index Data Contributor
     principalType: 'User'
+    resourceId: aiSearch!.outputs.resourceId
   }
 }
 
-var storageTableDataContributorRoleDefinitionId  = '0a9a7e1f-b9d0-4cc4-a60d-0319b160aaa3' // Storage Table Data Contributor
+// aiServiceRoleAssignmentFunctionApp - now inline in aiServices module
 
-module storageTableDataContributorRoleAssignmentprocessor 'app/storage-Access.bicep' = {
+// Storage role assignments using AVM pattern
+// Blob and table roles now inline in storage module
+var storageQueueDataContributorRole = '974c5e8b-45b9-4653-ba55-5f855dd0fb88'
+
+// storageRoleAssignmentApi - now inline in storage module
+// storageRoleAssignmentUser - now inline in storage module
+
+module storageQueueRoleApi 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
   scope: rg
-  name: 'storageTableDataContributorRole-${resourceToken}'
+  name: 'storageQueueApi-${resourceToken}'
   params: {
-    storageAccountName: storage.outputs.name
-    roleDefinitionID: storageTableDataContributorRoleDefinitionId
-    principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalId: apiUserAssignedIdentity.outputs.principalId
+    roleDefinitionId: storageQueueDataContributorRole
     principalType: 'ServicePrincipal'
+    resourceId: storage.outputs.resourceId
   }
 }
 
-// Virtual Network & private endpoint to blob storage
-module serviceVirtualNetwork 'app/vnet.bicep' =  if (!skipVnet) {
+module storageQueueRoleAIProject 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
   scope: rg
-  name: 'serviceVirtualNetwork-${resourceToken}'
+  name: 'storageQueueAI-${resourceToken}'
   params: {
+    principalId: aiProject.outputs.systemAssignedMIPrincipalId!
+    roleDefinitionId: storageQueueDataContributorRole
+    principalType: 'ServicePrincipal'
+    resourceId: storage.outputs.resourceId
+  }
+}
+
+module storageQueueRoleUser 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
+  scope: rg
+  name: 'storageQueueUser-${resourceToken}'
+  params: {
+    principalId: principalId
+    roleDefinitionId: storageQueueDataContributorRole
+    principalType: 'User'
+    resourceId: storage.outputs.resourceId
+  }
+}
+
+// storageTableRoleApi - now inline in storage module
+
+// Virtual Network using AVM
+var vnetName = !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
+
+module serviceVirtualNetwork 'br/public:avm/res/network/virtual-network:0.7.1' = if (!skipVnet) {
+  scope: rg
+  name: 'vnet-${resourceToken}'
+  params: {
+    name: vnetName
     location: location
     tags: tags
-    vNetName: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
+    addressPrefixes: ['10.0.0.0/16']
+    subnets: [
+      {
+        name: 'app-subnet'
+        addressPrefix: '10.0.0.0/24'
+        delegation: 'Microsoft.App/environments'
+      }
+      {
+        name: 'pe-subnet'
+        addressPrefix: '10.0.1.0/24'
+      }
+    ]
   }
 }
 
-module storagePrivateEndpoint 'app/storage-private-endpoint.bicep' = if (!skipVnet) {
+// Private DNS Zone for blob storage
+module privateDnsZone 'br/public:avm/res/network/private-dns-zone:0.8.0' = if (!skipVnet) {
   scope: rg
-  name: 'servicePrivateEndpoint-${resourceToken}'
+  name: 'pdns-${resourceToken}'
   params: {
+    name: 'privatelink.blob.${environment().suffixes.storage}'
+    virtualNetworkLinks: [
+      {
+        virtualNetworkResourceId: serviceVirtualNetwork!.outputs.resourceId
+      }
+    ]
+  }
+}
+
+// Private Endpoint for storage using AVM
+module storagePrivateEndpoint 'br/public:avm/res/network/private-endpoint:0.11.1' = if (!skipVnet) {
+  scope: rg
+  name: 'pe-${resourceToken}'
+  params: {
+    name: 'pe-storage-${resourceToken}'
     location: location
     tags: tags
-    virtualNetworkName: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
-    subnetName: skipVnet ? '' : serviceVirtualNetwork.outputs.peSubnetName
-    resourceName: storage.outputs.name
+    subnetResourceId: '${serviceVirtualNetwork!.outputs.resourceId}/subnets/pe-subnet'
+    privateLinkServiceConnections: [
+      {
+        name: 'storage-blob-connection'
+        properties: {
+          privateLinkServiceId: storage.outputs.resourceId
+          groupIds: ['blob']
+        }
+      }
+    ]
+    privateDnsZoneGroup: {
+      privateDnsZoneGroupConfigs: [
+        {
+          privateDnsZoneResourceId: privateDnsZone!.outputs.resourceId
+        }
+      ]
+    }
   }
 }
 
-// Monitor application with Azure Monitor
-module monitoring './core/monitor/monitoring.bicep' = {
+// Log Analytics Workspace using AVM
+module logAnalytics 'br/public:avm/res/operational-insights/workspace:0.13.0' = {
+  scope: rg
+  name: 'logs-${resourceToken}'
+  params: {
+    name: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
+    location: location
+    tags: tags
+  }
+}
+
+// Application Insights using AVM
+module monitoring 'br/public:avm/res/insights/component:0.7.1' = {
   scope: rg
   name: 'monitoring-${resourceToken}'
   params: {
+    name: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     location: location
     tags: tags
-    logAnalyticsName: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
-    applicationInsightsName: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
-    disableLocalAuth: disableLocalAuth  
+    workspaceResourceId: logAnalytics.outputs.resourceId
+    disableLocalAuth: disableLocalAuth
+    roleAssignments: [
+      {
+        principalId: apiUserAssignedIdentity.outputs.principalId
+        roleDefinitionIdOrName: '3913510d-42f4-4e42-8a64-420c390055eb' // Monitoring Metrics Publisher
+        principalType: 'ServicePrincipal'
+      }
+    ]
   }
-}
-
-var monitoringRoleDefinitionId = '3913510d-42f4-4e42-8a64-420c390055eb' // Monitoring Metrics Publisher role ID
-
-// Allow access from api to application insights using a managed identity
-module appInsightsRoleAssignmentApi './core/monitor/appinsights-access.bicep' = {
-  scope: rg
-  name: 'appInsightsRoleAssignmentApi-${resourceToken}'
-  params: {
-    appInsightsName: monitoring.outputs.applicationInsightsName
-    roleDefinitionID: monitoringRoleDefinitionId
-    principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
-  }
-  dependsOn: [
-    apiUserAssignedIdentity
-  ]
-}
-
-var azureAiDeveloperRoleId = '64702f94-c441-49e6-a78b-ef80e0188fee' // Azure AI Developer role ID
-// Enable access to AI Project from the Azure Function user assigned identity
-resource AIProjectRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(azureAiDeveloperRoleId, aiProjectName, resourceId('Microsoft.MachineLearningServices/workspaces', aiProjectName), resourceToken)
-  properties: {
-    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureAiDeveloperRoleId)
-    principalId: apiUserAssignedIdentity.outputs.identityPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-  dependsOn: [
-    apiUserAssignedIdentity
-  ]
 }
 
 var durableTaskDataContributorRoleDefinitionId = '0ad04412-c4d5-4796-b79c-f76d14c8d402'
 
-// Allow access from durable function to storage account using a user assigned managed identity
-module dtsRoleAssignment 'app/dts-access.bicep' = {
-  name: 'dtsRoleAssignment-${resourceToken}'
+module dtsRoleApi 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
   scope: rg
+  name: 'dtsRoleApi-${resourceToken}'
   params: {
-   roleDefinitionID: durableTaskDataContributorRoleDefinitionId
-   principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
-   principalType: 'ServicePrincipal'
-   dtsName: dts.outputs.dts_NAME
+    principalId: apiUserAssignedIdentity.outputs.principalId
+    roleDefinitionId: durableTaskDataContributorRoleDefinitionId
+    principalType: 'ServicePrincipal'
+    resourceId: dts.outputs.dts_ID
   }
-  dependsOn: [
-    storage
-    apiUserAssignedIdentity
-    dts
-  ]
 }
 
-module dtsDashboardRoleAssignment 'app/dts-access.bicep' = {
-  name: 'dtsDashboardRoleAssignment-${resourceToken}'
+module dtsRoleUser 'br/public:avm/ptn/authorization/resource-role-assignment:0.1.2' = {
   scope: rg
+  name: 'dtsRoleUser-${resourceToken}'
   params: {
-   roleDefinitionID: durableTaskDataContributorRoleDefinitionId
-   principalID: principalId
-   principalType: 'User'
-   dtsName: dts.outputs.dts_NAME
+    principalId: principalId
+    roleDefinitionId: durableTaskDataContributorRoleDefinitionId
+    principalType: 'User'
+    resourceId: dts.outputs.dts_ID
   }
-  dependsOn: [
-    dts
-  ]
 }
 
+// Durable Task Scheduler doesn't have AVM support yet - 
 module dts './app/dts.bicep' = {
   scope: rg 
   name: 'dtsResource-${resourceToken}'
@@ -525,23 +754,19 @@ module dts './app/dts.bicep' = {
     skuName: dtsSkuName
     skuCapacity: dtsCapacity
   }
-  dependsOn: [
-    storage
-  ]
 }
 
 // App outputs
-output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.applicationInsightsConnectionString
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = monitoring.outputs.connectionString
 output AZURE_LOCATION string = location
-// Note: AZURE_TENANT_ID and AZURE_CLIENT_ID outputs removed - not needed with DefaultAzureCredential
-output SERVICE_API_NAME string = api.outputs.SERVICE_API_NAME
-output SERVICE_API_URI string = api.outputs.SERVICE_API_URI
-output AZURE_FUNCTION_APP_NAME string = api.outputs.SERVICE_API_NAME
-output STATIC_WEB_APP_NAME string = webapp.outputs.name  
-output STATIC_WEB_APP_URI string = webapp.outputs.uri
+output SERVICE_API_NAME string = api.outputs.name
+output SERVICE_API_URI string = 'https://${api.outputs.defaultHostname}'
+output AZURE_FUNCTION_APP_NAME string = api.outputs.name
+output STATIC_WEB_APP_NAME string = webapp.outputs.name
+output STATIC_WEB_APP_URI string = 'https://${webapp.outputs.defaultHostname}'
 output PRE_STATIC_WEB_APP_URI string = webAppName
 output RESOURCE_GROUP string = rg.name
-output PROJECT_CONNECTION_STRING string = aiProject.outputs.projectConnectionString
+output PROJECT_CONNECTION_STRING string = projectConnectionString
 output STORAGE_CONNECTION__queueServiceUri string = 'https://${storage.outputs.name}.queue.${environment().suffixes.storage}'
-output AZURE_OPENAI_ENDPOINT string = aiDependencies.outputs.aiservicesTarget
+output AZURE_OPENAI_ENDPOINT string = aiServiceExists ? reference(aiServiceAccountResourceId, '2023-05-01').endpoint : aiServices!.outputs.endpoint
 output AZURE_OPENAI_DEPLOYMENT_NAME string = modelName

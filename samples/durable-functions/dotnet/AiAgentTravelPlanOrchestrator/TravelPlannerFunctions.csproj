@@ -35,15 +35,16 @@
     <PackageReference Include="Grpc.Net.Client" Version="2.71.0" />
     <PackageReference Include="Microsoft.Extensions.Azure" Version="1.12.0" />
     
-    <PackageReference Include="Azure.AI.OpenAI" Version="2.5.0-beta.1" />
-    <PackageReference Include="Microsoft.Extensions.AI" Version="9.*-*" />
-    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.*-*" />
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.7.0-beta.2" />
+    <!-- <PackageReference Include="Microsoft.Extensions.AI" Version="9.*-*" />
+    <PackageReference Include="Microsoft.Extensions.AI.OpenAI" Version="9.*-*" /> -->
   </ItemGroup>
 
   <!-- Private packages -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.*" />
-    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251114.1" />
+    <!-- <PackageReference Include="Microsoft.Agents.AI" Version="1.0.0-preview.*" /> -->
+    <PackageReference Include="Microsoft.Agents.AI.OpenAI" Version="1.0.0-preview.251125.1" />
+    <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureFunctions" Version="1.0.0-preview.251125.1" />
   </ItemGroup>
 
   <!-- Local project reference for Durable Agents -->
