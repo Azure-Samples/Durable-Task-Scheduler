@@ -22,7 +22,6 @@
     
     <!-- Durable Agents packages - aligned versions -->
     <PackageReference Include="Microsoft.Agents.AI.DurableTask" Version="1.0.0-preview.251114.1" />
-    <PackageReference Include="Microsoft.Agents.AI.Hosting.AzureFunctions" Version="1.0.0-preview.251114.1" />
 
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.3.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="2.0.2" />
