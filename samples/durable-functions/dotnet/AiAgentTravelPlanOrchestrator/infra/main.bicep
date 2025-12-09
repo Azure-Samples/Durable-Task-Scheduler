@@ -280,7 +280,7 @@ module api 'br/public:avm/res/web/site:0.19.3' = {
     siteConfig: {
       alwaysOn: false
       cors: {
-        allowedOrigins: [ webUri, webapp.outputs.defaultHostname ]
+        allowedOrigins: [ webUri, 'https://${webapp.outputs.defaultHostname}' ]
       }
       appSettings: [
         { name: 'AzureWebJobsStorage__credential', value: 'managedidentity' }

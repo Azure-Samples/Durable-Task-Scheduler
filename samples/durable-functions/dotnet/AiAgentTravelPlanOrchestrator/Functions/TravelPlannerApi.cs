@@ -235,7 +235,7 @@ public class TravelPlannerApi
                 {
                     if (bookingConfirmationElement.ValueKind == System.Text.Json.JsonValueKind.String)
                     {
-                        string bookingConfirmation = bookingConfirmationElement.GetString();
+                        string? bookingConfirmation = bookingConfirmationElement.GetString();
                         if (bookingConfirmation != null)
                         {
                             if (bookingConfirmation.Contains("Booking confirmed"))
