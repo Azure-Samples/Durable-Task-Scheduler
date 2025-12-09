@@ -5,6 +5,8 @@ infra:
   provider: bicep
   path: infra
   module: main
+  parameters:
+    location: ${AZURE_LOCATION}
 services:
   api:
     project: .
