@@ -50,7 +50,7 @@ param dtsName string = ''
 param taskHubName string = ''
 
 @description('Durable Task Scheduler SKU name')
-param dtsSkuName string = 'Dedicated'
+param dtsSkuName string = 'Consumption'
 
 @description('Durable Task Scheduler SKU capacity')
 param dtsCapacity int = 1
@@ -752,7 +752,6 @@ module dts './app/dts.bicep' = {
       '0.0.0.0/0'
     ]
     skuName: dtsSkuName
-    skuCapacity: dtsCapacity
   }
 }
 
