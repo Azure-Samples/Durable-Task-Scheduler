@@ -1,6 +1,10 @@
 name: travel-planner
 metadata:
   template: travel-planner@0.0.1
+infra:
+  provider: bicep
+  path: infra
+  module: main
 services:
   api:
     project: .

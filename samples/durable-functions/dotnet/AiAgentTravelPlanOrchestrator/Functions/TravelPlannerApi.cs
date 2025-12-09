@@ -51,7 +51,7 @@ public class TravelPlannerApi
         response.Headers.Add("Location", $"/api/travel-planner/status/{instanceId}");
         
         // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -87,7 +87,7 @@ public class TravelPlannerApi
         var response = req.CreateResponse(HttpStatusCode.OK);
         
         // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -127,7 +127,7 @@ public class TravelPlannerApi
         var response = req.CreateResponse(HttpStatusCode.OK);
         
         // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -149,7 +149,7 @@ public class TravelPlannerApi
         _logger.LogInformation("CORS preflight request received for travel-planner endpoint");
         
         var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -165,7 +165,7 @@ public class TravelPlannerApi
         _logger.LogInformation("CORS preflight request received for travel-planner/status endpoint");
         
         var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -181,7 +181,7 @@ public class TravelPlannerApi
         _logger.LogInformation("CORS preflight request received for travel-planner/approve endpoint");
         
         var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -211,7 +211,7 @@ public class TravelPlannerApi
         var response = req.CreateResponse(HttpStatusCode.OK);
         
         // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");
@@ -296,7 +296,7 @@ public class TravelPlannerApi
         _logger.LogInformation("CORS preflight request received for travel-planner/confirmation endpoint");
         
         var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "http://localhost:3000");
+        response.Headers.Add("Access-Control-Allow-Origin", "*");
         response.Headers.Add("Access-Control-Allow-Methods", "GET, OPTIONS");
         response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
         response.Headers.Add("Access-Control-Allow-Credentials", "true");

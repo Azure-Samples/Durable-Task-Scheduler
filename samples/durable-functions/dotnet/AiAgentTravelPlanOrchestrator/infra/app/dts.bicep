@@ -4,7 +4,6 @@ param tags object = {}
 param name string
 param taskhubname string
 param skuName string 
-param skuCapacity int
 
 resource dts 'Microsoft.DurableTask/schedulers@2025-11-01' = {
   location: location
@@ -14,7 +13,6 @@ resource dts 'Microsoft.DurableTask/schedulers@2025-11-01' = {
     ipAllowlist: ipAllowlist
     sku: {
       name: skuName
-      capacity: skuCapacity
     }
   }
 }
