@@ -1,0 +1,20 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.0.2">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <UserSecretsId>57e5b98b-1f06-4a80-8b40-81ed4a56b608</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Azure.Functions" Version="13.0.2-preview.1.25603.5" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="13.0.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../AzureFunctions/AzureFunctions.csproj" />
+  </ItemGroup>
+
+</Project>
