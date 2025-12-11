@@ -62,13 +62,13 @@ param principalId string = deployer().objectId
 param aiServicesName string = 'agentaiservices'
 
 @description('Model name for deployment')
-param modelName string = 'gpt-5-mini'
+param modelName string = 'gpt-4o-mini'
 
 @description('Model format for deployment')
 param modelFormat string = 'OpenAI'
 
 @description('Model version for deployment')
-param modelVersion string = '2025-08-07'
+param modelVersion string = '2024-07-18'
 
 @description('Model deployment SKU name')
 param modelSkuName string = 'S0'
