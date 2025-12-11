@@ -15,7 +15,7 @@ using Microsoft.Extensions.Logging;
 string endpoint = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT")
     ?? throw new InvalidOperationException("AZURE_OPENAI_ENDPOINT is not set.");
 string deploymentName = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT_NAME")
-    ?? "gpt-5-mini";
+    ?? throw new InvalidOperationException("AZURE_OPENAI_DEPLOYMENT_NAME is not set.");
 
 // Build the Functions application with the agents registered.
 FunctionsApplicationBuilder builder = FunctionsApplication
@@ -178,6 +178,13 @@ builder.Logging.Services.Configure<LoggerFilterOptions>(options =>
     });
 
 
+// Configure HttpClient for currency converter
+builder.Services.AddHttpClient("CurrencyConverter", client =>
+{
+    client.BaseAddress = new Uri("https://open.er-api.com/v6/");
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+
 builder.Services.AddAzureClients(clientBuilder =>
 {
     // Use DefaultAzureCredential which automatically handles:
@@ -232,4 +239,9 @@ builder.Services.AddCors(options =>
 
 // Build and run the application.
 var app = builder.Build();
+
+// Initialize the currency converter tool with HttpClientFactory
+var httpClientFactory = app.Services.GetRequiredService<IHttpClientFactory>();
+CurrencyConverterTool.Initialize(httpClientFactory);
+
 app.Run();

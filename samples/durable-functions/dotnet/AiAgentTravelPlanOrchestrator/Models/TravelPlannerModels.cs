@@ -20,14 +20,6 @@ public record DestinationRecommendations(
     List<DestinationRecommendation> Recommendations
 );
 
-public record TravelItineraryRequest(
-    string DestinationName,
-    int DurationInDays,
-    string Budget,
-    string TravelDates,
-    string SpecialRequirements
-);
-
 public record ItineraryDay(
     int Day,
     string Date,
@@ -48,14 +40,6 @@ public record TravelItinerary(
     List<ItineraryDay> DailyPlan,
     string EstimatedTotalCost,
     string AdditionalNotes
-);
-
-public record LocalRecommendationsRequest(
-    string DestinationName,
-    int DurationInDays,
-    string PreferredCuisine,
-    bool IncludeHiddenGems,
-    bool FamilyFriendly
 );
 
 public record Attraction(
@@ -96,7 +80,7 @@ public record SaveTravelPlanRequest(
 
 public record TravelPlanResult(
     TravelPlan Plan,
-    string DocumentUrl,
+    string? DocumentUrl,
     string? BookingConfirmation = null
 );
 
@@ -123,7 +107,6 @@ public record BookingConfirmation(
     DateTime BookingDate
 );
 
-// Currency Converter Models
 public record CurrencyConversion(
     string FromCurrency,
     string ToCurrency,
@@ -131,10 +114,4 @@ public record CurrencyConversion(
     decimal ConvertedAmount,
     decimal ExchangeRate,
     DateTime Timestamp
-);
-
-public record ExchangeRateResponse(
-    string BaseCode,
-    Dictionary<string, decimal> ConversionRates,
-    long TimeLastUpdateUnix
 );

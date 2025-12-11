@@ -11,10 +11,18 @@ namespace TravelPlannerFunctions.Tools;
 /// </summary>
 public class CurrencyConverterTool
 {
-    private static readonly HttpClient _httpClient = new HttpClient
+    private static IHttpClientFactory? _httpClientFactory;
+    private static readonly Lazy<HttpClient> _httpClient = new Lazy<HttpClient>(() =>
     {
-        BaseAddress = new Uri("https://open.er-api.com/v6/")
-    };
+        var client = _httpClientFactory?.CreateClient("CurrencyConverter") ?? new HttpClient();
+        client.BaseAddress = new Uri("https://open.er-api.com/v6/");
+        return client;
+    });
+
+    public static void Initialize(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory;
+    }
 
     /// <summary>
     /// Converts an amount from one currency to another using current exchange rates.
@@ -32,7 +40,7 @@ public class CurrencyConverterTool
         try
         {
             // Get exchange rates for the source currency
-            var response = await _httpClient.GetAsync($"latest/{fromCurrency.ToUpper()}");
+            var response = await _httpClient.Value.GetAsync($"latest/{fromCurrency.ToUpper()}");
             response.EnsureSuccessStatusCode();
 
             var content = await response.Content.ReadAsStringAsync();
@@ -99,37 +107,5 @@ public class CurrencyConverterTool
     {
         var conversion = await ConvertCurrency(1, fromCurrency, toCurrency);
         return conversion.ExchangeRate;
-    }
-
-    /// <summary>
-    /// Gets a list of supported currency codes.
-    /// </summary>
-    /// <returns>List of common currency codes</returns>
-    [Description("Gets a list of commonly used currency codes for reference.")]
-    public static List<string> GetSupportedCurrencies()
-    {
-        return new List<string>
-        {
-            "USD", // US Dollar
-            "EUR", // Euro
-            "GBP", // British Pound
-            "JPY", // Japanese Yen
-            "CNY", // Chinese Yuan
-            "AUD", // Australian Dollar
-            "CAD", // Canadian Dollar
-            "CHF", // Swiss Franc
-            "INR", // Indian Rupee
-            "MXN", // Mexican Peso
-            "BRL", // Brazilian Real
-            "ZAR", // South African Rand
-            "SGD", // Singapore Dollar
-            "NZD", // New Zealand Dollar
-            "KRW", // South Korean Won
-            "SEK", // Swedish Krona
-            "NOK", // Norwegian Krone
-            "DKK", // Danish Krone
-            "THB", // Thai Baht
-            "AED"  // UAE Dirham
-        };
     }
 }

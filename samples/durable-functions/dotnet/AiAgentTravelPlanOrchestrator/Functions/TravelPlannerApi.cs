@@ -50,12 +50,6 @@ public class TravelPlannerApi
         // Add a Location header that points to the status endpoint
         response.Headers.Add("Location", $"/api/travel-planner/status/{instanceId}");
         
-        // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
         await response.WriteAsJsonAsync(new
         {
             id = instanceId,
@@ -85,13 +79,6 @@ public class TravelPlannerApi
         }
 
         var response = req.CreateResponse(HttpStatusCode.OK);
-        
-        // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
         await response.WriteAsJsonAsync(status);
         return response;
     }
@@ -125,13 +112,6 @@ public class TravelPlannerApi
 
         // Return a success response
         var response = req.CreateResponse(HttpStatusCode.OK);
-        
-        // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
         await response.WriteAsJsonAsync(new
         {
             instanceId,
@@ -142,52 +122,7 @@ public class TravelPlannerApi
         return response;
     }
 
-    [Function(nameof(TravelPlannerOptionsHandler))]
-    public HttpResponseData TravelPlannerOptionsHandler(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "options", Route = "travel-planner")] HttpRequestData req)
-    {
-        _logger.LogInformation("CORS preflight request received for travel-planner endpoint");
-        
-        var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
-        return response;
-    }
-    
-    [Function(nameof(TravelPlannerStatusOptionsHandler))]
-    public HttpResponseData TravelPlannerStatusOptionsHandler(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "options", Route = "travel-planner/status/{instanceId}")] HttpRequestData req,
-        string instanceId)
-    {
-        _logger.LogInformation("CORS preflight request received for travel-planner/status endpoint");
-        
-        var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
-        return response;
-    }
-    
-    [Function(nameof(TravelPlannerApproveOptionsHandler))]
-    public HttpResponseData TravelPlannerApproveOptionsHandler(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "options", Route = "travel-planner/approve/{instanceId}")] HttpRequestData req,
-        string instanceId)
-    {
-        _logger.LogInformation("CORS preflight request received for travel-planner/approve endpoint");
-        
-        var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
-        return response;
-    }
+
 
     [Function(nameof(GetTripConfirmationStatus))]
     public async Task<HttpResponseData> GetTripConfirmationStatus(
@@ -209,12 +144,6 @@ public class TravelPlannerApi
         }
 
         var response = req.CreateResponse(HttpStatusCode.OK);
-        
-        // Add CORS headers
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
         
         // Check if the booking has been confirmed
         bool isConfirmed = false;
@@ -285,22 +214,6 @@ public class TravelPlannerApi
             status.RuntimeStatus
         });
 
-        return response;
-    }
-    
-    [Function(nameof(TripConfirmationOptionsHandler))]
-    public HttpResponseData TripConfirmationOptionsHandler(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "options", Route = "travel-planner/confirmation/{instanceId}")] HttpRequestData req,
-        string instanceId)
-    {
-        _logger.LogInformation("CORS preflight request received for travel-planner/confirmation endpoint");
-        
-        var response = req.CreateResponse(HttpStatusCode.OK);
-        response.Headers.Add("Access-Control-Allow-Origin", "*");
-        response.Headers.Add("Access-Control-Allow-Methods", "GET, OPTIONS");
-        response.Headers.Add("Access-Control-Allow-Headers", "Content-Type");
-        response.Headers.Add("Access-Control-Allow-Credentials", "true");
-        
         return response;
     }
 }

@@ -25,33 +25,25 @@ public class TravelPlannerActivities
     {
         _logger.LogInformation("Saving travel plan for {UserName} to blob storage", request.UserName);
         
-        try
-        {
-            // Create a unique filename for this travel plan
-            string fileName = $"travel-plan-{request.UserName}-{DateTime.UtcNow:yyyy-MM-dd-HH-mm-ss}.txt";
-            
-            // Format the travel plan as text
-            var content = FormatTravelPlanAsText(request.TravelPlan, request.UserName);
-            
-            // Get a container client using the pre-initialized BlobServiceClient
-            var containerClient = _blobServiceClient.GetBlobContainerClient("travel-plans");
-            await containerClient.CreateIfNotExistsAsync();
-            
-            // Upload the travel plan text to blob storage
-            var blobClient = containerClient.GetBlobClient(fileName);
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
-            await blobClient.UploadAsync(stream, overwrite: true);
-            
-            _logger.LogInformation("Successfully saved travel plan to {BlobUrl}", blobClient.Uri);
-            
-            // Return the URL of the uploaded file
-            return blobClient.Uri.ToString();
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error saving travel plan to blob storage");
-            return string.Empty;
-        }
+        // Create a unique filename for this travel plan
+        string fileName = $"travel-plan-{request.UserName}-{DateTime.UtcNow:yyyy-MM-dd-HH-mm-ss}.txt";
+        
+        // Format the travel plan as text
+        var content = FormatTravelPlanAsText(request.TravelPlan, request.UserName);
+        
+        // Get a container client using the pre-initialized BlobServiceClient
+        var containerClient = _blobServiceClient.GetBlobContainerClient("travel-plans");
+        await containerClient.CreateIfNotExistsAsync();
+        
+        // Upload the travel plan text to blob storage
+        var blobClient = containerClient.GetBlobClient(fileName);
+        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(content));
+        await blobClient.UploadAsync(stream, overwrite: true);
+        
+        _logger.LogInformation("Successfully saved travel plan to {BlobUrl}", blobClient.Uri);
+        
+        // Return the URL of the uploaded file
+        return blobClient.Uri.ToString();
     }
 
     [Function(nameof(RequestApproval))]
@@ -77,31 +69,23 @@ public class TravelPlannerActivities
         _logger.LogInformation("Booking trip to {Destination} for user {UserName}", 
             request.TravelPlan.Itinerary.DestinationName, request.UserName);
             
-        try
-        {
-            // In a real app, this would integrate with a booking system or API
-            // For demo purposes, we'll simulate an async booking operation
-            await Task.Delay(100); // Simulate an API call to a booking service
-            
-            // Generate a booking ID
-            string bookingId = $"BK-{Guid.NewGuid().ToString().Substring(0, 8)}";
-            
-            var confirmation = new BookingConfirmation(
-                bookingId,
-                $"Trip to {request.TravelPlan.Itinerary.DestinationName} booked successfully for {request.UserName}. " +
-                $"Travel dates: {request.TravelPlan.Itinerary.TravelDates}. " +
-                (string.IsNullOrEmpty(request.ApproverComments) ? "" : $"Notes: {request.ApproverComments}"),
-                DateTime.UtcNow
-            );
-            
-            _logger.LogInformation("Trip booked successfully with booking ID {BookingId}", bookingId);
-            return confirmation;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error booking trip");
-            throw; // Rethrow to let the orchestrator handle the error
-        }
+        // In a real app, this would integrate with a booking system or API
+        // For demo purposes, we'll simulate an async booking operation
+        await Task.Delay(100); // Simulate an API call to a booking service
+        
+        // Generate a booking ID
+        string bookingId = $"BK-{Guid.NewGuid().ToString()[..8]}";
+        
+        var confirmation = new BookingConfirmation(
+            bookingId,
+            $"Trip to {request.TravelPlan.Itinerary.DestinationName} booked successfully for {request.UserName}. " +
+            $"Travel dates: {request.TravelPlan.Itinerary.TravelDates}. " +
+            (string.IsNullOrEmpty(request.ApproverComments) ? "" : $"Notes: {request.ApproverComments}"),
+            DateTime.UtcNow
+        );
+        
+        _logger.LogInformation("Trip booked successfully with booking ID {BookingId}", bookingId);
+        return confirmation;
     }
     
     private string FormatTravelPlanAsText(TravelPlan travelPlan, string userName)

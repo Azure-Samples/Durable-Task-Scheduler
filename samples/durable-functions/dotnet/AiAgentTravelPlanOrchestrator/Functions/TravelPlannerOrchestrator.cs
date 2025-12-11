@@ -13,6 +13,19 @@ namespace TravelPlannerFunctions.Functions;
 
 public class TravelPlannerOrchestrator
 {
+    private const int ApprovalTimeoutDays = 7;
+    private const int StatusMaxSizeBytes = 16_384; // 16KB
+    
+    // Progress milestones
+    private const int ProgressStarting = 0;
+    private const int ProgressDestinations = 10;
+    private const int ProgressItinerary = 30;
+    private const int ProgressLocalRecommendations = 50;
+    private const int ProgressSavingPlan = 70;
+    private const int ProgressRequestingApproval = 85;
+    private const int ProgressWaitingForApproval = 90;
+    private const int ProgressBooking = 95;
+    
     private readonly ILogger _logger;
 
     public TravelPlannerOrchestrator(ILoggerFactory loggerFactory)
@@ -31,11 +44,9 @@ public class TravelPlannerOrchestrator
         logger.LogInformation("Starting travel planning orchestration for user {UserName}", travelRequest.UserName);
 
         // Set initial status
-        context.SetCustomStatus(new {
-            step = "Starting",
-            message = $"Starting travel planning for {travelRequest.UserName}",
-            progress = 0
-        });
+        SetOrchestrationStatus(context, "Starting", 
+            $"Starting travel planning for {travelRequest.UserName}", 
+            ProgressStarting);
 
         // Get the durable agents for the travel planning workflow
         DurableAIAgent destinationAgent = context.GetAgent("DestinationRecommenderAgent");
@@ -49,11 +60,9 @@ public class TravelPlannerOrchestrator
 
         // Step 1: Get destination recommendations
         logger.LogInformation("Step 1: Requesting destination recommendations");
-        context.SetCustomStatus(new {
-            step = "GetDestinationRecommendations",
-            message = "Finding the perfect destinations for your travel preferences...",
-            progress = 10
-        });
+        SetOrchestrationStatus(context, "GetDestinationRecommendations",
+            "Finding the perfect destinations for your travel preferences...",
+            ProgressDestinations);
         
         var destinationPrompt = $@"Based on the following preferences, recommend 3 travel destinations:
                                 User: {travelRequest.UserName}
@@ -84,12 +93,9 @@ public class TravelPlannerOrchestrator
 
         // Step 2: Create an itinerary for the selected destination
         logger.LogInformation("Step 2: Creating itinerary for {DestinationName}", topDestination.DestinationName);
-        context.SetCustomStatus(new {
-            step = "CreateItinerary",
-            message = $"Creating a detailed itinerary for {topDestination.DestinationName}...",
-            progress = 30,
-            destination = topDestination.DestinationName
-        });
+        SetOrchestrationStatus(context, "CreateItinerary",
+            $"Creating a detailed itinerary for {topDestination.DestinationName}...",
+            ProgressItinerary, topDestination.DestinationName);
         
         var itineraryPrompt = $@"Create a {travelRequest.DurationInDays}-day itinerary for {topDestination.DestinationName}.
                             Dates: {travelRequest.TravelDates}
@@ -133,12 +139,9 @@ public class TravelPlannerOrchestrator
 
         // Step 3: Get local recommendations
         logger.LogInformation("Step 3: Getting local recommendations for {DestinationName}", topDestination.DestinationName);
-        context.SetCustomStatus(new {
-            step = "GetLocalRecommendations",
-            message = $"Finding local hidden gems and recommendations in {topDestination.DestinationName}...",
-            progress = 50,
-            destination = topDestination.DestinationName
-        });
+        SetOrchestrationStatus(context, "GetLocalRecommendations",
+            $"Finding local hidden gems and recommendations in {topDestination.DestinationName}...",
+            ProgressLocalRecommendations, topDestination.DestinationName);
         
         var localPrompt = $@"Provide local recommendations for {topDestination.DestinationName}:
                         Duration: {travelRequest.DurationInDays} days
@@ -157,74 +160,55 @@ public class TravelPlannerOrchestrator
         
         // Step 4: Save the travel plan to blob storage
         logger.LogInformation("Step 4: Saving travel plan to blob storage");
-        context.SetCustomStatus(new {
-            step = "SaveTravelPlan",
-            message = "Finalizing your travel plan and preparing documentation...",
-            progress = 70,
-            destination = topDestination.DestinationName
-        });
+        SetOrchestrationStatus(context, "SaveTravelPlan",
+            "Finalizing your travel plan and preparing documentation...",
+            ProgressSavingPlan, topDestination.DestinationName);
         var savePlanRequest = new SaveTravelPlanRequest(travelPlan, travelRequest.UserName);
-        var documentUrl = await context.CallActivityAsync<string>(
-            nameof(TravelPlannerActivities.SaveTravelPlanToBlob),
-            savePlanRequest);
+        string? documentUrl;
+        try
+        {
+            documentUrl = await context.CallActivityAsync<string>(
+                nameof(TravelPlannerActivities.SaveTravelPlanToBlob),
+                savePlanRequest);
+            
+            if (string.IsNullOrEmpty(documentUrl))
+            {
+                logger.LogWarning("Failed to save travel plan to blob storage");
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Error saving travel plan to blob storage");
+            documentUrl = null;
+        }
         
         // Step 5: Request approval before booking the trip (Human Interaction Pattern)
         logger.LogInformation("Step 5: Requesting approval for travel plan");
-        context.SetCustomStatus(new {
-            step = "RequestApproval",
-            message = "Sending travel plan for your approval...",
-            progress = 85,
-            destination = topDestination.DestinationName,
-            documentUrl = documentUrl
-        });
+        SetOrchestrationStatus(context, "RequestApproval",
+            "Sending travel plan for your approval...",
+            ProgressRequestingApproval, topDestination.DestinationName, documentUrl);
         var approvalRequest = new ApprovalRequest(context.InstanceId, travelPlan, travelRequest.UserName);
         await context.CallActivityAsync(nameof(TravelPlannerActivities.RequestApproval), approvalRequest);
         
         // Step 6: Wait for approval
         logger.LogInformation("Step 6: Waiting for approval from user {UserName}", travelRequest.UserName);
         
-        // Define a default response for timeout
-        var defaultApprovalResponse = new ApprovalResponse(false, "Timed out waiting for approval");
-        
         // Wait for external event with timeout
         ApprovalResponse approvalResponse;
         try
         {
-            // Update the waiting for approval status with more structured data including the full dailyPlan and local recommendations
-            var waitingStatus = new {
-                step = "WaitingForApproval",
-                message = "Waiting for your approval of the travel plan...",
-                progress = 90,
-                destination = topDestination.DestinationName,
-                documentUrl = documentUrl,
-                travelPlan = new {
-                    destination = topDestination.DestinationName,
-                    dates = itinerary.TravelDates,
-                    cost = itinerary.EstimatedTotalCost,
-                    days = itinerary.DailyPlan.Count,
-                    dailyPlan = itinerary.DailyPlan, // Include the full dailyPlan in the status update
-                    attractions = localRecommendations.Attractions.FirstOrDefault(), // Include attractions
-                    restaurants = localRecommendations.Restaurants.FirstOrDefault(), // Include restaurants
-                    insiderTips = localRecommendations.InsiderTips // Include insider tips
-                }
-            };
-
-            // The custom status has a max size of 16KB.
-            var waitingStatusSize = Encoding.Unicode.GetByteCount(JsonSerializer.Serialize(waitingStatus));
-            
-            logger.LogInformation("Waiting status size: {Size} bytes", waitingStatusSize);
-            
-            context.SetCustomStatus(waitingStatus);
+            SetApprovalWaitingStatus(context, topDestination.DestinationName, documentUrl, 
+                itinerary, localRecommendations, logger);
             
             approvalResponse = await context.WaitForExternalEvent<ApprovalResponse>(
                 "ApprovalEvent",
-                TimeSpan.FromDays(7)); // Wait up to 7 days for a response
+                TimeSpan.FromDays(ApprovalTimeoutDays));
         }
         catch (TaskCanceledException)
         {
             // If timeout occurs, use the default response
             logger.LogWarning("Approval request timed out for user {UserName}", travelRequest.UserName);
-            approvalResponse = defaultApprovalResponse;
+            approvalResponse = new ApprovalResponse(false, "Timed out waiting for approval");
         }
             
         // Check if the trip was approved
@@ -234,14 +218,9 @@ public class TravelPlannerOrchestrator
             logger.LogInformation("Step 7: Booking trip to {Destination} for user {UserName}", 
                 itinerary.DestinationName, travelRequest.UserName);
                 
-            context.SetCustomStatus(new {
-                step = "BookingTrip",
-                message = $"Booking your trip to {topDestination.DestinationName}...",
-                progress = 95,
-                destination = topDestination.DestinationName,
-                documentUrl = documentUrl,
-                approved = true
-            });
+            SetOrchestrationStatus(context, "BookingTrip",
+                $"Booking your trip to {topDestination.DestinationName}...",
+                ProgressBooking, topDestination.DestinationName, documentUrl, approved: true);
                 
             var bookingRequest = new BookingRequest(travelPlan, travelRequest.UserName, approvalResponse.Comments);
             var bookingConfirmation = await context.CallActivityAsync<BookingConfirmation>(
@@ -366,5 +345,70 @@ public class TravelPlannerOrchestrator
             logger.LogError(ex, "Error validating cost calculation, using agent's original value");
             return itinerary;
         }
+    }
+
+    private void SetOrchestrationStatus(
+        TaskOrchestrationContext context, 
+        string step, 
+        string message, 
+        int progress,
+        string? destination = null,
+        string? documentUrl = null,
+        bool? approved = null)
+    {
+        var status = new Dictionary<string, object>
+        {
+            ["step"] = step,
+            ["message"] = message,
+            ["progress"] = progress
+        };
+
+        if (destination != null) status["destination"] = destination;
+        if (documentUrl != null) status["documentUrl"] = documentUrl;
+        if (approved.HasValue) status["approved"] = approved.Value;
+
+        context.SetCustomStatus(status);
+    }
+
+    private void SetApprovalWaitingStatus(
+        TaskOrchestrationContext context,
+        string destinationName,
+        string? documentUrl,
+        TravelItinerary itinerary,
+        LocalRecommendations localRecommendations,
+        ILogger logger)
+    {
+        var waitingStatus = new {
+            step = "WaitingForApproval",
+            message = "Waiting for your approval of the travel plan...",
+            progress = ProgressWaitingForApproval,
+            destination = destinationName,
+            documentUrl = documentUrl,
+            travelPlan = new {
+                destination = destinationName,
+                dates = itinerary.TravelDates,
+                cost = itinerary.EstimatedTotalCost,
+                days = itinerary.DailyPlan.Count,
+                dailyPlan = itinerary.DailyPlan,
+                attractions = localRecommendations.Attractions.FirstOrDefault(),
+                restaurants = localRecommendations.Restaurants.FirstOrDefault(),
+                insiderTips = localRecommendations.InsiderTips
+            }
+        };
+
+        var serialized = JsonSerializer.Serialize(waitingStatus);
+        var statusSize = Encoding.Unicode.GetByteCount(serialized);
+        
+        if (statusSize > StatusMaxSizeBytes)
+        {
+            logger.LogWarning("Waiting status size ({Size} bytes) exceeds maximum ({MaxSize} bytes). Status may be truncated.", 
+                statusSize, StatusMaxSizeBytes);
+        }
+        else
+        {
+            logger.LogInformation("Waiting status size: {Size} bytes", statusSize);
+        }
+        
+        context.SetCustomStatus(waitingStatus);
     }
 }
