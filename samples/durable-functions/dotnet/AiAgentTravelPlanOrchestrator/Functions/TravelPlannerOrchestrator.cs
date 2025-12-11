@@ -91,10 +91,10 @@ public class TravelPlannerOrchestrator
             
         logger.LogInformation("Selected top destination: {DestinationName}", topDestination.DestinationName);
 
-        // Step 2: Create an itinerary for the selected destination
-        logger.LogInformation("Step 2: Creating itinerary for {DestinationName}", topDestination.DestinationName);
-        SetOrchestrationStatus(context, "CreateItinerary",
-            $"Creating a detailed itinerary for {topDestination.DestinationName}...",
+        // Steps 2 & 3: Create itinerary and get local recommendations in parallel
+        logger.LogInformation("Steps 2 & 3: Creating itinerary and getting local recommendations for {DestinationName} in parallel", topDestination.DestinationName);
+        SetOrchestrationStatus(context, "CreateItineraryAndRecommendations",
+            $"Creating a detailed itinerary and finding local gems in {topDestination.DestinationName}...",
             ProgressItinerary, topDestination.DestinationName);
         
         var itineraryPrompt = $@"Create a {travelRequest.DurationInDays}-day itinerary for {topDestination.DestinationName}.
@@ -107,52 +107,32 @@ public class TravelPlannerOrchestrator
                             
                             IMPORTANT: Determine the local currency for {topDestination.DestinationName} and use the currency converter 
                             tool to provide costs in both the user's budget currency and the destination's local currency.";
-            
-        TravelItinerary itinerary;
-        try
-        {
-            logger.LogInformation("Calling itinerary agent with prompt length: {Length}", itineraryPrompt.Length);
-            
-            var itineraryResponse = await itineraryAgent.RunAsync<TravelItinerary>(
-                itineraryPrompt,
-                itineraryThread);
-            
-            if (itineraryResponse == null || itineraryResponse.Result == null)
-            {
-                throw new InvalidOperationException("Agent returned null response");
-            }
-            
-            itinerary = itineraryResponse.Result;
-            logger.LogInformation("Successfully received itinerary for {Destination}", itinerary.DestinationName);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Error getting itinerary from agent for {Destination}. Error: {Error}", 
-                topDestination.DestinationName, ex.Message);
-            throw new InvalidOperationException(
-                $"Failed to generate itinerary for {topDestination.DestinationName}. " +
-                $"The AI agent returned an invalid or empty response. Please try again.", ex);
-        }
-
-        // Validate and correct the cost calculation
-        itinerary = ValidateAndFixCostCalculation(itinerary, logger);
-
-        // Step 3: Get local recommendations
-        logger.LogInformation("Step 3: Getting local recommendations for {DestinationName}", topDestination.DestinationName);
-        SetOrchestrationStatus(context, "GetLocalRecommendations",
-            $"Finding local hidden gems and recommendations in {topDestination.DestinationName}...",
-            ProgressLocalRecommendations, topDestination.DestinationName);
         
         var localPrompt = $@"Provide local recommendations for {topDestination.DestinationName}:
                         Duration: {travelRequest.DurationInDays} days
                         Preferred Cuisine: Any
                         Include Hidden Gems: true
                         Family Friendly: {travelRequest.SpecialRequirements.Contains("family", StringComparison.OrdinalIgnoreCase)}";
-            
-        var localRecommendationsResponse = await localRecommendationsAgent.RunAsync<LocalRecommendations>(
+        
+        // Execute both agent calls in parallel
+        logger.LogInformation("Calling itinerary agent with prompt length: {Length}", itineraryPrompt.Length);
+        var itineraryTask = itineraryAgent.RunAsync<TravelItinerary>(
+            itineraryPrompt,
+            itineraryThread);
+        
+        logger.LogInformation("Calling local recommendations agent");
+        var localRecommendationsTask = localRecommendationsAgent.RunAsync<LocalRecommendations>(
             localPrompt,
             localThread);
         
+        // Wait for both tasks to complete
+        await Task.WhenAll(itineraryTask, localRecommendationsTask);
+        
+        var itineraryResponse = await itineraryTask;
+        var localRecommendationsResponse = await localRecommendationsTask;
+
+        // Validate and correct the cost calculation
+        var itinerary = ValidateAndFixCostCalculation(itineraryResponse.Result, logger);
         var localRecommendations = localRecommendationsResponse.Result;
 
         // Combine all results into a comprehensive travel plan
@@ -165,20 +145,14 @@ public class TravelPlannerOrchestrator
             ProgressSavingPlan, topDestination.DestinationName);
         var savePlanRequest = new SaveTravelPlanRequest(travelPlan, travelRequest.UserName);
         string? documentUrl;
-        try
         {
             documentUrl = await context.CallActivityAsync<string>(
                 nameof(TravelPlannerActivities.SaveTravelPlanToBlob),
                 savePlanRequest);
             
-            if (string.IsNullOrEmpty(documentUrl))
-            {
-                logger.LogWarning("Failed to save travel plan to blob storage");
-            }
-        }
-        catch (Exception ex)
+        if (string.IsNullOrEmpty(documentUrl))
         {
-            logger.LogError(ex, "Error saving travel plan to blob storage");
+            logger.LogWarning("Failed to save travel plan to blob storage");
             documentUrl = null;
         }
         
@@ -247,6 +221,7 @@ public class TravelPlannerOrchestrator
                 $"Travel plan was not approved. Comments: {approvalResponse.Comments}");
         }
     }
+}
 
     private TravelPlan CreateEmptyTravelPlan()
     {
