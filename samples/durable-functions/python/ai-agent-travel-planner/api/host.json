@@ -14,7 +14,9 @@
         "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       },
-      "hubName": "%TASKHUB_NAME%"
+      "hubName": "%TASKHUB_NAME%",
+      "maximumShortTimerDuration": "00:05:00",
+      "longRunningTimerIntervalDuration": "00:01:00"
     }
   },
   "extensionBundle": {

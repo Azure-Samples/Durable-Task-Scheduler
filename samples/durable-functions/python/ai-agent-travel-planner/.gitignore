@@ -1,0 +1,52 @@
+# Python virtual environments
+.venv
+venv/
+env/
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+
+# Azure Functions local settings (contains secrets)
+local.settings.json
+
+# Azurite emulator artifacts (local storage emulator data)
+__azurite_db_*.json
+__blobstorage__/
+__queuestorage__/
+__tablestorage__/
+AzuriteConfig
+
+# Azure deployment artifacts
+.azure/
+bin/
+obj/
+
+# IDE/Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+
+# Node.js (for frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+build/
+dist/
+
+# Miscellaneous
+*.log
+host.json.bak

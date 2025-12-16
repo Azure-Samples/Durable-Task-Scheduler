@@ -3,7 +3,8 @@
 # Manually managing azure-functions-worker may cause unexpected issues
 
 azure-functions
-azure-functions-durable
 azure-identity
-openai
-openai-agents
+pydantic
+
+# Agent Framework for Durable Agents
+agent-framework-azurefunctions

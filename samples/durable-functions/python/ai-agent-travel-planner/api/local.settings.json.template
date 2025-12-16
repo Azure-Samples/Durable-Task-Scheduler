@@ -6,9 +6,8 @@
     "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;Authentication=None;",
     "TASKHUB_NAME": "default",
     "AZURE_OPENAI_ENDPOINT": "https://your-openai-service.openai.azure.com/",
-    "AZURE_OPENAI_DEPLOYMENT": "your-gpt-deployment-name",
-    "ALLOWED_ORIGINS": "http://localhost:3000",
-    "AZURE_OPENAI_API_KEY": "your-openai-api-key-here"
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini",
+    "ALLOWED_ORIGINS": "http://localhost:3000"
   },
   "Host": {
     "CORS": "*",

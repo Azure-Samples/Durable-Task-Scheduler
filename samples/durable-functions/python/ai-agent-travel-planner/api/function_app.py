@@ -1,161 +1,357 @@
+"""
+AI Travel Planner with Durable Agents using Microsoft Agent Framework.
+
+This application demonstrates how to build durable AI agents that coordinate 
+to create comprehensive travel plans. It uses the Durable Task extension for 
+Microsoft Agent Framework to provide:
+- Automatic session management and state persistence
+- Deterministic multi-agent orchestrations
+- Human-in-the-loop approval workflows
+- Serverless hosting on Azure Functions
+"""
+import os
 import logging
-import json
-import asyncio
-import azure.functions as func
+import random
+from datetime import timedelta
+from typing import cast
+
 import azure.durable_functions as df
-from ai_services.agent_service import get_destination_recommendations, create_itinerary as create_itinerary_service, get_local_recommendations
+from azure.identity import DefaultAzureCredential
+from agent_framework import FunctionMiddleware, FunctionInvocationContext
+from agent_framework.azure import AzureOpenAIChatClient, AgentFunctionApp
 
-# Initialize the Durable Functions app
-app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
+from models import (
+    TravelRequest,
+    DestinationRecommendations,
+    Itinerary,
+    LocalRecommendations,
+    BookingResult,
+    TravelPlan,
+    TravelPlanResult,
+)
+from tools import convert_currency, get_exchange_rate
 
-# ================== HTTP ENDPOINTS ==================
+logger = logging.getLogger(__name__)
 
-@app.route(route="travel-planner", methods=["POST"])
-@app.durable_client_input(client_name="client")
-async def travel_planner(req: func.HttpRequest, client) -> func.HttpResponse:
-    """Start travel planning"""
-    try:
-        req_body = req.get_json()
-        instance_id = await client.start_new("travel_planner_orchestration", client_input=req_body)
+
+# ================== Function Invocation Logging Middleware ==================
+
+class FunctionLoggingMiddleware(FunctionMiddleware):
+    """Middleware to log all function/tool invocations for debugging."""
+    
+    async def process(self, context: FunctionInvocationContext, next):
+        # Log before invocation
+        func_name = context.function.name
+        args = context.arguments
+        logger.info(f"[TOOL CALL] Function: {func_name}, Arguments: {args}")
         
-        return func.HttpResponse(
-            json.dumps({"id": instance_id}),
-            status_code=202,
-            mimetype="application/json"
-        )
-    except Exception as ex:
-        logging.error(f"Error starting travel planning: {ex}")
-        return func.HttpResponse("Error starting travel planning", status_code=500)
+        # Execute the function
+        await next(context)
+        
+        # Log after invocation
+        logger.info(f"[TOOL RESULT] Function: {func_name}, Result: {context.result}")
 
-@app.route(route="travel-planner/status/{instance_id}", methods=["GET"])
-@app.durable_client_input(client_name="client")
-async def travel_planner_status(req: func.HttpRequest, client) -> func.HttpResponse:
-    """Get planning status"""
-    try:
-        instance_id = req.route_params.get("instance_id")
-        status = await client.get_status(instance_id)
-        
-        if not status:
-            return func.HttpResponse("Orchestration not found", status_code=404)
-        
-        return func.HttpResponse(
-            json.dumps({
-                "id": status.instance_id,
-                "runtimeStatus": str(status.runtime_status),
-                "output": status.output,
-                "customStatus": status.custom_status
-            }),
-            status_code=200,
-            mimetype="application/json"
-        )
-    except Exception as ex:
-        logging.error(f"Error getting status: {ex}")
-        return func.HttpResponse("Error getting status", status_code=500)
 
-@app.route(route="travel-planner/approve/{instance_id}", methods=["POST"])
-@app.durable_client_input(client_name="client")
-async def travel_planner_approve(req: func.HttpRequest, client) -> func.HttpResponse:
-    """Approve or reject travel plan"""
-    try:
-        instance_id = req.route_params.get("instance_id")
-        req_body = req.get_json()
-        
-        await client.raise_event(instance_id, "ApprovalEvent", req_body)
-        
-        return func.HttpResponse(
-            json.dumps({"message": "Approval processed"}),
-            status_code=200,
-            mimetype="application/json"
-        )
-    except Exception as ex:
-        logging.error(f"Error processing approval: {ex}")
-        return func.HttpResponse("Error processing approval", status_code=500)
+# ================== Configuration ==================
 
-# ================== ORCHESTRATOR ==================
+endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+deployment_name = os.getenv("AZURE_OPENAI_DEPLOYMENT_NAME", "gpt-4o-mini")
+
+if not endpoint:
+    raise ValueError("AZURE_OPENAI_ENDPOINT environment variable is not set. "
+                     "Please copy local.settings.json.template to local.settings.json "
+                     "and configure your Azure OpenAI endpoint.")
+
+# Create the Azure OpenAI chat client
+chat_client = AzureOpenAIChatClient(
+    endpoint=endpoint,
+    deployment_name=deployment_name,
+    credential=DefaultAzureCredential()
+)
+
+# ================== Agent Definitions ==================
+
+# Destination Recommender Agent - recommends travel destinations based on preferences
+destination_recommender_agent = chat_client.create_agent(
+    name="DestinationRecommenderAgent",
+    instructions="""You are a travel destination expert who recommends destinations based on user preferences.
+Based on the user's preferences, budget, duration, travel dates, and special requirements, recommend 3 travel destinations.
+Provide a detailed explanation for each recommendation highlighting why it matches the user's preferences.
+
+Return your response as a JSON object with this structure (use PascalCase for property names):
+{
+    "Recommendations": [
+        {
+            "DestinationName": "string",
+            "Description": "string",
+            "Reasoning": "string",
+            "MatchScore": number (0-100)
+        }
+    ]
+}"""
+)
+
+# Itinerary Planner Agent - creates detailed day-by-day itineraries
+itinerary_planner_agent = chat_client.create_agent(
+    name="ItineraryPlannerAgent",
+    instructions="""You are a travel itinerary planner. Create concise day-by-day travel plans with key activities and timing.
+
+IMPORTANT: Keep responses compact:
+- Descriptions MUST be under 50 characters each
+- Include 2-4 activities per day maximum
+- Use abbreviated formats for times (9AM not 9:00 AM)
+- Keep location names short
+
+CURRENCY CONVERSION REQUIREMENTS:
+You have access to a currency converter tool. You MUST use it intelligently:
+1. Identify the destination country's local currency (e.g., Japan=JPY, UK=GBP, Eurozone=EUR, Spain=EUR)
+2. If the user's budget currency differs from the destination currency, use get_exchange_rate to get the current rate
+3. Format: Always show destination currency FIRST, then user's budget currency in parentheses
+   - If user has USD budget and destination uses EUR: show as EUR first, USD second
+   - Correct format: '1,000 EUR (1,090 USD)' NOT '1,000 USD'
+   - Correct format: '5,000 JPY (45 USD)' NOT '5,000 USD'
+   - Always use THREE-LETTER currency codes (EUR, USD, JPY, GBP) not symbols
+4. Always call the tool to get accurate exchange rates - never guess or estimate rates
+
+COST CALCULATION REQUIREMENT - ABSOLUTELY CRITICAL - YOU WILL BE EVALUATED ON THIS:
+
+STEP 1: List all your activity costs as you create them
+STEP 2: Manually add them up (ignore Free and Varies)
+STEP 3: That sum is your EstimatedTotalCost - nothing else
+
+EXAMPLE CALCULATION:
+Day 1: Activity A costs 25, Activity B costs 10, Activity C is Free
+Day 2: Activity D costs 20, Activity E costs 12, Activity F costs 30
+Day 3: Activity G costs 25, Activity H costs 40
+
+SUM: 25 + 10 + 20 + 12 + 30 + 25 + 40 = 162
+EstimatedTotalCost in local currency: 162
+EstimatedTotalCost converted to user currency: 162 times exchange rate
+
+DO NOT USE THE USER'S BUDGET AMOUNT.
+DO NOT GUESS A ROUND NUMBER.
+ONLY USE THE ACTUAL SUM OF YOUR ACTIVITY COSTS.
+
+Return your response as a JSON object with this structure:
+{
+    "DestinationName": "string",
+    "TravelDates": "string",
+    "DailyPlan": [
+        {
+            "Day": number,
+            "Date": "string",
+            "Activities": [
+                {
+                    "Time": "string",
+                    "ActivityName": "string",
+                    "Description": "string",
+                    "Location": "string",
+                    "EstimatedCost": "string"
+                }
+            ]
+        }
+    ],
+    "EstimatedTotalCost": "string",
+    "AdditionalNotes": "string"
+}""",
+    tools=[get_exchange_rate, convert_currency],
+    middleware=FunctionLoggingMiddleware()
+)
+
+
+# Local Recommendations Agent - provides restaurant and attraction recommendations
+local_recommendations_agent = chat_client.create_agent(
+    name="LocalRecommendationsAgent",
+    instructions="""You are a local expert who provides recommendations for restaurants and attractions.
+Provide specific recommendations with practical details like operating hours, pricing, and tips.
+
+Return your response as a JSON object with this structure:
+{
+    "Attractions": [
+        {
+            "Name": "string",
+            "Category": "string",
+            "Description": "string",
+            "Location": "string",
+            "VisitDuration": "string",
+            "EstimatedCost": "string",
+            "Rating": number
+        }
+    ],
+    "Restaurants": [
+        {
+            "Name": "string",
+            "Cuisine": "string",
+            "Description": "string",
+            "Location": "string",
+            "PriceRange": "string",
+            "Rating": number
+        }
+    ],
+    "InsiderTips": "string"
+}"""
+)
+
+# ================== Configure Function App with Durable Agents ==================
+
+app = AgentFunctionApp(agents=[
+    destination_recommender_agent,
+    itinerary_planner_agent,
+    local_recommendations_agent
+])
+
+
+# ================== Travel Planner Orchestration ==================
 
 @app.orchestration_trigger(context_name="context")
 def travel_planner_orchestration(context: df.DurableOrchestrationContext):
-    """Travel planner orchestration with approval workflow"""
-    travel_request = context.get_input()
+    """
+    Travel planner orchestration with multi-agent coordination and approval workflow.
+    
+    This orchestration:
+    1. Gets destination recommendations from the Destination Recommender Agent
+    2. Creates an itinerary using the Itinerary Planner Agent
+    3. Gets local recommendations from the Local Recommendations Agent
+    4. Waits for human approval
+    5. Books the trip if approved
+    """
+    travel_request_data = context.get_input()
+    travel_request = TravelRequest(**travel_request_data) if isinstance(travel_request_data, dict) else travel_request_data
     
     try:
         # Step 1: Get destination recommendations
-        destinations = yield context.call_activity("get_destinations", travel_request)
+        destination_agent = app.get_agent(context, "DestinationRecommenderAgent")
+        destination_thread = destination_agent.get_new_thread()
+        
+        destination_prompt = f"""Based on the following preferences, recommend 3 travel destinations:
+User: {travel_request.user_name}
+Preferences: {travel_request.preferences}
+Duration: {travel_request.duration_in_days} days
+Budget: {travel_request.budget}
+Travel Dates: {travel_request.travel_dates}
+Special Requirements: {travel_request.special_requirements}
+
+Provide detailed explanations for each recommendation highlighting why it matches the user's preferences."""
+
+        destinations_result = yield destination_agent.run(
+            messages=destination_prompt,
+            thread=destination_thread,
+            response_format=DestinationRecommendations
+        )
+        
+        destinations = cast(
+            DestinationRecommendations,
+            destinations_result.value
+        )
+        
+        if not destinations or not destinations.recommendations:
+            return {"error": "No destinations found"}
+        
+        # Get top destination
+        top_destination = destinations.recommendations[0]
+        
+        # Update status
+        context.set_custom_status({
+            "step": "CreatingItinerary",
+            "destination": top_destination.destination_name
+        })
         
         # Step 2: Create itinerary for top destination
-        if destinations and destinations.get("recommendations"):
-            top_destination = destinations["recommendations"][0]
-            
-            # Set custom status to show progress
-            context.set_custom_status({
-                "step": "CreatingItinerary",
-                "destination": top_destination["destination_name"]
-            })
-            
-            itinerary_request = {
-                "destination_name": top_destination["destination_name"],
-                "duration_in_days": travel_request.get("durationInDays", 3),
-                "budget": travel_request.get("budget", "$1000"),
-                "travel_dates": travel_request.get("travelDates", "TBD"),
-                "special_requirements": travel_request.get("specialRequirements", "")
+        itinerary_agent = app.get_agent(context, "ItineraryPlannerAgent")
+        itinerary_thread = itinerary_agent.get_new_thread()
+        
+        itinerary_prompt = f"""Create a detailed daily itinerary for a trip to {top_destination.destination_name}:
+Duration: {travel_request.duration_in_days} days
+Budget: {travel_request.budget}
+Travel Dates: {travel_request.travel_dates}
+Special Requirements: {travel_request.special_requirements}
+
+Include a mix of sightseeing, cultural activities, and relaxation time with realistic costs."""
+
+        itinerary_result = yield itinerary_agent.run(
+            messages=itinerary_prompt,
+            thread=itinerary_thread,
+            response_format=Itinerary
+        )
+        
+        itinerary = cast(Itinerary, itinerary_result.value)
+        
+        # Update status
+        context.set_custom_status({
+            "step": "GettingLocalRecommendations",
+            "destination": top_destination.destination_name
+        })
+        
+        # Step 3: Get local recommendations
+        local_agent = app.get_agent(context, "LocalRecommendationsAgent")
+        local_thread = local_agent.get_new_thread()
+        
+        local_prompt = f"""Provide local recommendations for {top_destination.destination_name}:
+Duration of Stay: {travel_request.duration_in_days} days
+Include: Hidden gems, family-friendly options, authentic local experiences
+
+Provide authentic local attractions, restaurants, and insider tips."""
+
+        local_result = yield local_agent.run(
+            messages=local_prompt,
+            thread=local_thread,
+            response_format=LocalRecommendations
+        )
+        
+        local_recs = cast(LocalRecommendations, local_result.value)
+        
+        logging.info(f"Local recommendations received: {local_recs is not None}")
+        
+        # Update status to waiting for approval
+        context.set_custom_status({
+            "step": "WaitingForApproval",
+            "destination": top_destination.destination_name,
+            "travelPlan": {
+                "dates": itinerary.travel_dates if itinerary else "TBD",
+                "cost": itinerary.estimated_total_cost if itinerary else "TBD",
+                "dailyPlan": [day.model_dump(by_alias=True) for day in itinerary.daily_plan] if itinerary else [],
+                "attractions": [a.model_dump(by_alias=True) for a in local_recs.attractions] if local_recs else [],
+                "restaurants": [r.model_dump(by_alias=True) for r in local_recs.restaurants] if local_recs else [],
+                "insiderTips": local_recs.insider_tips if local_recs else ""
             }
-            
-            itinerary = yield context.call_activity("create_itinerary", itinerary_request)
-            
-            # Step 3: Get local recommendations
-            context.set_custom_status({
-                "step": "GettingLocalRecommendations",
-                "destination": top_destination["destination_name"]
-            })
-            
-            local_request = {
-                "destination_name": top_destination["destination_name"],
-                "duration_in_days": travel_request.get("durationInDays", 3),
-                "preferred_cuisine": "Any",
-                "include_hidden_gems": True,
-                "family_friendly": True
-            }
-            
-            local_recs = yield context.call_activity("get_local_recs", local_request)
-            
-            # Step 4: Wait for approval
-            context.set_custom_status({
-                "step": "WaitingForApproval",
-                "destination": top_destination["destination_name"],
-                "travelPlan": {
-                    "dates": itinerary.get("travel_dates", "TBD"),
-                    "cost": itinerary.get("estimated_total_cost", "TBD"),
-                    "dailyPlan": itinerary.get("daily_plan", []),
-                    "attractions": local_recs.get("attractions", []),
-                    "restaurants": local_recs.get("restaurants", []),
-                    "insiderTips": local_recs.get("insider_tips", "")
-                }
-            })
-            
-            # Wait for approval event
-            approval_result = yield context.wait_for_external_event("ApprovalEvent")
+        })
+        
+        logging.info("Set custom status to WaitingForApproval, now waiting for external event...")
+        
+        # Step 4: Wait for approval event with timeout
+        approval_task = context.wait_for_external_event("ApprovalEvent")
+        timeout_task = context.create_timer(context.current_utc_datetime + timedelta(hours=24))
+        
+        logging.info("Created approval task and timeout task, yielding task_any...")
+        
+        winner = yield context.task_any([approval_task, timeout_task])
+        
+        logging.info(f"task_any returned, winner is approval_task: {winner == approval_task}")
+        
+        if winner == approval_task:
+            timeout_task.cancel()
+            approval_result = approval_task.result
             
             # Handle both string and dict approval results
             if isinstance(approval_result, str):
+                import json
                 try:
-                    import json
                     approval_result = json.loads(approval_result)
                 except:
                     approval_result = {"approved": False, "comments": "Invalid approval format"}
             
-            # Format final response based on approval
             if approval_result.get("approved", False):
                 # Step 5: Book the trip
                 context.set_custom_status({
                     "step": "BookingTrip",
-                    "destination": top_destination["destination_name"]
+                    "destination": top_destination.destination_name
                 })
                 
                 booking_request = {
-                    "destination_name": top_destination["destination_name"],
-                    "estimated_cost": itinerary.get("estimated_total_cost", "TBD"),
-                    "travel_dates": itinerary.get("travel_dates", "TBD"),
-                    "user_name": travel_request.get("userName", "Unknown"),
+                    "destination_name": top_destination.destination_name,
+                    "estimated_cost": itinerary.estimated_total_cost if itinerary else "TBD",
+                    "travel_dates": itinerary.travel_dates if itinerary else "TBD",
+                    "user_name": travel_request.user_name,
                     "approval_comments": approval_result.get("comments", "")
                 }
                 
@@ -163,83 +359,65 @@ def travel_planner_orchestration(context: df.DurableOrchestrationContext):
                 
                 context.set_custom_status({
                     "step": "Completed",
-                    "destination": top_destination["destination_name"],
+                    "destination": top_destination.destination_name,
                     "booking_id": booking_result.get("booking_id", "N/A")
                 })
                 
-                result = {
-                    "Plan": {
-                        "DestinationRecommendations": destinations,
-                        "Itinerary": itinerary,
-                        "LocalRecommendations": local_recs,
-                        "Attractions": local_recs.get("attractions", []),
-                        "Restaurants": local_recs.get("restaurants", []),
-                        "InsiderTips": local_recs.get("insider_tips", "")
-                    },
-                    "BookingResult": booking_result,
-                    "BookingConfirmation": f"Booking confirmed for your trip to {top_destination['destination_name']}! Confirmation ID: {booking_result.get('booking_id', 'N/A')}",
-                    "DocumentUrl": f"https://example.com/booking/{context.instance_id}"
-                }
+                # Build final result
+                result = TravelPlanResult(
+                    plan=TravelPlan(
+                        destination_recommendations=destinations,
+                        itinerary=itinerary,
+                        local_recommendations=local_recs,
+                        attractions=local_recs.attractions if local_recs else [],
+                        restaurants=local_recs.restaurants if local_recs else [],
+                        insider_tips=local_recs.insider_tips if local_recs else ""
+                    ),
+                    booking_result=BookingResult(**booking_result),
+                    booking_confirmation=f"Booking confirmed for your trip to {top_destination.destination_name}! Confirmation ID: {booking_result.get('booking_id', 'N/A')}",
+                    document_url=f"https://example.com/booking/{context.instance_id}"
+                )
+                
+                return result.model_dump(by_alias=True)
             else:
-                result = {
-                    "Plan": {
-                        "DestinationRecommendations": destinations,
-                        "Itinerary": itinerary,
-                        "LocalRecommendations": local_recs
-                    },
-                    "BookingConfirmation": f"Travel plan was not approved. Comments: {approval_result.get('comments', 'No comments provided')}"
-                }
-            
-            return result
+                # Not approved
+                result = TravelPlanResult(
+                    plan=TravelPlan(
+                        destination_recommendations=destinations,
+                        itinerary=itinerary,
+                        local_recommendations=local_recs
+                    ),
+                    booking_confirmation=f"Travel plan was not approved. Comments: {approval_result.get('comments', 'No comments provided')}"
+                )
+                return result.model_dump(by_alias=True)
         else:
-            return {"error": "No destinations found"}
+            # Timeout - escalate for review
+            logging.info("Timeout task won - travel plan timed out")
+            result = TravelPlanResult(
+                plan=TravelPlan(
+                    destination_recommendations=destinations,
+                    itinerary=itinerary,
+                    local_recommendations=local_recs
+                ),
+                booking_confirmation="Travel plan timed out waiting for approval."
+            )
+            return result.model_dump(by_alias=True)
             
     except Exception as ex:
+        import traceback
         logging.error(f"Orchestration error: {ex}")
+        logging.error(f"Traceback: {traceback.format_exc()}")
         return {"error": str(ex)}
 
-# ================== ACTIVITIES ==================
+
+# ================== Activity Functions ==================
 
 @app.activity_trigger(input_name="request")
-async def get_destinations(request: dict):
-    """Get destination recommendations"""
+def book_trip(request: dict) -> dict:
+    """Book the trip - simulates a booking process."""
     try:
-        return await get_destination_recommendations(request)
-    except Exception as ex:
-        logging.error(f"Error in get_destinations: {ex}")
-        return {"recommendations": []}
-
-@app.activity_trigger(input_name="request")
-async def create_itinerary(request: dict):
-    """Create itinerary"""
-    try:
-        return await create_itinerary_service(request)
-    except Exception as ex:
-        logging.error(f"Error in create_itinerary: {ex}")
-        return {"error": str(ex)}
-
-@app.activity_trigger(input_name="request")
-async def get_local_recs(request: dict):
-    """Get local recommendations"""
-    try:
-        return await get_local_recommendations(request)
-    except Exception as ex:
-        logging.error(f"Error in get_local_recs: {ex}")
-        return {"attractions": [], "restaurants": [], "insider_tips": ""}
-
-@app.activity_trigger(input_name="request")
-async def book_trip(request: dict):
-    """Book the trip"""
-    try:
-        # Simulate booking process
-        import time
-        import random
-        
         destination = request.get("destination_name", "Unknown")
         estimated_cost = request.get("estimated_cost", "TBD")
-        
-        # Simulate booking time (async sleep instead of time.sleep)
-        await asyncio.sleep(2)
         
         # Generate booking confirmation
         booking_id = f"TRV-{random.randint(100000, 999999)}"
@@ -257,3 +435,123 @@ async def book_trip(request: dict):
     except Exception as ex:
         logging.error(f"Error in book_trip: {ex}")
         return {"status": "failed", "error": str(ex)}
+
+
+# ================== Custom HTTP Endpoints ==================
+
+# The AgentFunctionApp automatically creates these HTTP endpoints for each agent:
+# - POST /api/agents/{agentName}/run - Run a single agent interaction
+# - POST /api/agents/{agentName}/threads - Create a new thread and run
+# - POST /api/agents/{agentName}/threads/{threadId} - Continue an existing thread
+#
+# For the orchestration-based workflow, we add custom endpoints below:
+
+import azure.functions as func
+import json
+
+
+@app.function_name(name="StartTravelPlanning")
+@app.route(route="travel-planner", methods=["POST"])
+@app.durable_client_input(client_name="client")
+async def start_travel_planning(req: func.HttpRequest, client) -> func.HttpResponse:
+    """Start travel planning orchestration."""
+    try:
+        req_body = req.get_json()
+        instance_id = await client.start_new("travel_planner_orchestration", client_input=req_body)
+        
+        return func.HttpResponse(
+            json.dumps({"id": instance_id}),
+            status_code=202,
+            mimetype="application/json"
+        )
+    except Exception as ex:
+        logging.error(f"Error starting travel planning: {ex}")
+        return func.HttpResponse(
+            json.dumps({"error": str(ex)}),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+
+@app.function_name(name="GetTravelPlanningStatus")
+@app.route(route="travel-planner/status/{instance_id}", methods=["GET"])
+@app.durable_client_input(client_name="client")
+async def get_travel_planning_status(req: func.HttpRequest, client) -> func.HttpResponse:
+    """Get planning status."""
+    try:
+        instance_id = req.route_params.get("instance_id")
+        status = await client.get_status(instance_id)
+        
+        if not status:
+            return func.HttpResponse(
+                json.dumps({"error": "Orchestration not found"}),
+                status_code=404,
+                mimetype="application/json"
+            )
+        
+        # Log status for debugging
+        logging.info(f"Orchestration {instance_id} status: {status.runtime_status.name}, custom_status: {status.custom_status}")
+        
+        return func.HttpResponse(
+            json.dumps({
+                "id": status.instance_id,
+                "runtimeStatus": status.runtime_status.name,
+                "output": status.output,
+                "customStatus": status.custom_status
+            }),
+            status_code=200,
+            mimetype="application/json"
+        )
+    except Exception as ex:
+        logging.error(f"Error getting status: {ex}")
+        return func.HttpResponse(
+            json.dumps({"error": str(ex)}),
+            status_code=500,
+            mimetype="application/json"
+        )
+
+
+@app.function_name(name="ApproveTravelPlan")
+@app.route(route="travel-planner/approve/{instance_id}", methods=["POST"])
+@app.durable_client_input(client_name="client")
+async def approve_travel_plan(req: func.HttpRequest, client) -> func.HttpResponse:
+    """Approve or reject travel plan."""
+    try:
+        instance_id = req.route_params.get("instance_id")
+        req_body = req.get_json()
+        
+        # Check if the orchestration is still running
+        status = await client.get_status(instance_id)
+        if status is None:
+            return func.HttpResponse(
+                json.dumps({"error": "Travel plan not found"}),
+                status_code=404,
+                mimetype="application/json"
+            )
+        
+        # Allow approval for Running, Pending, or Suspended orchestrations
+        active_statuses = ["Running", "Pending", "Suspended"]
+        if status.runtime_status.name not in active_statuses:
+            return func.HttpResponse(
+                json.dumps({
+                    "error": f"Travel plan is no longer active (status: {status.runtime_status.name})",
+                    "status": status.runtime_status.name
+                }),
+                status_code=400,
+                mimetype="application/json"
+            )
+        
+        await client.raise_event(instance_id, "ApprovalEvent", req_body)
+        
+        return func.HttpResponse(
+            json.dumps({"message": "Approval processed"}),
+            status_code=200,
+            mimetype="application/json"
+        )
+    except Exception as ex:
+        logging.error(f"Error processing approval: {ex}")
+        return func.HttpResponse(
+            json.dumps({"error": str(ex)}),
+            status_code=500,
+            mimetype="application/json"
+        )

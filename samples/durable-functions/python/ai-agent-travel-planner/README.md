@@ -1,92 +1,141 @@
-# AI Agent Travel Planner - Python Implementation
+# AI Travel Planner with Durable Agents - Python
 
-This is a Python implementation of the AI Agent Travel Planner using Azure Durable Functions and Azure OpenAI, with a React frontend for a complete user experience.
+A travel planning application that demonstrates how to build **durable AI agents** using the [Durable Task extension for Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/user-guide/agents/agent-types/durable-agent/create-durable-agent). The application coordinates multiple specialized AI agents to create comprehensive, personalized travel plans through a structured workflow.
 
-## Features
+## Overview
 
-- **Multi-Agent Travel Planning**: Uses three specialized Azure OpenAI agents:
-  - **Destination Recommender Agent**: Suggests destinations based on preferences
-  - **Itinerary Planner Agent**: Creates detailed daily itineraries  
-  - **Local Recommendations Agent**: Provides authentic local insights
-- **Durable Functions Orchestration**: Coordinates multiple AI agents in a reliable workflow
-- **Human Approval Workflow**: Implements approval/rejection workflow for travel plans
-- **Booking Integration**: Simulated booking process after plan approval
-- **React Frontend**: Interactive chat interface with real-time progress updates
-- **CORS Support**: Configured for frontend integration
+This sample showcases an agentic workflow where specialized AI agents collaborate to plan travel experiences. Each agent focuses on a specific aspect of travel planning—destination recommendations, itinerary creation, and local insights—orchestrated by the Durable Task extension for reliability and state management.
+
+### Why Durable Agents?
+
+Traditional AI agents can be unpredictable and inconsistent. The [Durable Task extension for Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/user-guide/agents/agent-types/durable-agent/create-durable-agent) solves this by providing:
+
+- **Deterministic workflows**: Pre-defined steps ensure consistent, high-quality results
+- **Built-in resilience**: Automatic state persistence and recovery from failures
+- **Human-in-the-loop**: Native support for approval workflows before booking
+- **Scalability**: Serverless execution that scales with demand
 
 ## Architecture
 
 The application uses a multi-agent orchestration pattern:
 
 ```
-HTTP Request → Orchestrator → Destinations Agent → Itinerary Agent → Local Tips Agent → Approval → Booking → Response
+HTTP Request → Orchestrator → Destination Agent → Itinerary Agent → Local Tips Agent → Approval → Booking → Response
 ```
+
+### Workflow
+
+1. **User Request** → User submits travel preferences via React frontend
+2. **Destination Recommendation** → AI agent analyzes preferences and suggests destinations
+3. **Itinerary Planning** → AI agent creates detailed day-by-day plans (with currency conversion tools)
+4. **Local Recommendations** → AI agent adds insider tips and attractions
+5. **Approval** → User reviews and approves the plan (human-in-the-loop)
+6. **Booking** → Upon approval, booking process completes
+
+### Tech Stack
+
+| Component | Technology |
+|-----------|------------|
+| Backend | Python 3.10+, Azure Functions |
+| AI Framework | Microsoft Agent Framework with Durable Task Extension |
+| Orchestration | Durable Task Scheduler |
+| AI Model | Azure OpenAI (GPT-4o-mini) |
+| Frontend | React |
+| Hosting | Azure Static Web Apps, Azure Functions |
+| Infrastructure | Bicep, Azure Developer CLI (azd) |
+
+## Features
+
+- **Multi-Agent Travel Planning**: Uses three specialized durable agents:
+  - **DestinationRecommenderAgent**: Suggests destinations based on preferences
+  - **ItineraryPlannerAgent**: Creates detailed daily itineraries with currency conversion
+  - **LocalRecommendationsAgent**: Provides authentic local insights
+- **Automatic Session Management**: Agent state is automatically persisted and survives failures
+- **Currency Conversion Tools**: Itinerary agent uses real exchange rates for cost estimates
+- **Human Approval Workflow**: Implements approval/rejection workflow for travel plans
+- **Structured Responses**: Uses Pydantic models for type-safe agent responses
+- **React Frontend**: Interactive chat interface with real-time progress updates
 
 ## Prerequisites
 
-- Python 3.8+
-- Node.js 16+ (for frontend)
-- Azure Functions Core Tools
-- Azure OpenAI resource with GPT-4 deployment
+- Python 3.10+
+- Node.js 18+ (for frontend)
+- [Azure Functions Core Tools v4](https://docs.microsoft.com/en-us/azure/azure-functions/functions-run-local)
+- [Docker](https://www.docker.com/get-started) (for local Durable Task Scheduler emulator)
+- Azure OpenAI resource with GPT-4o-mini deployment
 - Azure subscription
 
-## Setup
+## Local Development
 
-1. **Clone and navigate to the project**:
-   ```bash
-   cd samples/durable-functions/python/ai-agent-travel-planner
-   ```
+### 1. Start Azure Storage Emulator
 
-2. **Configure environment variables**:
-   - Copy `api/local.settings.json.template` to `api/local.settings.json`
-   - Update the values with your Azure OpenAI credentials:
-   ```json
-   {
-     "IsEncrypted": false,
-     "Values": {
-       "AzureWebJobsStorage": "UseDevelopmentStorage=true",
-       "FUNCTIONS_WORKER_RUNTIME": "python",
-       "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;Authentication=None;",
-       "TASKHUB_NAME": "default",
-       "AZURE_OPENAI_ENDPOINT": "https://your-openai-service.openai.azure.com/",
-       "AZURE_OPENAI_DEPLOYMENT": "your-gpt-deployment-name",
-       "AZURE_OPENAI_API_KEY": "your-openai-api-key-here",
-       "ALLOWED_ORIGINS": "http://localhost:3000"
-     }
-   }
-   ```
+```bash
+npm install -g azurite
+azurite --silent --location ./azurite &
+```
 
-3. **Install Python dependencies**:
-   ```bash
-   cd api
-   pip install -r requirements.txt
-   ```
+### 2. Start Durable Task Scheduler Emulator
 
-4. **Start the backend**:
-   ```bash
-   cd api
-   func start
-   ```
+```bash
+docker run -d -p 8080:8080 mcr.microsoft.com/dts/dts-emulator:latest
+```
 
-5. **Start the frontend** (in a new terminal):
-   ```bash
-   cd frontend
-   npm install
-   npm start
-   ```
+### 3. Configure Local Settings
 
-6. **Open your browser** to `http://localhost:3000`
+Copy `api/local.settings.json.template` to `api/local.settings.json` and update the values:
+
+```json
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "python",
+    "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;Authentication=None;",
+    "TASKHUB_NAME": "default",
+    "AZURE_OPENAI_ENDPOINT": "https://your-openai-service.openai.azure.com/",
+    "AZURE_OPENAI_DEPLOYMENT_NAME": "gpt-4o-mini",
+    "ALLOWED_ORIGINS": "http://localhost:3000"
+  }
+}
+```
+
+> **Note**: The application uses `DefaultAzureCredential` for authentication. Run `az login` before starting the application.
+
+### 4. Install Python dependencies
+
+```bash
+cd api
+pip install -r requirements.txt
+```
+
+### 5. Start the backend
+
+```bash
+cd api
+func start
+```
+
+### 6. Start the frontend (in a new terminal)
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The application will be available at `http://localhost:3000`.
 
 ## API Endpoints
 
-### Core Functions
-- `POST /api/travel-planner` - Start travel planning process
+### Orchestration Endpoints
+- `POST /api/travel-planner` - Start travel planning orchestration
 - `GET /api/travel-planner/status/{instance_id}` - Check planning status  
 - `POST /api/travel-planner/approve/{instance_id}` - Approve or reject travel plan
 
-### Durable Functions Management (for testing)
-- `POST /api/orchestrators/TravelPlannerOrchestrator` - Direct orchestration start
-- `POST /runtime/webhooks/durabletask/instances/{instanceId}/raiseEvent/approval_response` - Send approval events
+### Agent Endpoints (auto-generated by AgentFunctionApp)
+- `POST /api/agents/{agentName}/run` - Run a single agent interaction
+- `POST /api/agents/{agentName}/threads` - Create a new thread and run
+- `POST /api/agents/{agentName}/threads/{threadId}` - Continue an existing thread
 
 ## Usage
 
@@ -95,8 +144,6 @@ HTTP Request → Orchestrator → Destinations Agent → Itinerary Agent → Loc
 3. **Direct Testing**: Make HTTP requests to the API endpoints
 
 ### Simple API Workflow
-
-The `test-api.http` file contains a simplified 3-step workflow:
 
 1. **Create Travel Plan**:
    ```http
@@ -118,22 +165,22 @@ The `test-api.http` file contains a simplified 3-step workflow:
 
 ## Agent Configuration
 
-The AI agents use optimized prompts for concise responses to stay within Azure Functions payload limits:
+The AI agents use the Durable Task extension pattern for reliable, stateful execution:
 
-- **Destination Agent**: Recommends 3 destinations with brief descriptions and match scores
-- **Itinerary Agent**: Creates daily plans with max 3 activities per day and cost estimates
-- **Local Agent**: Provides max 3 attractions and restaurants with insider tips
+- **DestinationRecommenderAgent**: Recommends 3 destinations with descriptions and match scores
+- **ItineraryPlannerAgent**: Creates daily plans with currency conversion tools for cost estimates
+- **LocalRecommendationsAgent**: Provides attractions, restaurants, and insider tips
 
 ## Development
 
 ### File Structure
 ```
 ├── api/                          # Azure Functions backend
-│   ├── function_app.py           # Main orchestration and HTTP triggers
-│   ├── ai_services/
-│   │   ├── agent_service.py      # AI agent implementations
+│   ├── function_app.py           # Durable agents and orchestration
+│   ├── tools/
+│   │   ├── currency_converter.py # Currency conversion tool for agents
 │   ├── models/
-│   │   ├── travel_models.py      # Data models
+│   │   ├── travel_models.py      # Pydantic data models
 │   ├── requirements.txt          # Python dependencies
 │   ├── host.json                 # Function host configuration
 │   ├── local.settings.json.template # Configuration template
@@ -154,13 +201,20 @@ The AI agents use optimized prompts for concise responses to stay within Azure F
 - Use `test-api.http` for simple API testing with a 3-step workflow
 - Frontend includes real-time status updates and approval workflow
 - Orchestration supports both approval and rejection flows
+- Monitor workflow in Durable Task Scheduler dashboard: `https://dashboard.durabletask.io/`
+
+## Learn More
+
+- [Durable Task Extension for Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/user-guide/agents/agent-types/durable-agent/create-durable-agent)
+- [Microsoft Agent Framework](https://learn.microsoft.com/en-us/agent-framework/overview/agent-framework-overview)
+- [Azure Durable Task Scheduler](https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-task-scheduler/quickstart-durable-task-scheduler)
+- [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/)
 
 ## Troubleshooting
 
-- **Payload Size Errors**: The prompts are optimized to stay under 16KB limit
-- **Authentication**: Ensure Azure OpenAI API key is correctly configured
+- **Authentication**: Uses `DefaultAzureCredential` - run `az login` before starting
 - **CORS Issues**: Frontend origin is configured in local.settings.json
-- **Function Timeout**: Long-running orchestrations handle timeouts gracefully
+- **Durable Task Scheduler**: Ensure emulator is running on port 8080
 
 ## License
 
