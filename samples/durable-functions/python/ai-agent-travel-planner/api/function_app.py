@@ -17,7 +17,6 @@ from typing import cast
 
 import azure.durable_functions as df
 from azure.identity import DefaultAzureCredential
-from agent_framework import FunctionMiddleware, FunctionInvocationContext
 from agent_framework.azure import AzureOpenAIChatClient, AgentFunctionApp
 
 from models import (
@@ -30,26 +29,6 @@ from models import (
     TravelPlanResult,
 )
 from tools import convert_currency, get_exchange_rate
-
-logger = logging.getLogger(__name__)
-
-
-# ================== Function Invocation Logging Middleware ==================
-
-class FunctionLoggingMiddleware(FunctionMiddleware):
-    """Middleware to log all function/tool invocations for debugging."""
-    
-    async def process(self, context: FunctionInvocationContext, next):
-        # Log before invocation
-        func_name = context.function.name
-        args = context.arguments
-        logger.info(f"[TOOL CALL] Function: {func_name}, Arguments: {args}")
-        
-        # Execute the function
-        await next(context)
-        
-        # Log after invocation
-        logger.info(f"[TOOL RESULT] Function: {func_name}, Result: {context.result}")
 
 
 # ================== Configuration ==================
@@ -154,8 +133,7 @@ Return your response as a JSON object with this structure:
     "EstimatedTotalCost": "string",
     "AdditionalNotes": "string"
 }""",
-    tools=[get_exchange_rate, convert_currency],
-    middleware=FunctionLoggingMiddleware()
+    tools=[get_exchange_rate, convert_currency]
 )
 
 
