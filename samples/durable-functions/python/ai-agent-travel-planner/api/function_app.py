@@ -81,35 +81,26 @@ IMPORTANT: Keep responses compact:
 - Use abbreviated formats for times (9AM not 9:00 AM)
 - Keep location names short
 
-CURRENCY CONVERSION REQUIREMENTS:
-You have access to a currency converter tool. You MUST use it intelligently:
-1. Identify the destination country's local currency (e.g., Japan=JPY, UK=GBP, Eurozone=EUR, Spain=EUR)
-2. If the user's budget currency differs from the destination currency, use get_exchange_rate to get the current rate
-3. Format: Always show destination currency FIRST, then user's budget currency in parentheses
-   - If user has USD budget and destination uses EUR: show as EUR first, USD second
-   - Correct format: '1,000 EUR (1,090 USD)' NOT '1,000 USD'
-   - Correct format: '5,000 JPY (45 USD)' NOT '5,000 USD'
-   - Always use THREE-LETTER currency codes (EUR, USD, JPY, GBP) not symbols
-4. Always call the tool to get accurate exchange rates - never guess or estimate rates
+CURRENCY HANDLING - FOLLOW THESE RULES EXACTLY:
 
-COST CALCULATION REQUIREMENT - ABSOLUTELY CRITICAL - YOU WILL BE EVALUATED ON THIS:
+1. First, identify the user's budget currency (from the budget string, e.g., "$3000" = USD)
+2. Identify the destination country's local currency (e.g., Japan=JPY, UK=GBP, Spain=EUR)
 
-STEP 1: List all your activity costs as you create them
-STEP 2: Manually add them up (ignore Free and Varies)
-STEP 3: That sum is your EstimatedTotalCost - nothing else
+3. IF SAME CURRENCY (e.g., user has USD budget and destination uses USD):
+   - DO NOT call any currency tools
+   - Show all costs in USD only (e.g., "25 USD")
+   - No conversion needed
 
-EXAMPLE CALCULATION:
-Day 1: Activity A costs 25, Activity B costs 10, Activity C is Free
-Day 2: Activity D costs 20, Activity E costs 12, Activity F costs 30
-Day 3: Activity G costs 25, Activity H costs 40
+4. IF DIFFERENT CURRENCIES (e.g., user has USD budget but destination uses EUR):
+   - Call get_exchange_rate EXACTLY ONCE at the start to get the rate
+   - Use simple multiplication for all conversions (do NOT call convert_currency for each activity)
+   - Show costs as: local currency first, then user currency in parentheses
+   - Example: "25 EUR (27 USD)" where 27 = 25 * exchange_rate
 
-SUM: 25 + 10 + 20 + 12 + 30 + 25 + 40 = 162
-EstimatedTotalCost in local currency: 162
-EstimatedTotalCost converted to user currency: 162 times exchange rate
-
-DO NOT USE THE USER'S BUDGET AMOUNT.
-DO NOT GUESS A ROUND NUMBER.
-ONLY USE THE ACTUAL SUM OF YOUR ACTIVITY COSTS.
+COST CALCULATION:
+- Add up all numeric activity costs (ignore "Free" and "Varies")
+- EstimatedTotalCost = sum of activity costs
+- If currencies differ, show both: "162 EUR (177 USD)"
 
 Return your response as a JSON object with this structure:
 {
@@ -197,6 +188,11 @@ def travel_planner_orchestration(context: df.DurableOrchestrationContext):
     travel_request = TravelRequest(**travel_request_data) if isinstance(travel_request_data, dict) else travel_request_data
     
     try:
+        # Set initial status
+        context.set_custom_status({
+            "step": "GettingDestinations"
+        })
+        
         # Step 1: Get destination recommendations
         destination_agent = app.get_agent(context, "DestinationRecommenderAgent")
         destination_thread = destination_agent.get_new_thread()
