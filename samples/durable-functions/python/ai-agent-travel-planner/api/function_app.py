@@ -425,7 +425,7 @@ import json
 
 
 @app.function_name(name="StartTravelPlanning")
-@app.route(route="travel-planner", methods=["POST"])
+@app.route(route="travel-planner", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 @app.durable_client_input(client_name="client")
 async def start_travel_planning(req: func.HttpRequest, client) -> func.HttpResponse:
     """Start travel planning orchestration."""
@@ -448,7 +448,7 @@ async def start_travel_planning(req: func.HttpRequest, client) -> func.HttpRespo
 
 
 @app.function_name(name="GetTravelPlanningStatus")
-@app.route(route="travel-planner/status/{instance_id}", methods=["GET"])
+@app.route(route="travel-planner/status/{instance_id}", methods=["GET"], auth_level=func.AuthLevel.ANONYMOUS)
 @app.durable_client_input(client_name="client")
 async def get_travel_planning_status(req: func.HttpRequest, client) -> func.HttpResponse:
     """Get planning status."""
@@ -486,7 +486,7 @@ async def get_travel_planning_status(req: func.HttpRequest, client) -> func.Http
 
 
 @app.function_name(name="ApproveTravelPlan")
-@app.route(route="travel-planner/approve/{instance_id}", methods=["POST"])
+@app.route(route="travel-planner/approve/{instance_id}", methods=["POST"], auth_level=func.AuthLevel.ANONYMOUS)
 @app.durable_client_input(client_name="client")
 async def approve_travel_plan(req: func.HttpRequest, client) -> func.HttpResponse:
     """Approve or reject travel plan."""
