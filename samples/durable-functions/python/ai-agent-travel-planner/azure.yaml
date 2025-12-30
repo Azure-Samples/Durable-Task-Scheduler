@@ -1,6 +1,6 @@
-name: travel-planner-python
+name: travel-planner
 metadata:
-  template: travel-planner-python@0.0.1
+  template: travel-planner@0.0.1
 services:
   api:
     project: ./api
