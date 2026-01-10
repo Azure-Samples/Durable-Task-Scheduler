@@ -38,7 +38,11 @@ The workflow is orchestrated using the Durable Task SDK, which handles the workf
 
    ```bash
    # Required: Azure AI Projects endpoint
-   export AGENT_CONNECTION_STRING="https://your-ai-project-endpoint.services.ai.azure.com/api/projects/your-project-id"
+   export AGENT_CONNECTION_STRING="https://{region}.aiprojects.azure.com/api/projects/{resourceGroup}/{projectName}"
+   
+   # Note: The AGENT_CONNECTION_STRING must be in URL format as shown above.
+   # The format should match: https://{region}.aiprojects.azure.com/api/projects/{resourceGroup}/{projectName}
+   # Example: https://eastus.aiprojects.azure.com/api/projects/my-resource-group/my-ai-project
 
    # Optional: OpenAI model name (defaults to "gpt-4")
    export OPENAI_DEPLOYMENT_NAME="gpt-4-turbo"
@@ -66,13 +70,195 @@ The workflow is orchestrated using the Durable Task SDK, which handles the workf
 
 4. **Generate an Article**
 
-   Follow the prompts in the client console to enter a news topic. The application will:
+   **Option 1: Using the HTTP API**
+   
+   The client exposes an HTTP API endpoint at http://localhost:5000. You can use tools like curl or any HTTP client to interact with it:
+
+   ```bash
+   # Make a request to generate an article
+   curl -X POST http://localhost:5000/api/articles \
+     -H "Content-Type: application/json" \
+     -d '{"topic": "renewable energy innovations"}'
+   
+   # Check the status of an article generation
+   curl http://localhost:5000/api/articles/{instanceId}
+   ```
+   
+   There is also a test.http file that can be used with the VS Code REST Client extension.
+   
+   **Option 2: Using the Console Interface**
+
+   Alternatively, follow the prompts in the client console to enter a news topic. The application will:
    - Research the topic
    - Generate article content
    - Create supporting images 
    - Save an HTML file with the complete article
 
    When finished, the client will show the path to your generated HTML file (typically in a temp directory like `/var/folders/.../T/article-generator/` on macOS).
+
+## Deploy to Azure
+
+This sample includes everything needed to deploy to Azure using the Azure Developer CLI (azd). The deployment will automatically provision all required Azure resources and deploy your application.
+
+### Prerequisites
+
+Before deploying to Azure, ensure you have:
+
+- **Azure CLI**: [Download and install](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli)
+- **Azure Developer CLI (azd)**: [Download and install](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)
+- **Azure Subscription**: You'll need an active Azure subscription
+- **Docker**: Required for building container images
+
+### Step-by-Step Deployment
+
+1. **Login to Azure**
+   ```bash
+   # Login with your Azure account
+   az login
+   
+   # Set your subscription (if you have multiple)
+   az account set --subscription "your-subscription-id"
+   ```
+
+2. **Initialize the Azure Developer CLI**
+   ```bash
+   # Initialize azd in the project directory
+   azd init
+   
+   # This will detect the existing azure.yaml configuration
+   ```
+
+3. **Deploy to Azure**
+   ```bash
+   # Deploy the entire application with one command
+   azd up
+   ```
+
+   The `azd up` command will:
+   - **Provision Infrastructure**: Create all required Azure resources
+   - **Build Images**: Build Docker containers for the client and worker
+   - **Deploy Services**: Deploy to Azure Container Apps
+   - **Configure Networking**: Set up ingress and internal communication
+   - **Set Environment Variables**: Configure all necessary settings
+
+### What Gets Deployed
+
+The deployment creates the following Azure resources:
+
+| Resource | Type | Purpose |
+|----------|------|---------|
+| **Resource Group** | `Microsoft.Resources/resourceGroups` | Contains all project resources |
+| **Container Apps Environment** | `Microsoft.App/managedEnvironments` | Runtime environment for containers |
+| **Container Registry** | `Microsoft.ContainerRegistry/registries` | Stores Docker images |
+| **Client App** | `Microsoft.App/containerApps` | Web API frontend (publicly accessible) |
+| **Worker App** | `Microsoft.App/containerApps` | Background worker (internal only) |
+| **Durable Task Scheduler** | `Microsoft.DurableTask/schedulers` | Orchestration engine |
+| **AI Project** | `Microsoft.CognitiveServices/accounts` | Azure AI services |
+| **OpenAI Deployments** | `Microsoft.CognitiveServices/accounts/deployments` | GPT-4o-mini and DALL-E 3 models |
+| **Log Analytics** | `Microsoft.OperationalInsights/workspaces` | Application monitoring and logs |
+| **Managed Identity** | `Microsoft.ManagedIdentity/userAssignedIdentities` | Secure authentication |
+
+### Post-Deployment
+
+After successful deployment, you'll see output similar to:
+
+```bash
+SUCCESS: Your application was deployed to Azure in 4 minutes.
+
+You can view the resources created under the resource group rg-<environment-name> in Azure Portal:
+https://portal.azure.com/#@/resource/subscriptions/.../resourceGroups/rg-<environment-name>/overview
+
+Services:
+  client    https://ca-<unique-id>-client.<region>.azurecontainerapps.io/
+  worker    (internal only)
+```
+
+### Using Your Deployed Application
+
+1. **Test the API**
+   
+   Use the provided client URL to interact with your deployed application:
+   
+   ```bash
+   # Replace <client-url> with your actual deployment URL
+   curl -X POST <client-url>/api/content \
+     -H "Content-Type: application/json" \
+     -d '{"topic": "Latest developments in AI technology"}'
+   ```
+
+2. **View Generated Articles**
+   
+   When an orchestration completes, the response will include an `articleEndpoint` property:
+   
+   ```json
+   {
+     "instanceId": "abc123...",
+     "articleEndpoint": "https://ca-xyz-client.region.azurecontainerapps.io/api/content/abc123.../document",
+     "status": "Completed"
+   }
+   ```
+   
+   Open the `articleEndpoint` URL in your browser to view the generated HTML article.
+
+3. **Monitor Your Application**
+   
+   - **Azure Portal**: View resources and metrics
+   - **Container Apps Logs**: Monitor application logs and performance
+   - **Log Analytics**: Query detailed telemetry and traces
+
+### Managing Your Deployment
+
+**Update your application:**
+```bash
+# Deploy code changes
+azd deploy
+
+# Update infrastructure and deploy
+azd up
+```
+
+**View deployment status:**
+```bash
+# Show current deployment information
+azd show
+
+# View environment variables
+azd env get-values
+```
+
+**Clean up resources:**
+```bash
+# Remove all Azure resources (be careful!)
+azd down
+```
+
+### Troubleshooting Deployment
+
+**Common Issues:**
+
+1. **Insufficient permissions**: Ensure your Azure account has `Contributor` or `Owner` role
+2. **Resource naming conflicts**: Try a different environment name with `azd env set AZURE_ENV_NAME <new-name>`
+3. **Deployment timeout**: Container builds can take time; wait for completion
+4. **Region availability**: Some Azure AI services may not be available in all regions
+
+**View detailed logs:**
+```bash
+# View container app logs
+az containerapp logs show --name <app-name> --resource-group <rg-name>
+
+# View deployment history
+azd deploy --debug
+```
+
+### Cost Considerations
+
+The deployed resources will incur costs based on usage:
+- **Container Apps**: Pay-per-use scaling model
+- **Azure OpenAI**: Token-based pricing for GPT and DALL-E
+- **Container Registry**: Storage costs for images
+- **Log Analytics**: Data ingestion and retention costs
+
+Consider setting up [Azure Cost Management](https://learn.microsoft.com/en-us/azure/cost-management-billing/) alerts to monitor spending.
 ## How It Works
 
 The application uses a durable orchestration workflow with four key steps:

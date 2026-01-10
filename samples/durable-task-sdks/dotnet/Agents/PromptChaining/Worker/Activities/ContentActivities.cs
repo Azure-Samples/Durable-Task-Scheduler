@@ -1,4 +1,4 @@
-using AgentChainingSample.Shared.Models;
+using AgentChainingSample.Worker.Models;
 using AgentChainingSample.Services;
 using Microsoft.DurableTask;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +31,11 @@ public class ArticleResult
     /// The URL to the article in blob storage (kept for compatibility, always empty)
     /// </summary>
     public string BlobUrl { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// The URL endpoint to view the article online
+    /// </summary>
+    public string ArticleEndpoint { get; set; } = string.Empty;
 }
 
 /// <summary>
@@ -132,12 +137,12 @@ public class GenerateImagesActivity(ImageGenerationAgentService imageGenerationS
 /// </summary>
 [DurableTask]
 public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> logger, IConfiguration configuration)
-    : TaskActivity<(string ArticleContent, List<GeneratedImage> Images), ArticleResult>
+    : TaskActivity<(string ArticleContent, List<GeneratedImage> Images, string InstanceId), ArticleResult>
 {
     // Use system temp directory by default, or the configured directory if specified
     private readonly string _outputDirectory = configuration["OutputDirectory"] ?? Path.GetTempPath();
 
-    public override async Task<ArticleResult> RunAsync(TaskActivityContext context, (string ArticleContent, List<GeneratedImage> Images) input)
+    public override async Task<ArticleResult> RunAsync(TaskActivityContext context, (string ArticleContent, List<GeneratedImage> Images, string InstanceId) input)
     {
         logger.LogInformation("Assembling final article with images in HTML format");
         
@@ -268,6 +273,9 @@ public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> 
             
             logger.LogInformation("HTML article saved to file: {FilePath}", localFilePath);
             
+            // Construct the article endpoint URL
+            string articleEndpoint = ConstructArticleEndpoint(input.InstanceId);
+            
             logger.LogInformation(
                 "Successfully assembled final article in HTML format of {Length} characters with {ImageCount} images", 
                 finalHtml.Length, input.Images.Count);
@@ -276,7 +284,8 @@ public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> 
             {
                 HtmlContent = finalHtml,
                 FilePath = localFilePath,
-                BlobUrl = string.Empty // No blob URL since we're not uploading
+                BlobUrl = string.Empty, // No blob URL since we're not uploading
+                ArticleEndpoint = articleEndpoint
             };
         }
         catch (Exception ex)
@@ -284,6 +293,23 @@ public class AssembleFinalArticleActivity(ILogger<AssembleFinalArticleActivity> 
             logger.LogError(ex, "Error assembling final article");
             throw;
         }
+    }
+    
+    /// <summary>
+    /// Constructs the article endpoint URL dynamically for both local and container app environments
+    /// </summary>
+    private string ConstructArticleEndpoint(string instanceId)
+    {
+        // Try to get base URL from environment variables (for container apps)
+        string? baseUrl = Environment.GetEnvironmentVariable("CLIENT_BASE_URL");
+        
+        // Fallback to local development URL
+        if (string.IsNullOrEmpty(baseUrl))
+        {
+            baseUrl = "http://localhost:5000";
+        }
+        
+        return $"{baseUrl}/api/content/{instanceId}/document";
     }
     
     /// <summary>
