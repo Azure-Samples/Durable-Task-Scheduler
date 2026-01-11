@@ -70,7 +70,7 @@ param modelFormat string = 'OpenAI'
 @description('Model version for deployment')
 param modelVersion string = '2024-07-18'
 
-@description('Model deployment SKU name')
+@description('Cognitive Services account SKU name')
 param modelSkuName string = 'S0'
 
 @description('Model deployment capacity')
