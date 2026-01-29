@@ -17,6 +17,7 @@ Build fault-tolerant, stateful workflows in .NET applications using the Durable 
   <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.*" />
   <PackageReference Include="Microsoft.DurableTask.Generators" Version="1.*" OutputItemType="Analyzer" />
   <PackageReference Include="Azure.Identity" Version="1.*" />
+  <PackageReference Include="Grpc.Net.Client" Version="2.*" />
 </ItemGroup>
 ```
 
