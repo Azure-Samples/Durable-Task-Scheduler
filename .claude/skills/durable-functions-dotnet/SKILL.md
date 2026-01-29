@@ -16,10 +16,10 @@ Build fault-tolerant, stateful serverless workflows using Azure Durable Function
   <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.*" />
   <PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="2.*" />
   <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http" Version="3.*" />
+  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Http.AspNetCore" Version="1.*" />
   <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask" Version="1.*" />
+  <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged" Version="*" />
   <PackageReference Include="Azure.Identity" Version="1.*" />
-  <!-- Optional: For class-based orchestrations/activities -->
-  <PackageReference Include="Microsoft.DurableTask.Generators" Version="1.*" OutputItemType="Analyzer" />
 </ItemGroup>
 ```
 
