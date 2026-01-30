@@ -60,7 +60,7 @@ resource aiProject 'Microsoft.MachineLearningServices/workspaces@2023-08-01-prev
   kind: 'project'
 
   // Resource definition for the capability host
-  resource capabilityHost 'capabilityHosts@2024-10-01-preview' = {
+  resource capabilityHost 'capabilityHosts@2025-11-01' = {
     name: '${aiProjectName}-${capabilityHostName}'
     properties: {
       capabilityHostKind: 'Agents'

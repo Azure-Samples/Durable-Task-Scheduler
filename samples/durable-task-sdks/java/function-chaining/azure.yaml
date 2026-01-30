@@ -8,6 +8,8 @@
 metadata:
   template: hello-azd-java
 name: dts-quickstart
+infra:
+  path: ../../../infra
 services:
   sampleapp:
     project: .

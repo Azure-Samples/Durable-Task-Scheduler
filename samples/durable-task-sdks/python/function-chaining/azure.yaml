@@ -8,6 +8,8 @@
 metadata:
   template: hello-azd-python
 name: dts-quickstart
+infra:
+  path: ../../../infra
 services:
   client:
     project: .
