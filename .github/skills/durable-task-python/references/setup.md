@@ -450,6 +450,9 @@ with DurableTaskSchedulerWorker(
     log_handler=log_handler,
     log_formatter=log_formatter
 ) as worker:
+    worker.add_orchestrator(my_orchestration)
+    worker.add_activity(my_activity)
+    worker.start()
     # ...
 ```
 
