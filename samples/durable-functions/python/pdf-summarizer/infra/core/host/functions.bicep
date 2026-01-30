@@ -64,9 +64,14 @@ module functions 'appservice.bicep' = {
     appCommandLine: appCommandLine
     applicationInsightsName: applicationInsightsName
     appServicePlanId: appServicePlanId
-    appSettings: union(appSettings, {
+    appSettings: union(appSettings, storageManagedIdentity ? {
+        AzureWebJobsStorage__accountName: storage.name
+        FUNCTIONS_EXTENSION_VERSION: extensionVersion
+        FUNCTIONS_WORKER_RUNTIME: runtimeName
+        AZURE_OPENAI_ENDPOINT: 'https://${azureOpenaiService}.openai.azure.com/'
+        COGNITIVE_SERVICES_ENDPOINT: documentIntelligenceEndpoint 
+      } : {
         AzureWebJobsStorage: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
-        BLOB_STORAGE_ENDPOINT: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
         FUNCTIONS_EXTENSION_VERSION: extensionVersion
         FUNCTIONS_WORKER_RUNTIME: runtimeName
         AZURE_OPENAI_ENDPOINT: 'https://${azureOpenaiService}.openai.azure.com/'
