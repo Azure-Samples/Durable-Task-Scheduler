@@ -47,7 +47,7 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to deploy the app. Thi
    - The Azure subscription you'd like to use.
    - The Azure location to use.
 
-   > **Note:** At the moment, the Durable Task Scheduler can only be deployed to `West US2` and `NorthCentral US`. Unfortunately, the AZD CLI does not support `North Central US` and Azure Open AI does not support `West US2`. The best way to navigate discrepencies is to select `West US2` as your AZD location and hardcode the `openAi` module location to a region like `East US2`.
+   > **Note:** At the moment, the Durable Task Scheduler can only be deployed to `West US2` and `NorthCentral US`. Unfortunately, the AZD CLI does not support `North Central US` and Azure Open AI does not support `West US2`. The best way to navigate discrepancies is to select `West US2` as your AZD location and hardcode the `openAi` module location to a region like `East US2`.
 
 Once the azd up command finishes, the app will have successfully provisioned and deployed. 
 

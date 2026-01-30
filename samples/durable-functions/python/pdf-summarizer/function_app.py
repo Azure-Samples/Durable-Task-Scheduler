@@ -16,6 +16,9 @@ my_app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
 # Use managed identity to access blob storage
 credential = DefaultAzureCredential()
 storage_account_name = os.environ.get("STORAGE_ACCOUNT_NAME")
+if not storage_account_name:
+    raise ValueError("STORAGE_ACCOUNT_NAME environment variable is required but not set")
+
 blob_service_client = BlobServiceClient(
     account_url=f"https://{storage_account_name}.blob.core.windows.net",
     credential=credential
