@@ -35,6 +35,7 @@ module durableFunction '../core/host/functions.bicep' = {
         DURABLE_TASK_SCHEDULER_CONNECTION_STRING: 'Endpoint=${dtsURL};Authentication=ManagedIdentity;ClientID=${identityClientId}'
         TASKHUB_NAME: taskHubName
         AZURE_CLIENT_ID: identityClientId
+        STORAGE_ACCOUNT_NAME: storageAccountName
       })
     documentIntelligenceEndpoint: documentIntelligenceEndpoint
     azureOpenaiService: azureOpenaiService

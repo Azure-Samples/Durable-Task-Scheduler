@@ -12,9 +12,16 @@ import requests
 from datetime import datetime
 
 my_app = df.DFApp(http_auth_level=func.AuthLevel.ANONYMOUS)
-blob_service_client = BlobServiceClient.from_connection_string(os.environ.get("BLOB_STORAGE_ENDPOINT"))
 
-@my_app.blob_trigger(arg_name="myblob", path="input", connection="BLOB_STORAGE_ENDPOINT")
+# Use managed identity to access blob storage
+credential = DefaultAzureCredential()
+storage_account_name = os.environ.get("STORAGE_ACCOUNT_NAME")
+blob_service_client = BlobServiceClient(
+    account_url=f"https://{storage_account_name}.blob.core.windows.net",
+    credential=credential
+)
+
+@my_app.blob_trigger(arg_name="myblob", path="input", connection="AzureWebJobsStorage")
 @my_app.durable_client_input(client_name="client")
 async def blob_trigger(myblob: func.InputStream, client):
     logging.info(f"Python blob trigger function processed blob"
