@@ -1,0 +1,3 @@
+durabletask-azuremanaged
+azure-identity
+packaging

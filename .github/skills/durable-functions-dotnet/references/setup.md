@@ -442,7 +442,7 @@ resource storageAccount 'Microsoft.Storage/storageAccounts@2023-01-01' = {
 }
 
 // Durable Task Scheduler Namespace
-resource dtsNamespace 'Microsoft.DurableTask/namespaces@2024-10-01-preview' = {
+resource dtsNamespace 'Microsoft.DurableTask/namespaces@2025-11-01' = {
   name: '${baseName}-dts'
   location: location
   sku: {
@@ -453,7 +453,7 @@ resource dtsNamespace 'Microsoft.DurableTask/namespaces@2024-10-01-preview' = {
 }
 
 // Scheduler
-resource scheduler 'Microsoft.DurableTask/namespaces/schedulers@2024-10-01-preview' = {
+resource scheduler 'Microsoft.DurableTask/namespaces/schedulers@2025-11-01' = {
   parent: dtsNamespace
   name: 'scheduler'
   location: location
@@ -469,7 +469,7 @@ resource scheduler 'Microsoft.DurableTask/namespaces/schedulers@2024-10-01-previ
 }
 
 // Task Hub
-resource taskHub 'Microsoft.DurableTask/namespaces/taskHubs@2024-10-01-preview' = {
+resource taskHub 'Microsoft.DurableTask/namespaces/taskHubs@2025-11-01' = {
   parent: dtsNamespace
   name: 'default'
   properties: {}

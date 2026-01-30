@@ -28,7 +28,8 @@ azure-identity
 ```python
 import os
 from azure.identity import DefaultAzureCredential
-from durabletask import client, task
+from durabletask import task
+from durabletask.client import OrchestrationStatus
 from durabletask.azuremanaged.client import DurableTaskSchedulerClient
 from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
 
@@ -62,17 +63,17 @@ with DurableTaskSchedulerWorker(
     worker.start()
 
     # Create client and schedule orchestration
-    client = DurableTaskSchedulerClient(
+    dts_client = DurableTaskSchedulerClient(
         host_address=endpoint,
         secure_channel=secure_channel,
         taskhub=taskhub,
         token_credential=credential
     )
     
-    instance_id = client.schedule_new_orchestration(my_orchestration, input="World")
-    state = client.wait_for_orchestration_completion(instance_id, timeout=60)
+    instance_id = dts_client.schedule_new_orchestration(my_orchestration, input="World")
+    state = dts_client.wait_for_orchestration_completion(instance_id, timeout=60)
     
-    if state and state.runtime_status == client.OrchestrationStatus.COMPLETED:
+    if state and state.runtime_status == OrchestrationStatus.COMPLETED:
         print(f"Result: {state.serialized_output}")
 ```
 

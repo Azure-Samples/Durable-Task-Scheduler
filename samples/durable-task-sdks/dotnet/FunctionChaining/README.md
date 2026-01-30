@@ -150,6 +150,8 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 
 This sample includes an `azure.yaml` configuration file that allows you to deploy the entire solution to Azure using Azure Developer CLI (AZD).
 
+> **Note:** This sample uses the shared infrastructure templates located at [`samples/infra/`](../../infra/).
+
 #### Prerequisites for AZD Deployment
 
 1. Install [Azure Developer CLI](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd)

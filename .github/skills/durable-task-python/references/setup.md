@@ -277,9 +277,12 @@ def main():
         
         print("Worker started. Press Ctrl+C to stop.")
         
-        # Keep running
-        while True:
-            signal.pause()
+        # Keep running (cross-platform)
+        import asyncio
+        try:
+            asyncio.get_event_loop().run_forever()
+        except KeyboardInterrupt:
+            pass
 
 
 if __name__ == "__main__":

@@ -139,7 +139,7 @@ param taskHubName string = 'default'
 @allowed(['basic', 'standard', 'premium'])
 param sku string = 'standard'
 
-resource scheduler 'Microsoft.DurableTask/schedulers@2024-10-01-preview' = {
+resource scheduler 'Microsoft.DurableTask/schedulers@2025-11-01' = {
   name: schedulerName
   location: location
   properties: {
@@ -149,7 +149,7 @@ resource scheduler 'Microsoft.DurableTask/schedulers@2024-10-01-preview' = {
   }
 }
 
-resource taskHub 'Microsoft.DurableTask/schedulers/taskHubs@2024-10-01-preview' = {
+resource taskHub 'Microsoft.DurableTask/schedulers/taskHubs@2025-11-01' = {
   parent: scheduler
   name: taskHubName
   properties: {}

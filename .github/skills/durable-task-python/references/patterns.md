@@ -278,11 +278,11 @@ def workflow_with_entity(ctx: task.OrchestrationContext, _):
     """Orchestration that interacts with entities"""
     entity_id = entities.EntityInstanceId("counter", "my-counter")
     
-    # Signal entity (fire-and-forget)
-    ctx.signal_entity(entity_id, operation_name="add", input=5)
+    # Signal entity (fire-and-forget) - uses entity_id and operation_name params
+    ctx.signal_entity(entity_id=entity_id, operation_name="add", input=5)
     
-    # Call entity and wait for result
-    value = yield ctx.call_entity(entity_id, operation_name="get")
+    # Call entity and wait for result - uses entity and operation params (different from signal!)
+    value = yield ctx.call_entity(entity=entity_id, operation="get")
     
     return f"Counter value: {value}"
 ```
@@ -307,12 +307,13 @@ def workflow_with_locks(ctx: task.OrchestrationContext, _):
     # Lock entities for exclusive access
     with (yield ctx.lock_entities([entity_id_1, entity_id_2])):
         # Perform atomic operations on both entities
-        balance1 = yield ctx.call_entity(entity_id_1, "get_balance")
-        balance2 = yield ctx.call_entity(entity_id_2, "get_balance")
+        # Note: call_entity uses 'entity' and 'operation' params
+        balance1 = yield ctx.call_entity(entity=entity_id_1, operation="get_balance")
+        balance2 = yield ctx.call_entity(entity=entity_id_2, operation="get_balance")
         
         # Transfer between accounts
-        yield ctx.call_entity(entity_id_1, "withdraw", input=100)
-        yield ctx.call_entity(entity_id_2, "deposit", input=100)
+        yield ctx.call_entity(entity=entity_id_1, operation="withdraw", input=100)
+        yield ctx.call_entity(entity=entity_id_2, operation="deposit", input=100)
     
     return "Transfer complete"
 ```
@@ -372,45 +373,80 @@ def monitoring_workflow(ctx: task.OrchestrationContext, job_id: str):
 
 ## Version-Aware Orchestration
 
-Handle breaking changes gracefully:
+Handle breaking changes gracefully using orchestration versioning. Version is set when scheduling the orchestration and read via `ctx.version`.
+
+### Setting Version When Scheduling
 
 ```python
-def versioned_orchestration(ctx: task.OrchestrationContext, order):
-    """Orchestrator that handles multiple versions"""
-    
-    # Check orchestration version
-    if ctx.version == '1.0.0':
-        # Old logic path
-        yield ctx.call_activity(activity_one)
-        yield ctx.call_activity(activity_two)
-        return "Success (v1)"
-    
-    # New logic path (v2.0.0+)
-    yield ctx.call_activity(activity_one)
-    yield ctx.call_activity(activity_three)  # New activity
-    yield ctx.call_activity(activity_two)
-    return "Success (v2)"
-```
-
-### Worker Versioning Configuration
-
-```python
-from durabletask.worker import VersioningOptions, VersionMatchStrategy, VersionFailureStrategy
-
-versioning = VersioningOptions(
-    default_version="2.0.0",
-    version="2.0.0",
-    match_strategy=VersionMatchStrategy.CURRENT_OR_OLDER,
-    failure_strategy=VersionFailureStrategy.FAIL
+# Schedule orchestration with a specific version
+instance_id = client.schedule_new_orchestration(
+    "versioned_orchestration",
+    input="data",
+    version="2.0.0"  # Version is set here
 )
-
-with DurableTaskSchedulerWorker(
-    host_address=endpoint,
-    secure_channel=secure_channel,
-    taskhub=taskhub,
-    token_credential=credential,
-    versioning_options=versioning
-) as worker:
-    worker.add_orchestrator(versioned_orchestration)
-    worker.start()
 ```
+
+### Version Comparison Helper
+
+Use the `packaging` module for semantic version comparison:
+
+```python
+from packaging import version
+
+def compare_version(v1: str | None, v2: str) -> int:
+    """Compare two version strings.
+    
+    Returns: -1 if v1 < v2, 0 if v1 == v2, 1 if v1 > v2
+    """
+    if v1 is None:
+        return -1
+    try:
+        ver1 = version.parse(v1)
+        ver2 = version.parse(v2)
+        if ver1 < ver2:
+            return -1
+        elif ver1 > ver2:
+            return 1
+        return 0
+    except Exception:
+        # Fall back to string comparison
+        return (v1 > v2) - (v1 < v2)
+```
+
+### Versioned Orchestration Example
+
+```python
+def versioned_orchestration(ctx: task.OrchestrationContext, name: str):
+    """Orchestrator that handles multiple versions.
+    
+    Version history:
+    - v1.0.0: Basic hello greeting
+    - v2.0.0: Added goodbye greeting
+    """
+    results = []
+    orch_version = ctx.version  # Read version set during scheduling
+    
+    # v1.0.0+: Always run this
+    hello = yield ctx.call_activity(say_hello, input=name)
+    results.append(hello)
+    
+    # v2.0.0+: Added in version 2
+    if compare_version(orch_version, "2.0.0") >= 0:
+        goodbye = yield ctx.call_activity(say_goodbye, input=name)
+        results.append(goodbye)
+    
+    return {"version": orch_version, "results": results}
+```
+
+### Why Versioning Matters
+
+Without versioning, changing orchestration logic causes **non-deterministic errors**:
+1. v1 orchestration starts (calls activity A, then B)
+2. You deploy v2 code (calls A, C, then B)
+3. v1 orchestration replays but hits new code path
+4. **ERROR**: History doesn't match - expected B, got C
+
+With versioning:
+- v1 orchestrations continue using v1 code path
+- v2 orchestrations use v2 code path
+- Both run on the same worker without conflict

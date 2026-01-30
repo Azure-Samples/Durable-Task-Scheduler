@@ -97,7 +97,7 @@ resource aiHub 'Microsoft.MachineLearningServices/workspaces@2024-07-01-preview'
   }
 
   // Resource definition for the capability host
-  resource capabilityHost 'capabilityHosts@2024-10-01-preview' = {
+  resource capabilityHost 'capabilityHosts@2025-11-01' = {
     name: '${aiHubName}-${capabilityHostName}'
     properties: {
       capabilityHostKind: 'Agents'
