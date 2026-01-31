@@ -64,9 +64,16 @@ module functions 'appservice.bicep' = {
     appCommandLine: appCommandLine
     applicationInsightsName: applicationInsightsName
     appServicePlanId: appServicePlanId
-    appSettings: union(appSettings, {
+    appSettings: union(appSettings, storageManagedIdentity ? {
+        AzureWebJobsStorage__accountName: storage.name
+        STORAGE_ACCOUNT_NAME: storage.name
+        FUNCTIONS_EXTENSION_VERSION: extensionVersion
+        FUNCTIONS_WORKER_RUNTIME: runtimeName
+        AZURE_OPENAI_ENDPOINT: 'https://${azureOpenaiService}.openai.azure.com/'
+        COGNITIVE_SERVICES_ENDPOINT: documentIntelligenceEndpoint 
+      } : {
         AzureWebJobsStorage: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
-        BLOB_STORAGE_ENDPOINT: 'DefaultEndpointsProtocol=https;AccountName=${storage.name};AccountKey=${storage.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+        STORAGE_ACCOUNT_NAME: storage.name
         FUNCTIONS_EXTENSION_VERSION: extensionVersion
         FUNCTIONS_WORKER_RUNTIME: runtimeName
         AZURE_OPENAI_ENDPOINT: 'https://${azureOpenaiService}.openai.azure.com/'
@@ -94,11 +101,11 @@ module functions 'appservice.bicep' = {
 }
 
 module storageOwnerRole '../security/role.bicep' = if (storageManagedIdentity) {
-  name: 'search-index-contrib-role-api'
+  name: 'storage-blob-data-owner-role-function'
   params: {
     principalId: functions.outputs.identityPrincipalId
-    // Search Index Data Contributor
-    roleDefinitionId: '8ebe5a00-799e-43f5-93ac-243d3dce84a7'
+    // Storage Blob Data Owner
+    roleDefinitionId: 'b7e6dc6d-f1e8-4753-8033-0f276bb0955b'
     principalType: 'ServicePrincipal'
   }
 }

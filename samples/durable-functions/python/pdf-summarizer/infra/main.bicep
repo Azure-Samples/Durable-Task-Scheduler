@@ -167,17 +167,17 @@ module storage './core/storage/storage-account.bicep' = {
     tags: tags
     containers: [{
       name: deploymentStorageContainerName
-      publicAccess: 'Blob'
+      publicAccess: 'None'
     },{
       name: 'input'
-      publicAccess: 'Blob'
+      publicAccess: 'None'
 
     },{
       name: 'output'
-      publicAccess: 'Blob'
+      publicAccess: 'None'
     }]
-    publicNetworkAccess: 'Enabled' // revisit for wave 3
-    allowBlobPublicAccess: true
+    publicNetworkAccess: 'Enabled'
+    allowBlobPublicAccess: false
   }
 }
 
