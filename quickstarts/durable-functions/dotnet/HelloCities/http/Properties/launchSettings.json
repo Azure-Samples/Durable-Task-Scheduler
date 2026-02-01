@@ -1,9 +1,0 @@
-{
-  "profiles": {
-    "hello_cities": {
-      "commandName": "Project",
-      "commandLineArgs": "--port 7092",
-      "launchBrowser": false,
-    }
-  }
-}
