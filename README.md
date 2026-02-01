@@ -1,4 +1,4 @@
-## Azure Functions durable task scheduler
+## Azure Durable Task Scheduler & Durable Functions
 
 The durable task scheduler is a solution for durable execution in Azure. Durable execution is a fault-tolerant approach to running code that handles failures and interruptions through automatic retries and state persistence. Scenarios where durable execution is required include distributed transactions, multi-agent orchestration, data processing, infrastructure management, and others. Coupled with a developer orchestration framework like Durable Functions or the Durable Task SDKs, the durable task scheduler enables developers to author stateful apps that run on any compute environment without the need to architect for fault tolerance. 
 
@@ -34,6 +34,69 @@ Durable Functions
 - [Python](https://learn.microsoft.com/python/api/azure-functions-durable/azure.durable_functions?view=azure-python)
 - [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask.azurefunctions?view=azure-java-stable)
 - [JavaScript](https://learn.microsoft.com/javascript/api/durable-functions/?view=azure-node-latest)
+
+## AI-Assisted Development Skills
+
+This repository includes specialized skills for AI coding assistants to help you build durable workflows more effectively. These skills provide best practices, code patterns, and contextual guidance that AI assistants can use to generate high-quality code.
+
+### Supported AI Assistants
+
+The skills are compatible with:
+- **[GitHub Copilot](https://github.com/features/copilot)** - Works with GitHub Copilot Chat and Copilot Workspace via custom instructions
+- **[Claude Code](https://claude.ai/code)** - Works as Claude skills that provide specialized domain knowledge
+
+### Available Skills
+
+| Skill | Description | Path |
+|-------|-------------|------|
+| **durable-functions-dotnet** | Build durable workflows using Azure Durable Functions with .NET isolated worker. Covers orchestrations, activities, entities, and patterns like function chaining, fan-out/fan-in, async HTTP APIs, human interaction, monitoring, and stateful aggregators. | [.github/skills/durable-functions-dotnet](.github/skills/durable-functions-dotnet/SKILL.md) |
+| **durable-task-dotnet** | Build durable workflows in .NET using the Durable Task SDK (portable SDK). Covers orchestrations, activities, entities, and common patterns without Azure Functions dependency. | [.github/skills/durable-task-dotnet](.github/skills/durable-task-dotnet/SKILL.md) |
+| **durable-task-java** | Build durable workflows in Java using the Durable Task SDK. Covers orchestrations, activities, and patterns like function chaining, fan-out/fan-in, human interaction, and monitoring. | [.github/skills/durable-task-java](.github/skills/durable-task-java/SKILL.md) |
+| **durable-task-python** | Build durable workflows in Python using the Durable Task SDK. Covers orchestrations, activities, entities, and patterns including function chaining, fan-out/fan-in, human interaction, and stateful agents. | [.github/skills/durable-task-python](.github/skills/durable-task-python/SKILL.md) |
+
+### What the Skills Provide
+
+Each skill includes:
+- **Quick start templates** - Minimal setup code to get started quickly
+- **Pattern implementations** - Detailed examples for common workflow patterns
+- **Determinism rules** - Critical guidance on writing replay-safe orchestration code with WRONG vs CORRECT examples
+- **Error handling** - Best practices for exception handling and retry policies
+- **Connection & authentication** - Configuration for local development and Azure deployment
+- **Code examples** - Production-ready snippets for activities, orchestrators, and client operations
+
+### Using with GitHub Copilot
+
+To use these skills with GitHub Copilot:
+
+1. **VS Code**: Reference the skill files in your Copilot Chat by mentioning them with `#file:.github/skills/durable-task-dotnet/SKILL.md`
+2. **Copilot Instructions**: Add the skill paths to your `.github/copilot-instructions.md` file:
+   ```markdown
+   When working with Durable Task or Durable Functions, reference these skills:
+   - .github/skills/durable-functions-dotnet/SKILL.md (for Azure Functions .NET)
+   - .github/skills/durable-task-dotnet/SKILL.md (for .NET SDK)
+   - .github/skills/durable-task-java/SKILL.md (for Java SDK)
+   - .github/skills/durable-task-python/SKILL.md (for Python SDK)
+   ```
+
+### Using with Claude Code
+
+To use these skills with Claude Code:
+
+1. **Manual reference**: Ask Claude to read the skill file before generating code:
+   ```
+   Please read .github/skills/durable-task-python/SKILL.md and then help me create a fan-out/fan-in orchestration
+   ```
+2. **Automatic loading**: Skills in the `.github/skills` directory are automatically detected by Claude Code when working on relevant files
+
+### Example Prompt
+
+```
+Using the durable-task-dotnet skill, create an orchestration that:
+1. Validates an order
+2. Processes payment (with retry policy)
+3. Sends confirmation email
+4. Handles failures with compensation
+```
 
 ## Tell us what you think
 
