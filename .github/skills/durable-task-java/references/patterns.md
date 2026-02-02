@@ -2,6 +2,35 @@
 
 Detailed implementations of workflow patterns for Java applications.
 
+> **Important API Note**: The examples below use shorthand lambda syntax for clarity. In production code, use `TaskOrchestrationFactory` and `TaskActivityFactory`:
+>
+> ```java
+> // Worker setup with DurableTaskSchedulerWorkerExtensions
+> DurableTaskGrpcWorker worker = DurableTaskSchedulerWorkerExtensions.createWorkerBuilder(connectionString)
+>     .addOrchestration(new TaskOrchestrationFactory() {
+>         @Override public String getName() { return "MyOrchestration"; }
+>         @Override public TaskOrchestration create() {
+>             return ctx -> {
+>                 // Orchestration logic here
+>                 ctx.complete(result);  // Use ctx.complete() to return value
+>             };
+>         }
+>     })
+>     .addActivity(new TaskActivityFactory() {
+>         @Override public String getName() { return "MyActivity"; }
+>         @Override public TaskActivity create() {
+>             return ctx -> {
+>                 // Activity logic here - return value directly
+>                 return result;
+>             };
+>         }
+>     })
+>     .build();
+>
+> // Client builder
+> DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();
+> ```
+
 ## Function Chaining
 
 Sequential activity execution where each step depends on the previous result.

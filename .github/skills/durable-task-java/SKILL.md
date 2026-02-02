@@ -14,19 +14,47 @@ Build fault-tolerant, stateful workflows in Java applications using the Durable 
 ```xml
 <dependencies>
     <dependency>
-        <groupId>com.microsoft.durabletask</groupId>
+        <groupId>com.microsoft</groupId>
         <artifactId>durabletask-client</artifactId>
-        <version>1.6.2</version>
+        <version>1.5.1</version>
     </dependency>
     <dependency>
-        <groupId>com.microsoft.durabletask</groupId>
+        <groupId>com.microsoft</groupId>
         <artifactId>durabletask-azuremanaged</artifactId>
-        <version>1.6.2</version>
+        <version>1.5.1-preview.1</version>
     </dependency>
     <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-identity</artifactId>
-        <version>1.11.0</version>
+        <version>1.15.0</version>
+    </dependency>
+    <!-- Logging -->
+    <dependency>
+        <groupId>ch.qos.logback</groupId>
+        <artifactId>logback-classic</artifactId>
+        <version>1.2.6</version>
+    </dependency>
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-api</artifactId>
+        <version>1.7.32</version>
+    </dependency>
+    <!-- gRPC -->
+    <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-protobuf</artifactId>
+        <version>1.59.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-stub</artifactId>
+        <version>1.59.0</version>
+    </dependency>
+    <dependency>
+        <groupId>io.grpc</groupId>
+        <artifactId>grpc-netty-shaded</artifactId>
+        <version>1.59.0</version>
+        <scope>runtime</scope>
     </dependency>
 </dependencies>
 ```
@@ -34,10 +62,26 @@ Build fault-tolerant, stateful workflows in Java applications using the Durable 
 ### Gradle Dependencies
 
 ```groovy
+def grpcVersion = '1.59.0'
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+}
+
 dependencies {
-    implementation 'com.microsoft.durabletask:durabletask-client:1.6.2'
-    implementation 'com.microsoft.durabletask:durabletask-azuremanaged:1.6.2'
-    implementation 'com.azure:azure-identity:1.11.0'
+    implementation 'com.microsoft:durabletask-client:1.5.1'
+    implementation 'com.microsoft:durabletask-azuremanaged:1.5.1-preview.1'
+    implementation 'com.azure:azure-identity:1.15.0'
+    
+    // Logging
+    implementation 'ch.qos.logback:logback-classic:1.2.6'
+    implementation 'org.slf4j:slf4j-api:1.7.32'
+    
+    // gRPC
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
+    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 }
 ```
 
@@ -45,7 +89,8 @@ dependencies {
 
 ```java
 import com.microsoft.durabletask.*;
-import com.microsoft.durabletask.azuremanaged.*;
+import com.microsoft.durabletask.azuremanaged.DurableTaskSchedulerClientExtensions;
+import com.microsoft.durabletask.azuremanaged.DurableTaskSchedulerWorkerExtensions;
 import java.time.Duration;
 
 public class DurableTaskApp {
@@ -56,26 +101,43 @@ public class DurableTaskApp {
             connectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
         }
 
-        // Build and start the worker
-        DurableTaskGrpcWorker worker = new DurableTaskGrpcWorkerBuilder()
-            .connectionString(connectionString)
-            .addOrchestration("MyOrchestration", ctx -> {
-                String input = ctx.getInput(String.class);
-                String result = ctx.callActivity("SayHello", input, String.class).await();
-                return result;
+        // Build and start the worker using DurableTaskSchedulerWorkerExtensions
+        DurableTaskGrpcWorker worker = DurableTaskSchedulerWorkerExtensions.createWorkerBuilder(connectionString)
+            .addOrchestration(new TaskOrchestrationFactory() {
+                @Override
+                public String getName() {
+                    return "MyOrchestration";
+                }
+
+                @Override
+                public TaskOrchestration create() {
+                    return ctx -> {
+                        String input = ctx.getInput(String.class);
+                        String result = ctx.callActivity("SayHello", input, String.class).await();
+                        ctx.complete(result);
+                    };
+                }
             })
-            .addActivity("SayHello", ctx -> {
-                String name = ctx.getInput(String.class);
-                return "Hello " + name + "!";
+            .addActivity(new TaskActivityFactory() {
+                @Override
+                public String getName() {
+                    return "SayHello";
+                }
+
+                @Override
+                public TaskActivity create() {
+                    return ctx -> {
+                        String name = ctx.getInput(String.class);
+                        return "Hello " + name + "!";
+                    };
+                }
             })
             .build();
 
         worker.start();
 
-        // Build the client
-        DurableTaskClient client = new DurableTaskGrpcClientBuilder()
-            .connectionString(connectionString)
-            .build();
+        // Build the client using DurableTaskSchedulerClientExtensions
+        DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();
 
         // Schedule an orchestration
         String instanceId = client.scheduleNewOrchestrationInstance("MyOrchestration", "World");
@@ -88,7 +150,6 @@ public class DurableTaskApp {
         System.out.println("Result: " + result.readOutputAs(String.class));
         
         worker.close();
-        client.close();
     }
 }
 ```
@@ -112,17 +173,29 @@ See [references/patterns.md](references/patterns.md) for detailed implementation
 
 ```java
 // Orchestrator function - MUST be deterministic
-.addOrchestration("OrderWorkflow", ctx -> {
-    OrderInfo order = ctx.getInput(OrderInfo.class);
-    
-    // Call activities sequentially
-    boolean valid = ctx.callActivity("ValidateOrder", order, Boolean.class).await();
-    if (!valid) {
-        return "Order invalid";
+// Use TaskOrchestrationFactory to register orchestrations
+.addOrchestration(new TaskOrchestrationFactory() {
+    @Override
+    public String getName() {
+        return "OrderWorkflow";
     }
-    
-    String result = ctx.callActivity("ProcessOrder", order, String.class).await();
-    return result;
+
+    @Override
+    public TaskOrchestration create() {
+        return ctx -> {
+            OrderInfo order = ctx.getInput(OrderInfo.class);
+            
+            // Call activities sequentially
+            boolean valid = ctx.callActivity("ValidateOrder", order, Boolean.class).await();
+            if (!valid) {
+                ctx.complete("Order invalid");
+                return;
+            }
+            
+            String result = ctx.callActivity("ProcessOrder", order, String.class).await();
+            ctx.complete(result);
+        };
+    }
 })
 ```
 
@@ -130,13 +203,24 @@ See [references/patterns.md](references/patterns.md) for detailed implementation
 
 ```java
 // Activity function - can have side effects, I/O, non-determinism
-.addActivity("ProcessOrder", ctx -> {
-    OrderInfo order = ctx.getInput(OrderInfo.class);
-    
-    // Perform actual work here - HTTP calls, database, etc.
-    System.out.println("Processing order: " + order.getOrderId());
-    
-    return "Order " + order.getOrderId() + " processed";
+// Use TaskActivityFactory to register activities
+.addActivity(new TaskActivityFactory() {
+    @Override
+    public String getName() {
+        return "ProcessOrder";
+    }
+
+    @Override
+    public TaskActivity create() {
+        return ctx -> {
+            OrderInfo order = ctx.getInput(OrderInfo.class);
+            
+            // Perform actual work here - HTTP calls, database, etc.
+            System.out.println("Processing order: " + order.getOrderId());
+            
+            return "Order " + order.getOrderId() + " processed";
+        };
+    }
 })
 ```
 
@@ -447,9 +531,7 @@ docker run -d -p 8080:8080 -p 8082:8082 --name dts-emulator mcr.microsoft.com/dt
 ## Client Operations
 
 ```java
-DurableTaskClient client = new DurableTaskGrpcClientBuilder()
-    .connectionString(connectionString)
-    .build();
+DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();
 
 // Schedule new orchestration
 String instanceId = client.scheduleNewOrchestrationInstance("MyOrchestration", input);
