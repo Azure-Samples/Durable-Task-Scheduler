@@ -9,28 +9,6 @@ Build fault-tolerant, stateful workflows in Java applications using the Durable 
 
 ## Quick Start
 
-### Maven Dependencies
-
-```xml
-<dependencies>
-    <dependency>
-        <groupId>com.microsoft.durabletask</groupId>
-        <artifactId>durabletask-client</artifactId>
-        <version>1.6.2</version>
-    </dependency>
-    <dependency>
-        <groupId>com.microsoft.durabletask</groupId>
-        <artifactId>durabletask-azuremanaged</artifactId>
-        <version>1.6.2</version>
-    </dependency>
-    <dependency>
-        <groupId>com.azure</groupId>
-        <artifactId>azure-identity</artifactId>
-        <version>1.11.0</version>
-    </dependency>
-</dependencies>
-```
-
 ### Gradle Dependencies
 
 ```groovy
