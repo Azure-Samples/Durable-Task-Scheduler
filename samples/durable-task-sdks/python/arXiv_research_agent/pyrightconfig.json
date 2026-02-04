@@ -1,0 +1,11 @@
+{
+  "include": ["arxiv_research_agent"],
+  "exclude": [".venv", "tests"],
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.9",
+  "typeCheckingMode": "strict",
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "reportUnknownMemberType": "warning"
+}
