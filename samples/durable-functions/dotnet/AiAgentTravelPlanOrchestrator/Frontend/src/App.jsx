@@ -1,6 +1,6 @@
-// App.js
+// App.jsx
 import React from 'react';
-import ChatInterface from './components/ChatInterface'; // Adjust the path as needed
+import ChatInterface from './components/ChatInterface.jsx';
 
 const App = () => {
   return (

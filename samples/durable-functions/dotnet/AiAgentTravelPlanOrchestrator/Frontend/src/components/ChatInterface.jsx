@@ -6,7 +6,7 @@ import ProgressTracker from './ProgressTracker';
 import './progress-tracker.css';
 
 // Get API URL from environment variables
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:7071/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
 
 const ChatInterface = () => {
   // Travel request state
@@ -31,6 +31,14 @@ const ChatInterface = () => {
   const [confirmationStatus, setConfirmationStatus] = useState(null); // New state to track trip confirmation status
   const [orchestrationStatus, setOrchestrationStatus] = useState(null); // New state for tracking orchestration steps
   const chatHistoryRef = useRef(null);
+  const planDataRef = useRef(null);
+  const pendingTimeoutsRef = useRef([]);
+  const abortControllerRef = useRef(null);
+  
+  // Keep planDataRef in sync with planData state
+  useEffect(() => {
+    planDataRef.current = planData;
+  }, [planData]);
   
   // Auto-scroll to the bottom of chat when new messages arrive
   useEffect(() => {
@@ -112,14 +120,25 @@ const ChatInterface = () => {
     }
   };
 
-  // Polling for status updates
+  // Polling for status updates - stops when approvalStatus is "processing" to avoid race condition
   useEffect(() => {
     let intervalId;
     
-    if (statusPolling && instanceId) {
+    // Don't poll while confirmation polling is active
+    if (statusPolling && instanceId && approvalStatus !== "processing") {
+      // Cancel any pending request
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      
       intervalId = setInterval(async () => {
+        // Create new abort controller for this request
+        abortControllerRef.current = new AbortController();
+        
         try {
-          const statusResponse = await axios.get(`${API_URL}/travel-planner/status/${instanceId}`);
+          const statusResponse = await axios.get(`${API_URL}/travel-planner/status/${instanceId}`, {
+            signal: abortControllerRef.current.signal
+          });
           const status = statusResponse.data;
           
           console.log("Status update received:", status); // Add logging to debug
@@ -214,25 +233,40 @@ const ChatInterface = () => {
             }]);
           }
         } catch (error) {
-          console.error('Error checking status:', error);
+          // Ignore abort errors
+          if (error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+            console.error('Error checking status:', error);
+          }
         }
       }, 5000); // Check every 5 seconds
     }
     
     return () => {
       if (intervalId) clearInterval(intervalId);
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
     };
-  }, [statusPolling, instanceId]);
+  }, [statusPolling, instanceId, approvalStatus]);
 
   // Effect to check for trip confirmation status
   useEffect(() => {
     let confirmationIntervalId;
+    let confirmationAbortController;
     
     if (instanceId && approvalStatus === "processing") {
       confirmationIntervalId = setInterval(async () => {
+        // Cancel any pending request
+        if (confirmationAbortController) {
+          confirmationAbortController.abort();
+        }
+        confirmationAbortController = new AbortController();
+        
         try {
           // Check confirmation status from the API
-          const confirmationResponse = await axios.get(`${API_URL}/travel-planner/confirmation/${instanceId}`);
+          const confirmationResponse = await axios.get(`${API_URL}/travel-planner/confirmation/${instanceId}`, {
+            signal: confirmationAbortController.signal
+          });
           const confirmationData = confirmationResponse.data;
           
           console.log("Confirmation status received:", confirmationData);
@@ -246,9 +280,10 @@ const ChatInterface = () => {
             // Stop polling for confirmation status
             clearInterval(confirmationIntervalId);
             
-            // Update the UI with confirmation message
+            // Update the UI with confirmation message - use ref to get latest planData
             if (confirmationData.confirmationMessage) {
-              const updatedPlanData = planData ? { ...planData, bookingConfirmation: confirmationData.confirmationMessage } : null;
+              const currentPlanData = planDataRef.current;
+              const updatedPlanData = currentPlanData ? { ...currentPlanData, bookingConfirmation: confirmationData.confirmationMessage } : null;
               if (updatedPlanData) {
                 displayBookingConfirmation(updatedPlanData);
               }
@@ -262,9 +297,10 @@ const ChatInterface = () => {
             // Stop polling
             clearInterval(confirmationIntervalId);
             
-            // Update UI with rejection message
+            // Update UI with rejection message - use ref to get latest planData
             if (confirmationData.confirmationMessage) {
-              const updatedPlanData = planData ? { ...planData, bookingConfirmation: confirmationData.confirmationMessage } : null;
+              const currentPlanData = planDataRef.current;
+              const updatedPlanData = currentPlanData ? { ...currentPlanData, bookingConfirmation: confirmationData.confirmationMessage } : null;
               if (updatedPlanData) {
                 displayRejectionMessage(updatedPlanData);
               }
@@ -275,15 +311,19 @@ const ChatInterface = () => {
             setLoading(false);
           }
         } catch (error) {
-          console.error('Error checking confirmation status:', error);
+          // Ignore abort errors
+          if (error.name !== 'CanceledError' && error.code !== 'ERR_CANCELED') {
+            console.error('Error checking confirmation status:', error);
+          }
         }
       }, 3000); // Check every 3 seconds
     }
     
     return () => {
       if (confirmationIntervalId) clearInterval(confirmationIntervalId);
+      if (confirmationAbortController) confirmationAbortController.abort();
     };
-  }, [instanceId, approvalStatus, planData]);
+  }, [instanceId, approvalStatus]);
 
   // Helper function to display travel plan for approval
   const displayTravelPlanForApproval = (plan) => {
@@ -527,13 +567,14 @@ ${documentUrl}
 
   // Helper function to display rejection message
   const displayRejectionMessage = (plan) => {
+    const comments = (plan.bookingConfirmation || "").replace("Travel plan was not approved. Comments: ", "");
     let resultContent = `
 # Travel Plan Rejected
 
 Your travel plan was not approved. You can start a new travel plan when you're ready.
 
 ## Comments
-${plan.bookingConfirmation.replace("Travel plan was not approved. Comments: ", "")}
+${comments}
     `;
     
     setMessages(prevMessages => {
@@ -592,11 +633,12 @@ ${plan.bookingConfirmation.replace("Travel plan was not approved. Comments: ", "
       
       // Need to force the effect to re-run by setting statusPolling to false first
       setStatusPolling(false);
-      // Then set it back to true after a brief delay
-      setTimeout(() => {
+      // Then set it back to true after a brief delay - track timeout for cleanup
+      const timeoutId = setTimeout(() => {
         setStatusPolling(true);
         setPlanReadyForApproval(false);
       }, 100);
+      pendingTimeoutsRef.current.push(timeoutId);
       
     } catch (error) {
       console.error('Error approving travel plan:', error);
@@ -634,11 +676,12 @@ ${plan.bookingConfirmation.replace("Travel plan was not approved. Comments: ", "
       
       // Need to force the effect to re-run by setting statusPolling to false first
       setStatusPolling(false);
-      // Then set it back to true after a brief delay
-      setTimeout(() => {
+      // Then set it back to true after a brief delay - track timeout for cleanup
+      const timeoutId = setTimeout(() => {
         setStatusPolling(true);
         setPlanReadyForApproval(false);
       }, 100);
+      pendingTimeoutsRef.current.push(timeoutId);
       
     } catch (error) {
       console.error('Error rejecting travel plan:', error);
@@ -650,6 +693,13 @@ ${plan.bookingConfirmation.replace("Travel plan was not approved. Comments: ", "
       setLoading(false);
     }
   };
+
+  // Cleanup pending timeouts on unmount
+  useEffect(() => {
+    return () => {
+      pendingTimeoutsRef.current.forEach(id => clearTimeout(id));
+    };
+  }, []);
 
   return (
     <div className="page-container">

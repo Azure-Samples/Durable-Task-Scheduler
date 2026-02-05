@@ -49,8 +49,8 @@ var host = new HostBuilder()
             var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
             var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
 
-            ArgumentNullException.ThrowIfNullOrEmpty(nameof(tenantId), "AZURE_TENANT_ID environment variable is not set.");
-            ArgumentNullException.ThrowIfNullOrEmpty(nameof(clientId), "AZURE_CLIENT_ID environment variable is not set.");
+            ArgumentNullException.ThrowIfNullOrEmpty(tenantId, nameof(tenantId));
+            ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
 
             // Use the same credentials for all clients. 
             clientBuilder.UseCredential(new DefaultAzureCredential(new DefaultAzureCredentialOptions

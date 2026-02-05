@@ -140,7 +140,7 @@ azurite
 ### 4. Run the Durable Task Scheduler Locally
 
 ```bash
-docker run -itP mcr.microsoft.com/dts/dts-emulator:latest
+docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
 ```
 
 ### 5. Run Backend Functions
@@ -218,7 +218,7 @@ This command will:
 
 - Create all required Azure resources as defined in your infrastructure files
 - Build the backend Azure Functions
-- Build and deploy the frontend React application
+- Build and deploy the frontend Vite React application
 - Configure all connections between components
 
 ### 4. Configure AI Agents

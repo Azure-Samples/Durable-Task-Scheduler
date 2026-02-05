@@ -2,6 +2,7 @@ using System.Text.Json;
 using Azure;
 using Azure.Identity;
 using Azure.AI.Projects;
+using Azure.AI.Agents.Persistent;
 using System.Net;
 using Microsoft.Extensions.Logging;
 
@@ -184,71 +185,64 @@ public abstract class BaseAgentService : IAgentService
                     throw new InvalidOperationException($"Connection string for agent {AgentId} is not set.");
                 }
 
-                // Create an agents client with the connection string
+                // Create an agents client with the connection string (endpoint)
                 var tenantId = Environment.GetEnvironmentVariable("AZURE_TENANT_ID");
                 var clientId = Environment.GetEnvironmentVariable("AZURE_CLIENT_ID");
 
-                ArgumentNullException.ThrowIfNullOrEmpty(nameof(tenantId), "AZURE_TENANT_ID environment variable is not set.");
-                ArgumentNullException.ThrowIfNullOrEmpty(nameof(clientId), "AZURE_CLIENT_ID environment variable is not set.");
+                ArgumentNullException.ThrowIfNullOrEmpty(tenantId, nameof(tenantId));
+                ArgumentNullException.ThrowIfNullOrEmpty(clientId, nameof(clientId));
 
-                var client = new AgentsClient(ConnectionString, new DefaultAzureCredential(
+                var projectClient = new AIProjectClient(new Uri(ConnectionString), new DefaultAzureCredential(
                     new DefaultAzureCredentialOptions
                     {
                         TenantId = tenantId,
                         ManagedIdentityClientId = clientId
                     }));
-                Logger.LogInformation($"Successfully created AgentsClient for agent {AgentId}");
+                var client = projectClient.GetPersistentAgentsClient();
+                Logger.LogInformation($"Successfully created PersistentAgentsClient for agent {AgentId}");
 
                 // Create a thread
-                Response<AgentThread> threadResponse = await client.CreateThreadAsync();
-                string threadId = threadResponse.Value.Id;
+                PersistentAgentThread thread = await client.Threads.CreateThreadAsync();
+                string threadId = thread.Id;
                 Logger.LogInformation($"Created thread, thread ID: {threadId}");
 
                 // Send the prompt to the thread
-                Response<ThreadMessage> messageResponse = await client.CreateMessageAsync(
+                await client.Messages.CreateMessageAsync(
                     threadId,
                     MessageRole.User,
                     prompt);
 
                 // Create a run with the agent using the agent ID
-                Response<ThreadRun> runResponse = await client.CreateRunAsync(
+                ThreadRun run = await client.Runs.CreateRunAsync(
                     threadId,
                     AgentId);
 
-                Logger.LogInformation($"Created run, run ID: {runResponse.Value.Id}");
+                Logger.LogInformation($"Created run, run ID: {run.Id}");
 
                 // Poll the run until it's completed
                 do
                 {
                     await Task.Delay(TimeSpan.FromMilliseconds(500));
-                    runResponse = await client.GetRunAsync(threadId, runResponse.Value.Id);
+                    run = await client.Runs.GetRunAsync(threadId, run.Id);
                 }
-                while (runResponse.Value.Status == RunStatus.Queued
-                    || runResponse.Value.Status == RunStatus.InProgress
-                    || runResponse.Value.Status == RunStatus.RequiresAction);
+                while (run.Status == RunStatus.Queued
+                    || run.Status == RunStatus.InProgress
+                    || run.Status == RunStatus.RequiresAction);
 
-                Logger.LogInformation($"Run completed with status: {runResponse.Value.Status}");
+                Logger.LogInformation($"Run completed with status: {run.Status}");
 
-                if (runResponse.Value.Status == RunStatus.Failed)
+                if (run.Status == RunStatus.Failed)
                 {
-                    // Check if the error is due to rate limiting
-                    string errorMessage = runResponse.Value.LastError?.Message ?? string.Empty;
-                    if (errorMessage.Contains("Rate limit") && retryCount < MaxRetryAttempts)
-                    {
-                        shouldRetry = true;
-                        retryDelay = await HandleRetry(++retryCount, retryDelay, errorMessage);
-                        continue;
-                    }
-
+                    string errorMessage = run.LastError?.Message ?? string.Empty;
                     throw new Exception($"Run failed: {errorMessage}");
                 }
 
                 // Get messages from the assistant thread
-                var messages = await client.GetMessagesAsync(threadId);
+                var messagesPageable = client.Messages.GetMessagesAsync(threadId);
 
                 // Get the most recent message from the assistant
                 string lastMessage = string.Empty;
-                foreach (ThreadMessage message in messages.Value)
+                await foreach (PersistentThreadMessage message in messagesPageable)
                 {
                     // Skip user messages, we only want assistant responses
                     if (message.Role == MessageRole.User)
@@ -271,7 +265,7 @@ public abstract class BaseAgentService : IAgentService
             }
             catch (RequestFailedException ex) when (
                 (ex.Status == (int)HttpStatusCode.TooManyRequests ||  // 429 Too Many Requests
-                ex.Status == 503) &&                                 // 503 Service Unavailable
+                ex.Status == 503) &&                                  // 503 Service Unavailable
                 retryCount < MaxRetryAttempts)
             {
                 shouldRetry = true;
@@ -279,17 +273,8 @@ public abstract class BaseAgentService : IAgentService
             }
             catch (Exception ex)
             {
-                // Check if the exception message contains indication of rate limit
-                if (ex.Message.Contains("Rate limit") && retryCount < MaxRetryAttempts)
-                {
-                    shouldRetry = true;
-                    retryDelay = await HandleRetry(++retryCount, retryDelay, ex.Message);
-                }
-                else
-                {
-                    Logger.LogInformation($"Error calling agent {AgentId}: {ex.Message}");
-                    throw;
-                }
+                Logger.LogError(ex, "Error calling agent {AgentId}", AgentId);
+                throw;
             }
         } while (shouldRetry);
 
