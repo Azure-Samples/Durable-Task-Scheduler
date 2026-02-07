@@ -1,0 +1,4 @@
+durabletask
+opentelemetry-api
+opentelemetry-sdk
+opentelemetry-exporter-otlp-proto-grpc

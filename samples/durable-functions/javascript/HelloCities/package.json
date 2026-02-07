@@ -1,0 +1,13 @@
+{
+  "name": "durable-functions-hello-cities-js",
+  "version": "1.0.0",
+  "description": "Durable Functions JavaScript quickstart with Durable Task Scheduler",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "durable-functions": "^3.0.0"
+  }
+}

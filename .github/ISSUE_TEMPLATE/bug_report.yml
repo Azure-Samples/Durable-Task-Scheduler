@@ -1,0 +1,58 @@
+name: 🐛 Bug Report
+description: Report a bug in a sample or documentation
+title: "[Bug]: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a bug! Please fill out the information below.
+  - type: dropdown
+    id: sample
+    attributes:
+      label: Which sample is affected?
+      options:
+        - Durable Task SDK - .NET
+        - Durable Task SDK - Python
+        - Durable Task SDK - Java
+        - Durable Functions - .NET
+        - Durable Functions - Python
+        - Infrastructure / Deployment
+        - Documentation
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of what the bug is.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Steps to reproduce the behavior.
+      placeholder: |
+        1. Run the emulator with '...'
+        2. Execute '...'
+        3. See error
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What you expected to happen.
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        - OS: [e.g., Windows 11, macOS 14, Ubuntu 22.04]
+        - Runtime: [e.g., .NET 8, Python 3.11, Java 17]
+        - Docker version (if using emulator)
+      render: markdown
