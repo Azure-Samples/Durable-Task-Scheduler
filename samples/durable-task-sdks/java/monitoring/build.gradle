@@ -5,6 +5,11 @@ plugins {
 
 group 'io.durabletask'
 version = '0.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 def grpcVersion = '1.59.0'
 archivesBaseName = 'durabletask-samples'
 
