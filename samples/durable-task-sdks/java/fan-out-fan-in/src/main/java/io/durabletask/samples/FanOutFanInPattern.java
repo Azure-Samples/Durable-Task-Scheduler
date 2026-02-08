@@ -91,5 +91,6 @@ class FanOutFanInPattern {
 
         // Shutdown the worker and exit
         worker.stop();
+        System.exit(0);
     }
 }

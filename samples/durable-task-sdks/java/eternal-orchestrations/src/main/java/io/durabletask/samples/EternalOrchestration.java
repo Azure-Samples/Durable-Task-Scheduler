@@ -99,5 +99,6 @@ public class EternalOrchestration {
         Thread.sleep(Duration.ofMinutes(5).toMillis());  // Run for 5 minutes then exit
 
         worker.stop();
+        System.exit(0);
     }
 } 
