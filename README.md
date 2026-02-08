@@ -1,105 +1,174 @@
-## Azure Durable Task Scheduler & Durable Functions
+# Azure Durable Task
 
-The durable task scheduler is a solution for durable execution in Azure. Durable execution is a fault-tolerant approach to running code that handles failures and interruptions through automatic retries and state persistence. Scenarios where durable execution is required include distributed transactions, multi-agent orchestration, data processing, infrastructure management, and others. Coupled with a developer orchestration framework like Durable Functions or the Durable Task SDKs, the durable task scheduler enables developers to author stateful apps that run on any compute environment without the need to architect for fault tolerance. 
+**Build reliable, fault-tolerant workflows that survive any failure.**
 
-Developers can use the durable task scheduler with the following orchestration frameworks: 
-- [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview) 
-- Durable Task SDKs, also referred to as "portable SDKs"
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
+[![Docs](https://img.shields.io/badge/docs-Microsoft%20Learn-blue)](https://aka.ms/dts-documentation)
 
-> **Note:** Though the durable task scheduler can also be used with the [Durable Task Framework](https://github.com/Azure/durabletask), we recommend new apps to use the Durable Task SDK over the Durable Task Framework as the former follows more modern .NET conventions and will be the focus of our future investments.
+---
 
-### Use with Durable Functions 
-When used with Durable Functions, a feature of Azure Functions, the durable task scheduler plays the role the ["backend provider"](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-storage-providers), where state data is persisted as the app runs. While other backend providers are supported, only the durable task scheduler offers a fully managed experience, which removes operational overhead from users. Additionally, the scheduler offers exceptional performance, reliability, and the ease of monitoring orchestrations. 
+## Table of Contents
 
-### Use with Durable Task SDKs or "portable SDKs"
-The Durable Task SDKs provide a lightweight client library for the durable task scheduler. When running orchestrations, apps using these SDKs would make a connection to the scheduler's orchestration engine in Azure. These SDKs are called "portable" because apps that leverage them can be hosted in various compute environments, such as Azure Container Apps, Azure Kubernetes Service, Azure App Service, or VMs. 
+- [What is Durable Execution?](#what-is-durable-execution)
+- [Why Durable Task Scheduler?](#why-durable-task-scheduler)
+- [Get Started in 5 Minutes](#-get-started-in-5-minutes)
+- [Choose Your Framework](#choose-your-framework)
+- [Samples](#samples)
+- [Observability](#observability)
+- [API Reference](#api-reference)
+- [AI-Assisted Development](#ai-assisted-development)
+- [Contributing](#contributing)
+- [Community & Support](#community--support)
 
-![Durable Task Scheduler in all Azure Computes](./media/images/durable-task-sdks/dts-in-all-computes.png)
+---
 
-For more information on how to use the Azure Functions durable task scheduler and to explore its features, please refer to the [official documentation](https://aka.ms/dts-documentation)
+## What is Durable Execution?
 
-## Choosing your orchestration framework
-Refer to [Choosing an orchestration framework](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework) article for guidance on how to pick the framework for your use case. 
+[Durable execution](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler) is a fault-tolerant approach to running code that handles failures and interruptions through automatic retries and state persistence. Your orchestration logic is checkpointed at every step, so if a process crashes or a VM reboots, execution resumes exactly where it left off. Common use cases include distributed transactions, multi-agent AI orchestration, data processing pipelines, and infrastructure management. Paired with a developer framework like [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview) or the Durable Task SDKs, the scheduler lets you author stateful apps on any compute without architecting for fault tolerance yourself.
 
-## API reference docs
-Durable Task SDKs
+---
+
+## Why Durable Task Scheduler?
+
+- 🏗️ **Fully managed** — no storage accounts to configure, no infrastructure to maintain
+- ⚡ **Purpose-built & fast** — optimized compute+memory; push-model gRPC streaming (no polling)
+- 📊 **Built-in dashboard** — monitor orchestrations, drill into history, pause/terminate/restart instances ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-dashboard))
+- 🛡️ **Fault isolation** — runs as a separate Azure resource; failures don't cascade to your app
+- 📈 **Independent scaling** — scheduler scales separately from your app; multiple apps can share one scheduler
+- 🗂️ **Multiple task hubs** — isolate workloads by environment, team, or project ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler#multiple-task-hubs))
+- 🐳 **Emulator for local dev** — Docker-based emulator with dashboard included, zero Azure dependency
+- 🔐 **Identity-based auth** — Microsoft Entra ID / managed identity, no secrets in connection strings ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity))
+- 🌍 **Run anywhere** — Azure Functions, Container Apps, AKS, App Service, VMs
+
+![Architecture](./media/images/durable-task-sdks/dts-in-all-computes.png)
+
+---
+
+## ⚡ Get Started in 5 Minutes
+
+### Step 1: Start the emulator
+
+```bash
+docker pull mcr.microsoft.com/dts/dts-emulator:latest
+docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+```
+
+### Step 2: Pick your language and run a sample
+
+| Language | Quickstart Sample | Run Command |
+|----------|-------------------|-------------|
+| .NET | Function Chaining | `cd samples/durable-task-sdks/dotnet/FunctionChaining/Worker && dotnet run` |
+| Python | Function Chaining | `cd samples/durable-task-sdks/python/function-chaining && pip install -r requirements.txt && python worker.py` |
+| Java | Function Chaining | `cd samples/durable-task-sdks/java/function-chaining && ./gradlew runChainingPattern` |
+
+### Step 3: Open the dashboard
+
+Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestration status, history, and more.
+
+---
+
+## Choose Your Framework
+
+| | Durable Functions | Durable Task SDKs |
+|---|---|---|
+| **Best for** | Serverless event-driven apps | Any compute (containers, VMs, etc.) |
+| **Hosting** | Azure Functions | Any host (ACA, AKS, App Service, VMs) |
+| **Triggers** | HTTP, Timer, Queue, etc. | Self-managed |
+| **Scaling** | Built-in auto-scale | Bring your own scaling |
+| **Languages** | .NET, Python, Java, JavaScript | .NET, Python, Java |
+
+📖 [Choosing an orchestration framework →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework)
+
+---
+
+## Samples
+
+Explore production-ready examples across languages and frameworks.
+
+📂 [**Full Sample Catalog →**](./samples/README.md)
+
+### Featured Samples
+
+🤖 **[AI Research Agent](./samples/durable-task-sdks/python/arXiv_research_agent)** — Autonomous academic research agent that searches arXiv, analyzes papers, and synthesizes reports (Python)
+
+✈️ **[AI Travel Planner](./samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator)** — Multi-agent travel planning with specialized agents and human approval (Durable Functions, .NET)
+
+🛒 **[Order Processor](./samples/durable-functions/dotnet/OrderProcessor)** — End-to-end order workflow with inventory, payment, and notifications (Durable Functions, .NET)
+
+🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga)** — Distributed transactions with compensating actions for failure recovery (Durable Functions, .NET)
+
+### Patterns Quick Reference
+
+| Pattern | .NET SDK | Python SDK | Java SDK | Durable Functions |
+|---------|----------|------------|----------|-------------------|
+| Function Chaining | ✅ | ✅ | ✅ | ✅ |
+| Fan-out/Fan-in | ✅ | ✅ | ✅ | ✅ |
+| Human Interaction | ✅ | ✅ | ✅ | — |
+| Async HTTP API | — | ✅ | ✅ | ✅ |
+| Monitoring | ✅ | ✅ | ✅ | — |
+| Sub-orchestrations | ✅ | ✅ | ✅ | — |
+| Eternal Orchestrations | ✅ | ✅ | ✅ | — |
+| Durable Entities | ✅ | ✅ | — | — |
+| Saga/Compensation | — | ✅ | — | ✅ |
+| Orchestration Versioning | ✅ | ✅ | — | — |
+
+---
+
+## Observability
+
+The Durable Task Scheduler provides a **built-in dashboard** for monitoring orchestration instances, inspecting execution history, and managing running workflows. The SDKs also support **OpenTelemetry distributed tracing** for end-to-end visibility across services. Durable Functions users can leverage [distributed tracing V2](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-diagnostics#distributed-tracing) for enhanced diagnostics.
+
+---
+
+## API Reference
+
+### Durable Task SDKs
+
 - [.NET](https://learn.microsoft.com/dotnet/api/microsoft.durabletask?view=durabletask-dotnet-1.x)
 - [Python](https://github.com/microsoft/durabletask-python)
 - [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask?view=durabletask-java-1.x)
 - JavaScript (coming soon)
 
+### Durable Functions
 
-Durable Functions
 - [.NET (isolated)](https://learn.microsoft.com/dotnet/api/microsoft.azure.functions.worker.extensions.durabletask?view=azure-dotnet)
 - [Python](https://learn.microsoft.com/python/api/azure-functions-durable/azure.durable_functions?view=azure-python)
 - [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask.azurefunctions?view=azure-java-stable)
 - [JavaScript](https://learn.microsoft.com/javascript/api/durable-functions/?view=azure-node-latest)
 
-## AI-Assisted Development Skills
+---
 
-This repository includes specialized skills for AI coding assistants to help you build durable workflows more effectively. These skills provide best practices, code patterns, and contextual guidance that AI assistants can use to generate high-quality code.
+## AI-Assisted Development
 
-### Supported AI Assistants
-
-The skills are compatible with:
-- **[GitHub Copilot](https://github.com/features/copilot)** - Works with GitHub Copilot Chat and Copilot Workspace via custom instructions
-- **[Claude Code](https://claude.ai/code)** - Works as Claude skills that provide specialized domain knowledge
-
-### Available Skills
+This repository includes specialized skills for AI coding assistants ([GitHub Copilot](https://github.com/features/copilot), [Claude Code](https://claude.ai/code)) to help you build durable workflows with best practices, code patterns, and contextual guidance.
 
 | Skill | Description | Path |
 |-------|-------------|------|
-| **durable-functions-dotnet** | Build durable workflows using Azure Durable Functions with .NET isolated worker. Covers orchestrations, activities, entities, and patterns like function chaining, fan-out/fan-in, async HTTP APIs, human interaction, monitoring, and stateful aggregators. | [.github/skills/durable-functions-dotnet](.github/skills/durable-functions-dotnet/SKILL.md) |
-| **durable-task-dotnet** | Build durable workflows in .NET using the Durable Task SDK (portable SDK). Covers orchestrations, activities, entities, and common patterns without Azure Functions dependency. | [.github/skills/durable-task-dotnet](.github/skills/durable-task-dotnet/SKILL.md) |
-| **durable-task-java** | Build durable workflows in Java using the Durable Task SDK. Covers orchestrations, activities, and patterns like function chaining, fan-out/fan-in, human interaction, and monitoring. | [.github/skills/durable-task-java](.github/skills/durable-task-java/SKILL.md) |
-| **durable-task-python** | Build durable workflows in Python using the Durable Task SDK. Covers orchestrations, activities, entities, and patterns including function chaining, fan-out/fan-in, human interaction, and stateful agents. | [.github/skills/durable-task-python](.github/skills/durable-task-python/SKILL.md) |
+| **durable-functions-dotnet** | Durable Functions with .NET isolated worker — orchestrations, activities, entities, and all workflow patterns | [Skill →](.github/skills/durable-functions-dotnet/SKILL.md) |
+| **durable-task-dotnet** | Durable Task SDK for .NET — portable orchestrations without Azure Functions dependency | [Skill →](.github/skills/durable-task-dotnet/SKILL.md) |
+| **durable-task-java** | Durable Task SDK for Java — orchestrations, activities, and common workflow patterns | [Skill →](.github/skills/durable-task-java/SKILL.md) |
+| **durable-task-python** | Durable Task SDK for Python — orchestrations, activities, entities, and stateful agents | [Skill →](.github/skills/durable-task-python/SKILL.md) |
 
-### What the Skills Provide
+**Usage:** Reference a skill file in your AI assistant (e.g., `#file:.github/skills/durable-task-dotnet/SKILL.md` in Copilot Chat) or ask it to read the skill before generating code. Skills are automatically detected by Claude Code when working on relevant files.
 
-Each skill includes:
-- **Quick start templates** - Minimal setup code to get started quickly
-- **Pattern implementations** - Detailed examples for common workflow patterns
-- **Determinism rules** - Critical guidance on writing replay-safe orchestration code with WRONG vs CORRECT examples
-- **Error handling** - Best practices for exception handling and retry policies
-- **Connection & authentication** - Configuration for local development and Azure deployment
-- **Code examples** - Production-ready snippets for activities, orchestrators, and client operations
+---
 
-### Using with GitHub Copilot
+## Contributing
 
-To use these skills with GitHub Copilot:
+We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to get involved, submit issues, and open pull requests.
 
-1. **VS Code**: Reference the skill files in your Copilot Chat by mentioning them with `#file:.github/skills/durable-task-dotnet/SKILL.md`
-2. **Copilot Instructions**: Add the skill paths to your `.github/copilot-instructions.md` file:
-   ```markdown
-   When working with Durable Task or Durable Functions, reference these skills:
-   - .github/skills/durable-functions-dotnet/SKILL.md (for Azure Functions .NET)
-   - .github/skills/durable-task-dotnet/SKILL.md (for .NET SDK)
-   - .github/skills/durable-task-java/SKILL.md (for Java SDK)
-   - .github/skills/durable-task-python/SKILL.md (for Python SDK)
-   ```
+---
 
-### Using with Claude Code
+## Community & Support
 
-To use these skills with Claude Code:
+- 📖 [Official Documentation](https://aka.ms/dts-documentation)
+- 💬 [GitHub Issues](https://github.com/Azure/Durable-Task-Scheduler/issues) — bugs and feature requests
+- 📧 Contact: [nicholas.greenfield@microsoft.com](mailto:nicholas.greenfield@microsoft.com), [jiayma@microsoft.com](mailto:jiayma@microsoft.com)
 
-1. **Manual reference**: Ask Claude to read the skill file before generating code:
-   ```
-   Please read .github/skills/durable-task-python/SKILL.md and then help me create a fan-out/fan-in orchestration
-   ```
-2. **Automatic loading**: Skills in the `.github/skills` directory are automatically detected by Claude Code when working on relevant files
+---
 
-### Example Prompt
+## License
 
-```
-Using the durable-task-dotnet skill, create an orchestration that:
-1. Validates an order
-2. Processes payment (with retry policy)
-3. Sends confirmation email
-4. Handles failures with compensation
-```
+This project is licensed under the [MIT License](./LICENSE.md).
 
-## Tell us what you think
-
-Your feedback is essential in shaping the future direction of this product. We encourage you to share your experiences, both the good and the bad. If there are any missing features or capabilities that you would like to see supported in the Durable Task Scheduler, we want to hear about them.
-
-> **Note:** This repo is a sample repo. If you have feature requests or feedback, you can share by dropping us an issue in the [Azure/Durable Task Scheduler repo](https://github.com/azure/Durable-Task-Scheduler) or send an email to our product managers Nick and Lily ([nicholas.greenfield@microsoft.com](mailto:nicholas.greenfield@microsoft.com); [jiayma@microsoft.com](mailto:jiayma@microsoft.com)).
+⭐ **Star this repo if you find it useful!**

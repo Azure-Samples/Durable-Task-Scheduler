@@ -30,6 +30,7 @@ public class SubOrchestrationPattern {
         // Create worker and register orchestrations
         DurableTaskGrpcWorker worker = createWorker(connectionString);
         worker.start();
+        Thread.sleep(5000);
 
         // Create client
         DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();

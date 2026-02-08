@@ -1,13 +1,11 @@
-## [project-title] Changelog
+# Changelog
 
-<a name="x.y.z"></a>
-# x.y.z (yyyy-mm-dd)
+All notable changes to the Durable Task Scheduler samples repository will be documented in this file.
 
-*Features*
-* ...
+## 2025-01-01 — Initial Public Release
 
-*Bug Fixes*
-* ...
-
-*Breaking Changes*
-* ...
+- Initial set of Durable Task SDK samples (.NET, Python, Java)
+- Durable Functions samples (.NET, Python)
+- AI-powered samples (arXiv Research Agent, Travel Planner, PDF Summarizer)
+- Infrastructure templates for Azure deployment
+- AI-assisted development skills for GitHub Copilot and Claude

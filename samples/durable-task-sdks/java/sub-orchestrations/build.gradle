@@ -25,7 +25,7 @@ task runSubOrchestrationPattern(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.6.1")
+    implementation("com.microsoft:durabletask-client:1.6.3")
     implementation("com.microsoft:durabletask-azuremanaged:1.6.3")
 
     // Logging dependencies

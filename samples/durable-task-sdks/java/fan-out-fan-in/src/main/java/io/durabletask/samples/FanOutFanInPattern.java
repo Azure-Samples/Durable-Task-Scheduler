@@ -63,6 +63,7 @@ class FanOutFanInPattern {
 
         // Start the worker
         worker.start();
+        Thread.sleep(5000);
 
         // Create client using Azure-managed extensions
         DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();

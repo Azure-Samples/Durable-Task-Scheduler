@@ -25,7 +25,7 @@ task runWebApi(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.6.1")
+    implementation("com.microsoft:durabletask-client:1.6.3")
     implementation("com.microsoft:durabletask-azuremanaged:1.6.3")
 
     implementation platform("org.springframework.boot:spring-boot-dependencies:3.5.10")

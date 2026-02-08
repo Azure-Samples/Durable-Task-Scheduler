@@ -126,8 +126,9 @@ final class ChainingPattern {
             })
             .build();
 
-        // Start the worker
+        // Start the worker and wait for it to connect
         worker.start();
+        Thread.sleep(5000);
 
         // Create client using Azure-managed extensions
         DurableTaskClient client = (credential != null 
