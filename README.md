@@ -97,21 +97,6 @@ Explore production-ready examples across languages and frameworks.
 
 🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga)** — Distributed transactions with compensating actions for failure recovery (Durable Functions, .NET)
 
-### Patterns Quick Reference
-
-| Pattern | .NET SDK | Python SDK | Java SDK | Durable Functions |
-|---------|----------|------------|----------|-------------------|
-| Function Chaining | ✅ | ✅ | ✅ | ✅ |
-| Fan-out/Fan-in | ✅ | ✅ | ✅ | ✅ |
-| Human Interaction | ✅ | ✅ | ✅ | — |
-| Async HTTP API | — | ✅ | ✅ | ✅ |
-| Monitoring | ✅ | ✅ | ✅ | — |
-| Sub-orchestrations | ✅ | ✅ | ✅ | — |
-| Eternal Orchestrations | ✅ | ✅ | ✅ | — |
-| Durable Entities | ✅ | ✅ | — | — |
-| Saga/Compensation | — | ✅ | — | ✅ |
-| Orchestration Versioning | ✅ | ✅ | — | — |
-
 ---
 
 ## Observability
