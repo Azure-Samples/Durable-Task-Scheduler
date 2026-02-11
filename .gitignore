@@ -400,8 +400,35 @@ FodyWeavers.xsd
 # JetBrains Rider
 *.sln.iml
 
-# durable-task-sdks java build folders and compiled files
-samples/durable-task-sdks/java/**/build/
-samples/durable-task-sdks/java/**/*.class
-samples/durable-task-sdks/java/**/.gradle/
-samples/durable-task-sdks/java/**/out/
+# Java
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# Gradle
+.gradle/
+build/
+!**/src/**/build/
+
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/

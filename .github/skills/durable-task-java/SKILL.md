@@ -16,44 +16,44 @@ Build fault-tolerant, stateful workflows in Java applications using the Durable 
     <dependency>
         <groupId>com.microsoft</groupId>
         <artifactId>durabletask-client</artifactId>
-        <version>1.5.1</version>
+        <version>1.6.1</version>
     </dependency>
     <dependency>
         <groupId>com.microsoft</groupId>
         <artifactId>durabletask-azuremanaged</artifactId>
-        <version>1.5.1-preview.1</version>
+        <version>1.6.3</version>
     </dependency>
     <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-identity</artifactId>
-        <version>1.15.0</version>
+        <version>1.18.1</version>
     </dependency>
     <!-- Logging -->
     <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.2.6</version>
+        <version>1.5.28</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
-        <version>1.7.32</version>
+        <version>2.0.17</version>
     </dependency>
     <!-- gRPC -->
     <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-protobuf</artifactId>
-        <version>1.59.0</version>
+        <version>1.78.0</version>
     </dependency>
     <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-stub</artifactId>
-        <version>1.59.0</version>
+        <version>1.78.0</version>
     </dependency>
     <dependency>
         <groupId>io.grpc</groupId>
         <artifactId>grpc-netty-shaded</artifactId>
-        <version>1.59.0</version>
+        <version>1.78.0</version>
         <scope>runtime</scope>
     </dependency>
 </dependencies>
@@ -62,7 +62,7 @@ Build fault-tolerant, stateful workflows in Java applications using the Durable 
 ### Gradle Dependencies
 
 ```groovy
-def grpcVersion = '1.59.0'
+def grpcVersion = '1.78.0'
 
 repositories {
     mavenLocal()
@@ -70,13 +70,13 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.microsoft:durabletask-client:1.5.1'
-    implementation 'com.microsoft:durabletask-azuremanaged:1.5.1-preview.1'
-    implementation 'com.azure:azure-identity:1.15.0'
+    implementation 'com.microsoft:durabletask-client:1.6.1'
+    implementation 'com.microsoft:durabletask-azuremanaged:1.6.3'
+    implementation 'com.azure:azure-identity:1.18.1'
     
     // Logging
-    implementation 'ch.qos.logback:logback-classic:1.2.6'
-    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'ch.qos.logback:logback-classic:1.5.28'
+    implementation 'org.slf4j:slf4j-api:2.0.17'
     
     // gRPC
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
@@ -556,6 +556,28 @@ client.terminate(instanceId, "User cancelled");
 // Suspend/Resume
 client.suspend(instanceId, "Pausing for maintenance");
 client.resume(instanceId, "Resuming operation");
+```
+
+## Troubleshooting
+
+### `NullPointerException: Cannot invoke "TaskOrchestrationFactory.create()" because "factory" is null`
+
+This error means **multiple workers with different orchestration registrations are connected to the same Task Hub simultaneously**. When the scheduler dispatches an orchestration event, it may route it to a worker that does not have that orchestration type registered, causing a null factory lookup.
+
+**Root cause:** Different sample applications or worker processes running at the same time against the same emulator endpoint and Task Hub. Worker A picks up an orchestration that was scheduled by Worker B, but Worker A doesn't have that orchestration registered.
+
+**Fix:**
+1. **Stop all running worker processes** before starting a new sample
+2. Ensure only **one worker type** is connected to a given Task Hub at a time
+3. If using the local emulator, restart it to clear any queued orchestrations: `docker restart dts-emulator`
+4. Alternatively, use **different Task Hub names** for each sample to isolate them
+
+```bash
+# Stop any lingering Java/Gradle processes
+pkill -f "gradlew" || true
+
+# Or restart the emulator to clear state
+docker restart dts-emulator
 ```
 
 ## References

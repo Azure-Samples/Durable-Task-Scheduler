@@ -5,8 +5,13 @@ plugins {
 
 group 'io.durabletask'
 version = '0.1.0'
-def grpcVersion = '1.59.0'
-archivesBaseName = 'durabletask-samples'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+def grpcVersion = '1.78.0'
+base { archivesName = 'durabletask-samples' }
 
 repositories {
     mavenLocal()
@@ -20,16 +25,16 @@ task runSubOrchestrationPattern(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.5.1")
-    implementation("com.microsoft:durabletask-azuremanaged:1.5.1-preview.1")
+    implementation("com.microsoft:durabletask-client:1.6.3")
+    implementation("com.microsoft:durabletask-azuremanaged:1.6.3")
 
     // Logging dependencies
-    implementation 'ch.qos.logback:logback-classic:1.2.6'
-    implementation 'org.slf4j:slf4j-api:1.7.32'
+    implementation 'ch.qos.logback:logback-classic:1.5.28'
+    implementation 'org.slf4j:slf4j-api:2.0.17'
 
     // https://github.com/grpc/grpc-java#download
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation 'com.azure:azure-identity:1.15.0'
+    implementation 'com.azure:azure-identity:1.18.1'
 }

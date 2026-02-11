@@ -47,13 +47,13 @@ az login
 1. Clone this repo to your developer machine:
 
     ```shell
-    git clone https://github.com/Azure/Azure-Functions-Durable-Task-Scheduler-Private-Preview.git
+    git clone https://github.com/Azure/Durable-Task-Scheduler.git
     ```
 
 1. Navigate to the `hello cities` source code directory:
 
     ```shell
-    cd Azure-Functions-Durable-Task-Scheduler-Private-Preview/quickstarts/HelloCities/http/
+    cd Durable-Task-Scheduler/samples/durable-functions/dotnet/HelloCities/http/
     ```
 
 1. Open the Application in VS Code:

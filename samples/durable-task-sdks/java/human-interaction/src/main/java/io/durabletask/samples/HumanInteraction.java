@@ -35,6 +35,7 @@ public class HumanInteraction {
         // Create worker and register orchestration and activities
         DurableTaskGrpcWorker worker = createWorker(connectionString);
         worker.start();
+        Thread.sleep(5000);
 
         // Create client
         DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();

@@ -88,6 +88,7 @@ public class EternalOrchestration {
 
         // Start the worker
         worker.start();
+        Thread.sleep(5000);
 
         // Create client and start orchestration
         DurableTaskClient client = DurableTaskSchedulerClientExtensions.createClientBuilder(connectionString).build();
@@ -99,5 +100,6 @@ public class EternalOrchestration {
         Thread.sleep(Duration.ofMinutes(5).toMillis());  // Run for 5 minutes then exit
 
         worker.stop();
+        System.exit(0);
     }
 } 
