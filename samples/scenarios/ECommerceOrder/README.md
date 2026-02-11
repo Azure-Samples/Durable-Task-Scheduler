@@ -44,8 +44,6 @@ Without durable execution, a failure during payment processing could leave inven
 | .NET | Durable Functions | [Saga Pattern](../../durable-functions/dotnet/Saga/) |
 | .NET | Durable Functions | [Order Processor](../../durable-functions/dotnet/OrderProcessor/) |
 
-> 💡 **Want to contribute?** We welcome implementations in Python and Java. See the [contributing guide](../../CONTRIBUTING.md) and [sample template](../../../docs/SAMPLE_TEMPLATE.md).
-
 ## Related Patterns
 
 - [Function Chaining](../../durable-task-sdks/dotnet/FunctionChaining/) — Sequential activity execution
