@@ -5,7 +5,7 @@
   "type": "module",
   "dependencies": {
     "@azure/storage-blob": "^12.29.1",
-    "axios": "^1.13.2",
+    "axios": "^1.13.5",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
     "react-markdown": "^10.1.0",
