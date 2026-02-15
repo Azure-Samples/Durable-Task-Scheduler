@@ -1,0 +1,59 @@
+# Dependabot configuration file
+# https://docs.github.com/en/code-security/dependabot/dependabot-version-updates
+
+version: 2
+updates:
+  # .NET (NuGet)
+  - package-ecosystem: "nuget"
+    directories:
+      - "/samples/durable-task-sdks/dotnet/**"
+      - "/samples/durable-functions/dotnet/**"
+      - "/samples/scenarios/**"
+    schedule:
+      interval: "weekly"
+
+  # Java (Maven)
+  - package-ecosystem: "maven"
+    directories:
+      - "/samples/durable-functions/java/**"
+    schedule:
+      interval: "weekly"
+
+  # Java (Gradle)
+  - package-ecosystem: "gradle"
+    directories:
+      - "/samples/durable-task-sdks/java/**"
+    schedule:
+      interval: "weekly"
+
+  # Python (pip)
+  - package-ecosystem: "pip"
+    directories:
+      - "/samples/durable-task-sdks/python/**"
+      - "/samples/durable-functions/python/**"
+    schedule:
+      interval: "weekly"
+
+  # JavaScript (npm)
+  - package-ecosystem: "npm"
+    directories:
+      - "/samples/durable-functions/javascript/**"
+      - "/samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/Frontend"
+    schedule:
+      interval: "weekly"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+  # Docker
+  - package-ecosystem: "docker"
+    directories:
+      - "/samples/scenarios/AutoscalingInACA/**"
+      - "/samples/durable-functions/dotnet/HelloCities/.devcontainer"
+      - "/samples/durable-task-sdks/java/function-chaining"
+      - "/samples/durable-task-sdks/dotnet/FunctionChaining/**"
+    schedule:
+      interval: "weekly"
