@@ -193,7 +193,7 @@ jobs:
 
       # Syntax check all Python files
       - name: Syntax check Python files
-        run: python -m py_compile samples/durable-task-sdks/python/function-chaining/client.py && python -m py_compile samples/durable-task-sdks/python/function-chaining/worker.py
+        run: find samples -name "*.py" -not -path "*/__pycache__/*" -exec python -m py_compile {} +
 
   javascript:
     name: JavaScript Samples
