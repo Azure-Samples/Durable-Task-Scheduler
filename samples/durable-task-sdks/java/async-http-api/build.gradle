@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '3.5.10'
+    id 'org.springframework.boot' version '4.0.2'
     id 'java'
     id 'application'
 }
@@ -11,7 +11,7 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
-def grpcVersion = '1.78.0'
+def grpcVersion = '1.79.0'
 base { archivesName = 'durabletask-samples' }
 
 repositories {
@@ -25,10 +25,10 @@ task runWebApi(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.6.3")
-    implementation("com.microsoft:durabletask-azuremanaged:1.6.3")
+    implementation("com.microsoft:durabletask-client:1.7.0")
+    implementation("com.microsoft:durabletask-azuremanaged:1.7.0")
 
-    implementation platform("org.springframework.boot:spring-boot-dependencies:3.5.10")
+    implementation platform("org.springframework.boot:spring-boot-dependencies:4.0.2")
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
@@ -40,7 +40,7 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation 'com.azure:azure-identity:1.18.1'
+    implementation 'com.azure:azure-identity:1.18.2'
 
     // install lombok
     annotationProcessor 'org.projectlombok:lombok:1.18.42'

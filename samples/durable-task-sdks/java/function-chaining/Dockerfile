@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk
+FROM eclipse-temurin:25-jdk
 
 # Install dos2unix to fix line endings
 RUN apt-get update && apt-get install -y dos2unix && rm -rf /var/lib/apt/lists/*

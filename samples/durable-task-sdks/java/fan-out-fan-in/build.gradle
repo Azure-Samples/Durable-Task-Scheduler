@@ -25,8 +25,8 @@ task runFanOutFanInPattern(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.6.3")
-    implementation("com.microsoft:durabletask-azuremanaged:1.6.3")
+    implementation("com.microsoft:durabletask-client:1.7.0")
+    implementation("com.microsoft:durabletask-azuremanaged:1.7.0")
 
     // Logging dependencies
     implementation 'ch.qos.logback:logback-classic:1.5.28'
@@ -36,5 +36,5 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation 'com.azure:azure-identity:1.18.1'
+    implementation 'com.azure:azure-identity:1.18.2'
 }
