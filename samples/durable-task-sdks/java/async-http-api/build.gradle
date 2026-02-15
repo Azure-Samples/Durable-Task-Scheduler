@@ -11,7 +11,7 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
-def grpcVersion = '1.78.0'
+def grpcVersion = '1.79.0'
 base { archivesName = 'durabletask-samples' }
 
 repositories {
