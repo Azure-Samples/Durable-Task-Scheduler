@@ -1,5 +1,6 @@
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Worker;
+using Microsoft.DurableTask.Worker.AzureManaged;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using OpenTelemetry;
@@ -30,9 +31,8 @@ string connectionString = endpoint.Contains("localhost")
     ? $"Endpoint={endpoint};TaskHub={taskHub};Authentication=None"
     : $"Endpoint={endpoint};TaskHub={taskHub};Authentication=DefaultAzure";
 
-builder.Services.AddDurableTaskWorker(builder =>
-{
-    builder.AddTasks(tasks =>
+builder.Services.AddDurableTaskWorker()
+    .AddTasks(tasks =>
     {
         tasks.AddOrchestratorFunc<string, string>("OrderProcessingOrchestration", async (ctx, input) =>
         {
@@ -78,9 +78,8 @@ builder.Services.AddDurableTaskWorker(builder =>
             Thread.Sleep(50); // Simulate work
             return Task.FromResult($"Notified({input})");
         });
-    });
-})
-.UseDurableTaskScheduler(connectionString);
+    })
+    .UseDurableTaskScheduler(connectionString);
 
 var host = builder.Build();
 Console.WriteLine("Worker started. Press Ctrl+C to exit.");

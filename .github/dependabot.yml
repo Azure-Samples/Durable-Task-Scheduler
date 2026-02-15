@@ -11,10 +11,6 @@ updates:
       - "/samples/scenarios/**"
     schedule:
       interval: "weekly"
-    ignore:
-      # These packages are not yet published to nuget.org
-      - dependency-name: "Microsoft.DurableTask.Sdk"
-      - dependency-name: "Microsoft.DurableTask.Sdk.Grpc"
 
   # Java (Maven)
   - package-ecosystem: "maven"
