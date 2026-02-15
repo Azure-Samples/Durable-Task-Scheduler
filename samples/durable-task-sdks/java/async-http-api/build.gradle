@@ -40,7 +40,7 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation 'com.azure:azure-identity:1.18.1'
+    implementation 'com.azure:azure-identity:1.18.2'
 
     // install lombok
     annotationProcessor 'org.projectlombok:lombok:1.18.42'
