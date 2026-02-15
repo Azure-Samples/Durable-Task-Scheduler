@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@azure/storage-blob": "^12.29.1",
+    "@azure/storage-blob": "^12.31.0",
     "axios": "^1.13.5",
     "react": "^19.2.1",
     "react-dom": "^19.2.1",
@@ -18,7 +18,7 @@
     "preview": "vite preview"
   },
   "devDependencies": {
-    "@vitejs/plugin-react": "^4.5.1",
+    "@vitejs/plugin-react": "^5.1.4",
     "vite": "^7.3.1"
   }
 }
