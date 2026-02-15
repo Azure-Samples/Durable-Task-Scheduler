@@ -1,0 +1,215 @@
+name: Build Samples
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "samples/**"
+      - ".github/workflows/build-samples.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "samples/**"
+      - ".github/workflows/build-samples.yml"
+
+jobs:
+  dotnet:
+    name: .NET Samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.x"
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.x"
+          dotnet-quality: "preview"
+
+      # Durable Task SDK samples (net8.0)
+      - name: Build DTS - FunctionChaining
+        run: dotnet build samples/durable-task-sdks/dotnet/FunctionChaining/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/FunctionChaining/Worker/Worker.csproj
+
+      - name: Build DTS - FanOutFanIn
+        run: dotnet build samples/durable-task-sdks/dotnet/FanOutFanIn/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/FanOutFanIn/Worker/Worker.csproj
+
+      - name: Build DTS - SubOrchestrations
+        run: dotnet build samples/durable-task-sdks/dotnet/SubOrchestrations/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/SubOrchestrations/Worker/Worker.csproj
+
+      - name: Build DTS - Monitoring
+        run: dotnet build samples/durable-task-sdks/dotnet/Monitoring/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/Monitoring/Worker/Worker.csproj
+
+      - name: Build DTS - HumanInteraction
+        run: dotnet build samples/durable-task-sdks/dotnet/HumanInteraction/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/HumanInteraction/Worker/Worker.csproj
+
+      - name: Build DTS - EternalOrchestrations
+        run: dotnet build samples/durable-task-sdks/dotnet/EternalOrchestrations/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/EternalOrchestrations/Worker/Worker.csproj
+
+      - name: Build DTS - ScheduleWebApp
+        run: dotnet build samples/durable-task-sdks/dotnet/ScheduleWebApp/ScheduleWebApp.csproj
+
+      - name: Build DTS - AspNetWebApp
+        run: dotnet build samples/durable-task-sdks/dotnet/AspNetWebApp/AspNetWebApp.csproj
+
+      - name: Build DTS - OrchestrationVersioning
+        run: dotnet build samples/durable-task-sdks/dotnet/OrchestrationVersioning/OrchestrationVersioning.csproj
+
+      - name: Build DTS - EntitiesSample
+        run: dotnet build samples/durable-task-sdks/dotnet/EntitiesSample/AccountTransferBackend.csproj
+
+      - name: Build DTS - OpenTelemetryTracing
+        run: dotnet build samples/durable-task-sdks/dotnet/OpenTelemetryTracing/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/OpenTelemetryTracing/Worker/Worker.csproj
+
+      - name: Build DTS - Agents/PromptChaining
+        run: dotnet build samples/durable-task-sdks/dotnet/Agents/PromptChaining/Shared/Shared.csproj && dotnet build samples/durable-task-sdks/dotnet/Agents/PromptChaining/Worker/Worker.csproj && dotnet build samples/durable-task-sdks/dotnet/Agents/PromptChaining/Client/Client.csproj
+
+      # Durable Task SDK Aspire samples (net10.0)
+      - name: Build DTS - DtsWithAspire
+        run: dotnet build samples/durable-task-sdks/dotnet/DtsWithAspire/AspireHost/AspireHost.csproj
+
+      # Durable Functions samples (net8.0)
+      - name: Build DF - HelloCities
+        run: dotnet build samples/durable-functions/dotnet/HelloCities/http/hello_cities.csproj
+
+      - name: Build DF - OrderProcessor
+        run: dotnet build samples/durable-functions/dotnet/OrderProcessor/OrderProcessor.csproj
+
+      - name: Build DF - DistributedTracing
+        run: dotnet build samples/durable-functions/dotnet/DistributedTracing/DistributedTracing.csproj
+
+      - name: Build DF - Saga
+        run: dotnet build samples/durable-functions/dotnet/Saga/DurableFunctionsSaga.csproj
+
+      - name: Build DF - PdfSummarizer
+        run: dotnet build samples/durable-functions/dotnet/PdfSummarizer/pdf-summarizer-dotnet.csproj
+
+      - name: Build DF - AiAgentTravelPlanOrchestrator
+        run: dotnet build samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/TravelPlannerFunctions.csproj
+
+      # Durable Functions Aspire samples (net10.0)
+      - name: Build DF - AzureFunctionsAndDtsWithAspire
+        run: dotnet build samples/durable-functions/dotnet/AzureFunctionsAndDtsWithAspire/AspireHost/AspireHost.csproj
+
+      # Scenarios
+      - name: Build Scenario - AutoscalingInACA
+        run: dotnet build samples/scenarios/AutoscalingInACA/Client/Client.csproj && dotnet build samples/scenarios/AutoscalingInACA/Worker/Worker.csproj
+
+  java:
+    name: Java Samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+
+      # Durable Task SDK samples (Gradle)
+      - name: Build DTS - function-chaining
+        run: cd samples/durable-task-sdks/java/function-chaining && chmod +x gradlew && ./gradlew build
+
+      - name: Build DTS - fan-out-fan-in
+        run: cd samples/durable-task-sdks/java/fan-out-fan-in && chmod +x gradlew && ./gradlew build
+
+      - name: Build DTS - sub-orchestrations
+        run: cd samples/durable-task-sdks/java/sub-orchestrations && chmod +x gradlew && ./gradlew build
+
+      - name: Build DTS - human-interaction
+        run: cd samples/durable-task-sdks/java/human-interaction && chmod +x gradlew && ./gradlew build
+
+      - name: Build DTS - monitoring
+        run: cd samples/durable-task-sdks/java/monitoring && chmod +x gradlew && ./gradlew build
+
+      - name: Build DTS - eternal-orchestrations
+        run: cd samples/durable-task-sdks/java/eternal-orchestrations && chmod +x gradlew && ./gradlew build
+
+      - name: Build DTS - async-http-api
+        run: cd samples/durable-task-sdks/java/async-http-api && chmod +x gradlew && ./gradlew build
+
+      # Durable Functions samples (Maven)
+      - name: Build DF - HelloCities
+        run: cd samples/durable-functions/java/HelloCities && mvn compile --batch-mode
+
+  python:
+    name: Python Samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # Durable Task SDK samples
+      - name: Install DTS - function-chaining
+        run: pip install -r samples/durable-task-sdks/python/function-chaining/requirements.txt
+
+      - name: Install DTS - fan-out-fan-in
+        run: pip install -r samples/durable-task-sdks/python/fan-out-fan-in/requirements.txt
+
+      - name: Install DTS - sub-orchestrations
+        run: pip install -r samples/durable-task-sdks/python/sub-orchestrations/requirements.txt
+
+      - name: Install DTS - human-interaction
+        run: pip install -r samples/durable-task-sdks/python/human-interaction/requirements.txt
+
+      - name: Install DTS - monitoring
+        run: pip install -r samples/durable-task-sdks/python/monitoring/requirements.txt
+
+      - name: Install DTS - async-http-api
+        run: pip install -r samples/durable-task-sdks/python/async-http-api/requirements.txt
+
+      - name: Install DTS - eternal-orchestrations
+        run: pip install -r samples/durable-task-sdks/python/eternal-orchestrations/requirements.txt
+
+      - name: Install DTS - versioning
+        run: pip install -r samples/durable-task-sdks/python/versioning/requirements.txt
+
+      - name: Install DTS - entities
+        run: pip install -r samples/durable-task-sdks/python/entities/requirements.txt
+
+      - name: Install DTS - saga
+        run: pip install -r samples/durable-task-sdks/python/saga/requirements.txt
+
+      - name: Install DTS - opentelemetry-tracing
+        run: pip install -r samples/durable-task-sdks/python/opentelemetry-tracing/requirements.txt
+
+      - name: Install DTS - arXiv_research_agent
+        run: pip install -r samples/durable-task-sdks/python/arXiv_research_agent/requirements.txt
+
+      # Durable Functions samples
+      - name: Install DF - fan-out-fan-in
+        run: pip install -r samples/durable-functions/python/fan-out-fan-in/requirements.txt
+
+      - name: Install DF - pdf-summarizer
+        run: pip install -r samples/durable-functions/python/pdf-summarizer/requirements.txt
+
+      # Syntax check all Python files
+      - name: Syntax check Python files
+        run: find samples -name "*.py" -not -path "*/__pycache__/*" -exec python -m py_compile {} +
+
+  javascript:
+    name: JavaScript Samples
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Durable Functions samples
+      - name: Build DF JS - HelloCities
+        run: cd samples/durable-functions/javascript/HelloCities && npm install
+
+      # Frontend (React app)
+      - name: Build DF - AiAgentTravelPlanOrchestrator Frontend
+        run: cd samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/Frontend && npm install && npm run build
