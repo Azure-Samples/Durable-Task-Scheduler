@@ -432,3 +432,8 @@ buildNumber.properties
 *.iws
 *.ipr
 out/
+
+# Bicep-generated ARM template JSON files
+**/infra/**/*.json
+!**/infra/**/*.parameters.json
+!**/infra/**/abbreviations.json
