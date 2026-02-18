@@ -50,7 +50,7 @@ param functionSkuTier string = 'ElasticPremium' // Uses main.parameters.json fir
 param functionReservedPlan bool = true // Set to false to get a Windows OS plan
 
 param dtsLocation string = location
-param dtsSkuName string = 'Dedicated'
+param dtsSkuName string = 'Consumption'
 param dtsCapacity int = 1
 
 param durableFunctionServiceName string = ''
