@@ -31,7 +31,7 @@ def generate_large_payload(size_kb: int) -> str:
     """Generate a JSON payload of approximately the specified size in KB."""
     # Each character in the string is roughly 1 byte
     target_bytes = size_kb * 1024
-    filler = "x" * (target_bytes - 50)  # Reserve space for JSON envelope
+    filler = "x" * max(0, target_bytes - 50)  # Reserve space for JSON envelope
     return json.dumps({"size_kb": size_kb, "data": filler})
 
 
@@ -42,7 +42,24 @@ def generate_large_payload(size_kb: int) -> str:
 @app.durable_client_input(client_name="client")
 async def start_large_payload(req: func.HttpRequest, client):
     """HTTP trigger that starts the large-payload orchestration."""
-    instance_id = await client.start_new("large_payload_orchestrator")
+    try:
+        body = req.get_json()
+    except ValueError:
+        body = {}
+
+    activity_count = int(
+        req.params.get("activity_count")
+        or body.get("activity_count")
+        or DEFAULT_ACTIVITY_COUNT
+    )
+    payload_size_kb = int(
+        req.params.get("payload_size_kb")
+        or body.get("payload_size_kb")
+        or DEFAULT_PAYLOAD_SIZE_KB
+    )
+
+    config = {"activity_count": activity_count, "payload_size_kb": payload_size_kb}
+    instance_id = await client.start_new("large_payload_orchestrator", client_input=config)
     logging.info("Started orchestration with ID = '%s'.", instance_id)
     return client.create_check_status_response(req, instance_id)
 
@@ -53,8 +70,11 @@ async def start_large_payload(req: func.HttpRequest, client):
 @app.orchestration_trigger(context_name="context")
 def large_payload_orchestrator(context: df.DurableOrchestrationContext):
     """Fan-out/fan-in orchestrator that exercises large payload externalization."""
-    activity_count = int(os.environ.get("ACTIVITY_COUNT", DEFAULT_ACTIVITY_COUNT))
-    payload_size_kb = int(os.environ.get("PAYLOAD_SIZE_KB", DEFAULT_PAYLOAD_SIZE_KB))
+    # Read config from orchestration input (set by the HTTP trigger)
+    # to avoid non-deterministic environment variable access in the orchestrator.
+    config = context.get_input() or {}
+    activity_count = config.get("activity_count", DEFAULT_ACTIVITY_COUNT)
+    payload_size_kb = config.get("payload_size_kb", DEFAULT_PAYLOAD_SIZE_KB)
 
     # Fan-out: schedule N activities in parallel
     tasks = []

@@ -130,7 +130,7 @@ If you don't already have them, create the required Azure resources:
 az group create --name my-rg --location <location>
 
 # Create a Durable Task Scheduler and task hub
-az durabletask scheduler create --name my-scheduler --resource-group my-rg --location <location> --sku free
+az durabletask scheduler create --name my-scheduler --resource-group my-rg --location <location> --sku-name <sku-name>
 az durabletask taskhub create --scheduler-name my-scheduler --resource-group my-rg --name my-taskhub
 
 # Create a storage account

@@ -45,7 +45,7 @@ public static class LargePayloadOrchestration
         int payloadSizeKb = int.TryParse(
             Environment.GetEnvironmentVariable("PAYLOAD_SIZE_KB"), out int ps) ? ps : DefaultPayloadSizeKb;
 
-        var config = new OrchestratorConfig(activityCount, payloadSizeKb);
+        OrchestratorConfig config = new OrchestratorConfig(activityCount, payloadSizeKb);
 
         string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
             nameof(LargePayloadFanOutFanIn), config);
@@ -75,7 +75,7 @@ public static class LargePayloadOrchestration
             activityCount, payloadSizeKb);
 
         // Fan-out: schedule N activities in parallel
-        var tasks = new List<Task<ActivityResult>>();
+        List<Task<ActivityResult>> tasks = new List<Task<ActivityResult>>();
         for (int i = 0; i < activityCount; i++)
         {
             tasks.Add(context.CallActivityAsync<ActivityResult>(
@@ -87,7 +87,7 @@ public static class LargePayloadOrchestration
         ActivityResult[] results = await Task.WhenAll(tasks);
 
         // Aggregate results
-        var summary = new PayloadSummary(
+        PayloadSummary summary = new PayloadSummary(
             ItemsProcessed: results.Length,
             TotalSizeKb: results.Sum(r => r.SizeKb),
             IndividualSizes: results.Select(r => r.SizeKb).ToArray());
@@ -129,7 +129,7 @@ public static class LargePayloadOrchestration
     public static HttpResponseData Hello(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
     {
-        var response = req.CreateResponse(System.Net.HttpStatusCode.OK);
+        HttpResponseData response = req.CreateResponse(System.Net.HttpStatusCode.OK);
         response.WriteString("Hello from Large Payload Sample!");
         return response;
     }
