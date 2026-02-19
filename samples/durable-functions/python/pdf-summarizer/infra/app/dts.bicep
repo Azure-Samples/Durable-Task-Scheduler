@@ -4,7 +4,7 @@ param tags object = {}
 param name string
 param taskhubname string
 param skuName string 
-param skuCapacity int
+param skuCapacity int = 0
 
 resource dts 'Microsoft.DurableTask/schedulers@2025-11-01' = {
   location: location
@@ -12,9 +12,11 @@ resource dts 'Microsoft.DurableTask/schedulers@2025-11-01' = {
   name: name
   properties: {
     ipAllowlist: ipAllowlist
-    sku: {
+    sku: skuName == 'Dedicated' ? {
       name: skuName
       capacity: skuCapacity
+    } : {
+      name: skuName
     }
   }
 }
