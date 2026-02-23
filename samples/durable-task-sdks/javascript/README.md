@@ -1,22 +1,44 @@
-# JavaScript/TypeScript Samples
+# JavaScript Samples for Durable Task SDK
 
-> 🚧 **Coming Soon** — The Durable Task SDK for JavaScript/TypeScript is currently in development.
+This directory contains sample applications demonstrating orchestration patterns using the Durable Task JavaScript SDK with Azure Durable Task Scheduler.
 
-## What to expect
+## Prerequisites
 
-JavaScript/TypeScript samples for common orchestration patterns will be added here once the SDK is available:
+- [Node.js 22+](https://nodejs.org/)
+- [Docker](https://www.docker.com/products/docker-desktop/)
 
-- Function Chaining
-- Fan-out/Fan-in
-- Human Interaction
-- Async HTTP API
-- And more...
+## Running samples with the Durable Task Scheduler Emulator
 
-## In the meantime
+1. Pull and run the emulator:
 
-- **Durable Functions JavaScript** is available today! See the [Durable Functions documentation](https://learn.microsoft.com/azure/azure-functions/durable/quickstart-js-vscode).
-- **API Reference:** [Durable Functions JavaScript API](https://learn.microsoft.com/javascript/api/durable-functions/)
+	```bash
+	docker pull mcr.microsoft.com/dts/dts-emulator:latest
+	docker run -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+	```
 
-## Stay updated
+2. The sample defaults to these local settings when `ENDPOINT` and `TASKHUB` aren't set:
+	- Endpoint: `http://localhost:8080`
+	- Task hub: `default`
 
-Watch this repository or check the [Durable Task Scheduler documentation](https://aka.ms/dts-documentation) for announcements.
+## Available samples
+
+- **fan-out-fan-in**: Parallel processing and aggregation workflow, with both local emulator and `azd` deployment support.
+
+## Running the sample
+
+```bash
+cd fan-out-fan-in
+npm install
+npm run worker
+```
+
+In another terminal:
+
+```bash
+cd fan-out-fan-in
+npm run client
+```
+
+## View orchestrations in the dashboard
+
+Open `http://localhost:8082` and select the `default` task hub.

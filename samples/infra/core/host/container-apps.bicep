@@ -29,9 +29,24 @@ module containerAppsEnvironment 'container-apps-environment.bicep' = {
   }
 }
 
-module containerRegistry 'container-registry.bicep' = {
-  name: '${name}-container-registry'
-  scope: !empty(containerRegistryResourceGroupName) ? resourceGroup(containerRegistryResourceGroupName) : resourceGroup()
+module containerRegistryCurrentRg 'container-registry.bicep' = if (empty(containerRegistryResourceGroupName)) {
+  name: '${name}-container-registry-current-rg'
+  scope: resourceGroup()
+  params: {
+    name: containerRegistryName
+    location: location
+    adminUserEnabled: containerRegistryAdminUserEnabled
+    tags: tags
+    sku: {
+      name: 'Standard'
+    }
+    anonymousPullEnabled: false
+  }
+}
+
+module containerRegistryCustomRg 'container-registry.bicep' = if (!empty(containerRegistryResourceGroupName)) {
+  name: '${name}-container-registry-custom-rg'
+  scope: resourceGroup(containerRegistryResourceGroupName)
   params: {
     name: containerRegistryName
     location: location
@@ -48,5 +63,5 @@ output defaultDomain string = containerAppsEnvironment.outputs.defaultDomain
 output environmentName string = containerAppsEnvironment.outputs.name
 output environmentId string = containerAppsEnvironment.outputs.id
 
-output registryLoginServer string = containerRegistry.outputs.loginServer
-output registryName string = containerRegistry.outputs.name
+output registryLoginServer string = empty(containerRegistryResourceGroupName) ? containerRegistryCurrentRg.outputs.loginServer : containerRegistryCustomRg.outputs.loginServer
+output registryName string = empty(containerRegistryResourceGroupName) ? containerRegistryCurrentRg.outputs.name : containerRegistryCustomRg.outputs.name
