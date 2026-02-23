@@ -15,7 +15,6 @@ New to Durable Task Scheduler? Start with the **Function Chaining** sample in yo
 | .NET | [Function Chaining](./durable-task-sdks/dotnet/FunctionChaining) | Sequential workflow with data transformation |
 | Python | [Function Chaining](./durable-task-sdks/python/function-chaining) | Sequential workflow basics |
 | Java | [Function Chaining](./durable-task-sdks/java/function-chaining) | Sequential workflow basics |
-| JavaScript | [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Parallel processing quickstart pattern |
 
 ---
 
@@ -25,23 +24,23 @@ A quick-reference matrix showing which patterns are available in each language a
 
 ### Durable Task SDKs
 
-| Pattern | .NET | Python | Java | JavaScript |
-|---------|------|--------|------|------------|
-| Function Chaining | [✅](./durable-task-sdks/dotnet/FunctionChaining) | [✅](./durable-task-sdks/python/function-chaining) | [✅](./durable-task-sdks/java/function-chaining) | |
-| Fan-out/Fan-in | [✅](./durable-task-sdks/dotnet/FanOutFanIn) | [✅](./durable-task-sdks/python/fan-out-fan-in) | [✅](./durable-task-sdks/java/fan-out-fan-in) | [✅](./durable-task-sdks/javascript/fan-out-fan-in) |
-| Human Interaction | [✅](./durable-task-sdks/dotnet/HumanInteraction) | [✅](./durable-task-sdks/python/human-interaction) | [✅](./durable-task-sdks/java/human-interaction) | |
-| Async HTTP API | | [✅](./durable-task-sdks/python/async-http-api) | [✅](./durable-task-sdks/java/async-http-api) | |
-| Monitoring | [✅](./durable-task-sdks/dotnet/Monitoring) | [✅](./durable-task-sdks/python/monitoring) | [✅](./durable-task-sdks/java/monitoring) | |
-| Sub-orchestrations | [✅](./durable-task-sdks/dotnet/SubOrchestrations) | [✅](./durable-task-sdks/python/sub-orchestrations) | [✅](./durable-task-sdks/java/sub-orchestrations) | |
-| Eternal Orchestrations | [✅](./durable-task-sdks/dotnet/EternalOrchestrations) | [✅](./durable-task-sdks/python/eternal-orchestrations) | [✅](./durable-task-sdks/java/eternal-orchestrations) | |
-| Saga Pattern | | [✅](./durable-task-sdks/python/saga) | | |
-| Durable Entities | [✅](./durable-task-sdks/dotnet/EntitiesSample) | [✅](./durable-task-sdks/python/entities) | | |
-| Orchestration Versioning | [✅](./durable-task-sdks/dotnet/OrchestrationVersioning) | [✅](./durable-task-sdks/python/versioning) | | |
-| ASP.NET Web API | [✅](./durable-task-sdks/dotnet/AspNetWebApp) | | | |
-| Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | | | |
-| .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | |
-| AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | |
-| AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | |
+| Pattern | .NET | Python | Java |
+|---------|------|--------|------|
+| Function Chaining | [✅](./durable-task-sdks/dotnet/FunctionChaining) | [✅](./durable-task-sdks/python/function-chaining) | [✅](./durable-task-sdks/java/function-chaining) |
+| Fan-out/Fan-in | [✅](./durable-task-sdks/dotnet/FanOutFanIn) | [✅](./durable-task-sdks/python/fan-out-fan-in) | [✅](./durable-task-sdks/java/fan-out-fan-in) |
+| Human Interaction | [✅](./durable-task-sdks/dotnet/HumanInteraction) | [✅](./durable-task-sdks/python/human-interaction) | [✅](./durable-task-sdks/java/human-interaction) |
+| Async HTTP API | | [✅](./durable-task-sdks/python/async-http-api) | [✅](./durable-task-sdks/java/async-http-api) |
+| Monitoring | [✅](./durable-task-sdks/dotnet/Monitoring) | [✅](./durable-task-sdks/python/monitoring) | [✅](./durable-task-sdks/java/monitoring) |
+| Sub-orchestrations | [✅](./durable-task-sdks/dotnet/SubOrchestrations) | [✅](./durable-task-sdks/python/sub-orchestrations) | [✅](./durable-task-sdks/java/sub-orchestrations) |
+| Eternal Orchestrations | [✅](./durable-task-sdks/dotnet/EternalOrchestrations) | [✅](./durable-task-sdks/python/eternal-orchestrations) | [✅](./durable-task-sdks/java/eternal-orchestrations) |
+| Saga Pattern | | [✅](./durable-task-sdks/python/saga) | |
+| Durable Entities | [✅](./durable-task-sdks/dotnet/EntitiesSample) | [✅](./durable-task-sdks/python/entities) | |
+| Orchestration Versioning | [✅](./durable-task-sdks/dotnet/OrchestrationVersioning) | [✅](./durable-task-sdks/python/versioning) | |
+| ASP.NET Web API | [✅](./durable-task-sdks/dotnet/AspNetWebApp) | | |
+| Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | | |
+| .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | |
+| AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | |
+| AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | |
 
 ### Durable Functions
 
@@ -106,12 +105,6 @@ A quick-reference matrix showing which patterns are available in each language a
 | [Monitoring](./durable-task-sdks/java/monitoring) | Monitoring | Periodic polling pattern |
 | [Sub-orchestrations](./durable-task-sdks/java/sub-orchestrations) | Sub-orchestrations | Nested orchestration composition |
 | [Eternal Orchestrations](./durable-task-sdks/java/eternal-orchestrations) | Eternal Orchestrations | Continue-as-new pattern |
-
-### JavaScript
-
-| Sample | Pattern | Description |
-|--------|---------|-------------|
-| [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Fan-out/Fan-in | Parallel execution and result aggregation with JavaScript SDK |
 
 ---
 
