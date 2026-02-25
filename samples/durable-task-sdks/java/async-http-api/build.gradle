@@ -1,5 +1,5 @@
 plugins {
-    id 'org.springframework.boot' version '4.0.2'
+    id 'org.springframework.boot' version '4.0.3'
     id 'java'
     id 'application'
 }
@@ -28,7 +28,7 @@ dependencies {
     implementation("com.microsoft:durabletask-client:1.7.0")
     implementation("com.microsoft:durabletask-azuremanaged:1.7.0")
 
-    implementation platform("org.springframework.boot:spring-boot-dependencies:4.0.2")
+    implementation platform("org.springframework.boot:spring-boot-dependencies:4.0.3")
     implementation 'org.springframework.boot:spring-boot-starter'
     implementation 'org.springframework.boot:spring-boot-starter-web'
 
