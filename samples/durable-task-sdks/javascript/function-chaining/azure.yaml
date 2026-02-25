@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+metadata:
+  template: hello-azd-javascript
+name: dts-quickstart
+infra:
+  path: ../../../infra
+services:
+  client:
+    project: .
+    language: js
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile.client
+  worker:
+    project: .
+    language: js
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile.worker

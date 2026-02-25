@@ -15,7 +15,7 @@ New to Durable Task Scheduler? Start with the **Function Chaining** sample in yo
 | .NET | [Function Chaining](./durable-task-sdks/dotnet/FunctionChaining) | Sequential workflow with data transformation |
 | Python | [Function Chaining](./durable-task-sdks/python/function-chaining) | Sequential workflow basics |
 | Java | [Function Chaining](./durable-task-sdks/java/function-chaining) | Sequential workflow basics |
-| JavaScript | [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Parallel processing quickstart pattern |
+| JavaScript | [Function Chaining](./durable-task-sdks/javascript/function-chaining) | Sequential workflow basics |
 
 ---
 
@@ -27,7 +27,7 @@ A quick-reference matrix showing which patterns are available in each language a
 
 | Pattern | .NET | Python | Java | JavaScript |
 |---------|------|--------|------|------------|
-| Function Chaining | [✅](./durable-task-sdks/dotnet/FunctionChaining) | [✅](./durable-task-sdks/python/function-chaining) | [✅](./durable-task-sdks/java/function-chaining) | |
+| Function Chaining | [✅](./durable-task-sdks/dotnet/FunctionChaining) | [✅](./durable-task-sdks/python/function-chaining) | [✅](./durable-task-sdks/java/function-chaining) | [✅](./durable-task-sdks/javascript/function-chaining) |
 | Fan-out/Fan-in | [✅](./durable-task-sdks/dotnet/FanOutFanIn) | [✅](./durable-task-sdks/python/fan-out-fan-in) | [✅](./durable-task-sdks/java/fan-out-fan-in) | [✅](./durable-task-sdks/javascript/fan-out-fan-in) |
 | Human Interaction | [✅](./durable-task-sdks/dotnet/HumanInteraction) | [✅](./durable-task-sdks/python/human-interaction) | [✅](./durable-task-sdks/java/human-interaction) | |
 | Async HTTP API | | [✅](./durable-task-sdks/python/async-http-api) | [✅](./durable-task-sdks/java/async-http-api) | |
@@ -111,6 +111,7 @@ A quick-reference matrix showing which patterns are available in each language a
 
 | Sample | Pattern | Description |
 |--------|---------|-------------|
+| [Function Chaining](./durable-task-sdks/javascript/function-chaining) | Function Chaining | Sequential workflow basics with JavaScript SDK |
 | [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Fan-out/Fan-in | Parallel execution and result aggregation with JavaScript SDK |
 
 ---
