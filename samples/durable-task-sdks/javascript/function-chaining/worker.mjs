@@ -91,6 +91,7 @@ process.on("SIGTERM", async () => {
     console.log("Worker started and waiting for orchestrations...");
 
     setInterval(() => {
+      // Keep process running for worker mode
     }, 60_000);
   } catch (error) {
     console.error("Worker failed to start", error);
