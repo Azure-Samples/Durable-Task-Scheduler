@@ -22,6 +22,7 @@ This directory contains sample applications demonstrating orchestration patterns
 
 ## Available samples
 
+- **function-chaining**: Sequential activity pipeline workflow, with local emulator and `azd` deployment support.
 - **fan-out-fan-in**: Parallel processing and aggregation workflow, with both local emulator and `azd` deployment support.
 
 ## Running the sample
