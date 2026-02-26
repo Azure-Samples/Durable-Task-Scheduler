@@ -6,29 +6,29 @@
   
   <ItemGroup>
     <!-- Azure SDK -->
-    <PackageVersion Include="Azure.Identity" Version="1.13.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.17.1" />
     <PackageVersion Include="Azure.AI.Projects" Version="1.0.0-beta.9" />
-    <PackageVersion Include="Azure.AI.Agents.Persistent" Version="1.0.0" />
-    <PackageVersion Include="Azure.Core" Version="1.46.1" />
+    <PackageVersion Include="Azure.AI.Agents.Persistent" Version="1.1.0" />
+    <PackageVersion Include="Azure.Core" Version="1.51.1" />
     
     <!-- Microsoft.DurableTask -->
-    <PackageVersion Include="Microsoft.DurableTask.Client" Version="1.10.0" />
-    <PackageVersion Include="Microsoft.DurableTask.Worker" Version="1.10.0" />
-    <PackageVersion Include="Microsoft.DurableTask.Worker.Abstractions" Version="1.10.0" />
-    <PackageVersion Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.10.0-preview.1" />
-    <PackageVersion Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.10.0-preview.1" />
-    <PackageVersion Include="Microsoft.DurableTask.Generators" Version="1.0.0-preview.1" />
+    <PackageVersion Include="Microsoft.DurableTask.Client" Version="1.21.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Worker" Version="1.21.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Worker.Abstractions" Version="1.21.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.21.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.21.0" />
+    <PackageVersion Include="Microsoft.DurableTask.Generators" Version="2.0.0-preview.1" />
     
     <!-- Microsoft Extensions -->
-    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="8.0.0" />
-    <PackageVersion Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.3" />
+    <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.3" />
     
     <!-- gRPC -->
-    <PackageVersion Include="Grpc.Net.Client" Version="2.67.0" />
+    <PackageVersion Include="Grpc.Net.Client" Version="2.76.0" />
   </ItemGroup>
 </Project>

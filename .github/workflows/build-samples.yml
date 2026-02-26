@@ -30,7 +30,7 @@ jobs:
           dotnet-version: "10.x"
           dotnet-quality: "preview"
 
-      # Durable Task SDK samples (net8.0)
+      # Durable Task SDK samples (net10.0)
       - name: Build DTS - FunctionChaining
         run: dotnet build samples/durable-task-sdks/dotnet/FunctionChaining/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/FunctionChaining/Worker/Worker.csproj
 
@@ -71,7 +71,7 @@ jobs:
       - name: Build DTS - DtsWithAspire
         run: dotnet build samples/durable-task-sdks/dotnet/DtsWithAspire/AspireHost/AspireHost.csproj
 
-      # Durable Functions samples (net8.0)
+      # Durable Functions samples
       - name: Build DF - HelloCities
         run: dotnet build samples/durable-functions/dotnet/HelloCities/http/hello_cities.csproj
 
