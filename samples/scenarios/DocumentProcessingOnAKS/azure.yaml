@@ -9,7 +9,7 @@ metadata:
 name: durable-task-on-aks
 hooks:
   predeploy:
-    shell: sh
+    shell: bash
     run: ./scripts/acr-build.sh
 services:
   client:

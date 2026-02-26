@@ -58,7 +58,7 @@ foreach (var doc in docs)
 
 Console.WriteLine("Done.");
 
-// In AKS the pod restarts automatically; locally just exit.
+// In non-interactive/container environments (including AKS), keep the process alive for log inspection; locally (interactive) just exit.
 if (!Environment.UserInteractive || Console.IsInputRedirected)
     await Task.Delay(Timeout.InfiniteTimeSpan); // keep pod alive for log inspection
 

@@ -55,7 +55,7 @@ Both Client and Worker auto-detect the environment: locally they connect to `htt
 
 ## Prerequisites
 
-- [.NET 9 SDK](https://dotnet.microsoft.com/download/dotnet/9.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/) — for the local DTS emulator
 - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) & [Azure Developer CLI (`azd`)](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/install-azd) — for Azure deployment
 - [kubectl](https://kubernetes.io/docs/tasks/tools/) — for verifying the AKS deployment
