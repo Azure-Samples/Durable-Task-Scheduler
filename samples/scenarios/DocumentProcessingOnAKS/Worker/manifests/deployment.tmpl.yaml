@@ -1,0 +1,46 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: worker
+  namespace: default
+  annotations:
+    azure.workload.identity/client-id: {{ .Env.AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID }}
+  labels:
+    azure.workload.identity/use: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  namespace: default
+  labels:
+    app: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: worker
+      containers:
+        - name: worker
+          image: {{ .Env.SERVICE_WORKER_IMAGE_NAME }}
+          env:
+            - name: ENDPOINT
+              value: {{ .Env.DTS_ENDPOINT }}
+            - name: TASKHUB
+              value: {{ .Env.DTS_TASKHUB_NAME }}
+            - name: AZURE_CLIENT_ID
+              value: {{ .Env.AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID }}
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi

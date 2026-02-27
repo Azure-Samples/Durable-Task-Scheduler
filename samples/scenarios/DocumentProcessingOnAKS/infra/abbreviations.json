@@ -1,0 +1,17 @@
+{
+    "analysisServicesServers": "as",
+    "apiManagementService": "apim-",
+    "appConfigurationStores": "appcs-",
+    "appManagedEnvironments": "cae-",
+    "appContainerApps": "ca-",
+    "authorizationPolicyDefinitions": "policy-",
+    "automationAutomationAccounts": "aa-",
+    "containerRegistryRegistries": "cr",
+    "containerServiceManagedClusters": "aks-",
+    "networkVirtualNetworks": "vnet-",
+    "networkNetworkSecurityGroups": "nsg-",
+    "managedIdentityUserAssignedIdentities": "id-",
+    "resourcesResourceGroups": "rg-",
+    "dts": "dts-",
+    "taskhub": "taskhub-"
+}

@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+# Durable Task Scheduler on Azure Kubernetes Service
+# Adapted from the AutoscalingInACA sample to run on AKS (without autoscaling support).
+# Images are built server-side via ACR Tasks (az acr build) to avoid local Docker push issues.
+
+metadata:
+  template: durable-task-on-aks-dotnet
+name: durable-task-on-aks
+hooks:
+  predeploy:
+    shell: bash
+    run: ./scripts/acr-build.sh
+services:
+  client:
+    project: ./Client
+    language: csharp
+    host: aks
+  worker:
+    project: ./Worker
+    language: csharp
+    host: aks
