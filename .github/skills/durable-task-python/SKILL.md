@@ -472,11 +472,11 @@ state = client.get_orchestration_state(instance_id)
 client.raise_orchestration_event(instance_id, "approval_received", data=approval_data)
 
 # Terminate orchestration
-client.terminate_orchestration(instance_id, reason="User cancelled")
+client.terminate_orchestration(instance_id, output="User cancelled")
 
 # Suspend/Resume
-client.suspend_orchestration(instance_id, reason="Pausing for maintenance")
-client.resume_orchestration(instance_id, reason="Resuming operation")
+client.suspend_orchestration(instance_id)
+client.resume_orchestration(instance_id)
 ```
 
 ## References

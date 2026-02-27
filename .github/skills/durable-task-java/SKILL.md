@@ -16,23 +16,23 @@ Build fault-tolerant, stateful workflows in Java applications using the Durable 
     <dependency>
         <groupId>com.microsoft</groupId>
         <artifactId>durabletask-client</artifactId>
-        <version>1.6.1</version>
+        <version>1.7.0</version>
     </dependency>
     <dependency>
         <groupId>com.microsoft</groupId>
         <artifactId>durabletask-azuremanaged</artifactId>
-        <version>1.6.3</version>
+        <version>1.7.0</version>
     </dependency>
     <dependency>
         <groupId>com.azure</groupId>
         <artifactId>azure-identity</artifactId>
-        <version>1.18.1</version>
+        <version>1.18.2</version>
     </dependency>
     <!-- Logging -->
     <dependency>
         <groupId>ch.qos.logback</groupId>
         <artifactId>logback-classic</artifactId>
-        <version>1.5.28</version>
+        <version>1.5.32</version>
     </dependency>
     <dependency>
         <groupId>org.slf4j</groupId>
@@ -70,12 +70,12 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.microsoft:durabletask-client:1.6.1'
-    implementation 'com.microsoft:durabletask-azuremanaged:1.6.3'
-    implementation 'com.azure:azure-identity:1.18.1'
+    implementation 'com.microsoft:durabletask-client:1.7.0'
+    implementation 'com.microsoft:durabletask-azuremanaged:1.7.0'
+    implementation 'com.azure:azure-identity:1.18.2'
     
     // Logging
-    implementation 'ch.qos.logback:logback-classic:1.5.28'
+    implementation 'ch.qos.logback:logback-classic:1.5.32'
     implementation 'org.slf4j:slf4j-api:2.0.17'
     
     // gRPC
@@ -554,8 +554,8 @@ client.raiseEvent(instanceId, "ApprovalEvent", approvalData);
 client.terminate(instanceId, "User cancelled");
 
 // Suspend/Resume
-client.suspend(instanceId, "Pausing for maintenance");
-client.resume(instanceId, "Resuming operation");
+client.suspendInstance(instanceId, "Pausing for maintenance");
+client.resumeInstance(instanceId, "Resuming operation");
 ```
 
 ## Troubleshooting
