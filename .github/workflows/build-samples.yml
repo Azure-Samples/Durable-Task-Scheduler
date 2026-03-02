@@ -12,6 +12,9 @@ on:
       - "samples/**"
       - ".github/workflows/build-samples.yml"
 
+permissions:
+  contents: read
+
 jobs:
   dotnet:
     name: .NET Samples
