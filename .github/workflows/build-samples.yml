@@ -132,6 +132,9 @@ jobs:
       - name: Build DTS - async-http-api
         run: cd samples/durable-task-sdks/java/async-http-api && chmod +x gradlew && ./gradlew build
 
+      - name: Build DTS - opentelemetry-tracing
+        run: cd samples/durable-task-sdks/java/opentelemetry-tracing && chmod +x gradlew && ./gradlew build
+
       # Durable Functions samples (Maven)
       - name: Build DF - HelloCities
         run: cd samples/durable-functions/java/HelloCities && mvn compile --batch-mode
