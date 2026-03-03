@@ -67,6 +67,7 @@ docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:lates
 | .NET | Function Chaining | `cd samples/durable-task-sdks/dotnet/FunctionChaining/Worker && dotnet run` |
 | Python | Function Chaining | `cd samples/durable-task-sdks/python/function-chaining && pip install -r requirements.txt && python worker.py` |
 | Java | Function Chaining | `cd samples/durable-task-sdks/java/function-chaining && ./gradlew runChainingPattern` |
+| JavaScript | Function Chaining | `cd samples/durable-task-sdks/javascript/function-chaining && npm install && node worker.mjs` |
 
 ### Step 3: Open the dashboard
 
@@ -82,7 +83,7 @@ Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestra
 | **Hosting** | Azure Functions | Any host (ACA, AKS, App Service, VMs) |
 | **Triggers** | HTTP, Timer, Queue, etc. | Self-managed |
 | **Scaling** | Built-in auto-scale | Bring your own scaling |
-| **Languages** | .NET, Python, Java, JavaScript | .NET, Python, Java |
+| **Languages** | .NET, Python, Java, JavaScript | .NET, Python, Java, JavaScript |
 
 📖 [Choosing an orchestration framework →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework)
 
