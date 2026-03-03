@@ -36,9 +36,19 @@ This sample demonstrates how to add OpenTelemetry distributed tracing to a Durab
    - **Jaeger UI:** http://localhost:16686 (search for service `durable-worker`)
    - **DTS Dashboard:** http://localhost:8082
 
+## Viewing Traces
+
+Open the [Jaeger UI](http://localhost:16686), select the `durable-worker` service, and click **Find Traces**. You'll see one trace per activity — `validate_order`, `process_payment`, `ship_order`, and `send_notification`:
+
+![Jaeger search results showing 4 activity traces](images/jaeger-search-results.png)
+
+Click on any trace to see span details including tags, duration, and OpenTelemetry metadata:
+
+![Jaeger trace detail showing span tags and process info](images/jaeger-trace-detail.png)
+
 ## What You'll See
 
-The Jaeger UI shows the complete trace for each orchestration — the parent orchestration span with child spans for each activity, including timing and any errors. This helps you:
+These traces help you:
 
 - Identify slow activities
 - See the sequential flow of function chaining

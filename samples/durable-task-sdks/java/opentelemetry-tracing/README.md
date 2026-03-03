@@ -27,7 +27,7 @@ This launches:
 ### 2. Run the sample
 
 ```bash
-./gradlew runOpenTelemetryTracingPattern
+./gradlew run
 ```
 
 This starts the worker, schedules an `OrderProcessingOrchestration`, and waits for it to complete.
@@ -35,25 +35,25 @@ This starts the worker, schedules an `OrderProcessingOrchestration`, and waits f
 ## Viewing Traces
 
 1. Open the Jaeger UI at **http://localhost:16686**
-2. Select the **durable-worker** service from the dropdown
+2. Select the **DistributedTracingSample** service from the dropdown
 3. Click **Find Traces**
-4. Click on a trace to see the span tree — you'll see spans for each activity (`ValidateOrder`, `ProcessPayment`, `ShipOrder`, `SendNotification`)
+4. Click on the trace with **5 Spans** — you'll see the parent `create_orchestration:OrderProcessingOrchestration` with child activity spans nested underneath
 
-![Jaeger search results showing activity traces](images/jaeger-search-results.png)
+![Jaeger search results showing orchestration trace with 5 spans](images/jaeger-search-results.png)
 
-Click on any trace to see the span details, including service name, duration, and OpenTelemetry tags:
+Click on the trace to see the full span tree with parent-child hierarchy and rich `durabletask.*` tags:
 
-![Jaeger trace detail view with span metadata](images/jaeger-trace-detail.png)
+![Jaeger trace detail showing nested activity spans with durable task metadata](images/jaeger-trace-detail.png)
 
 You can also view the orchestration status in the DTS Dashboard at **http://localhost:8082**.
 
 ## What You'll See
 
-The Jaeger UI shows traces for each activity in the orchestration, including timing and any errors. This helps you:
+The Jaeger UI shows a single trace for the entire orchestration with nested child spans for each activity. Each span includes `durabletask.task.name`, `durabletask.type`, and `durabletask.task.task_id` tags. This helps you:
 
-- Identify slow activities
+- Identify slow activities within an orchestration
 - See the sequential flow of function chaining
-- Correlate traces across distributed services
+- Correlate the full orchestration lifecycle in one trace
 - Debug failures with full context
 
 ## How It Works
@@ -68,7 +68,7 @@ OtlpGrpcSpanExporter spanExporter = OtlpGrpcSpanExporter.builder()
         .build();
 
 SdkTracerProvider tracerProvider = SdkTracerProvider.builder()
-        .setResource(Resource.builder().put("service.name", "durable-worker").build())
+        .setResource(Resource.builder().put("service.name", "DistributedTracingSample").build())
         .addSpanProcessor(BatchSpanProcessor.builder(spanExporter).build())
         .build();
 
