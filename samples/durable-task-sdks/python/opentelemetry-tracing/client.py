@@ -1,4 +1,9 @@
-"""Client to schedule and monitor orchestrations with OpenTelemetry tracing."""
+"""Client to schedule and monitor orchestrations with OpenTelemetry tracing.
+
+The SDK automatically captures the current OpenTelemetry span context
+and propagates it as W3C trace context to the orchestration, which then
+forwards it to all activities and sub-orchestrations.
+"""
 import os
 import asyncio
 
@@ -18,7 +23,7 @@ exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
 provider.add_span_processor(BatchSpanProcessor(exporter))
 trace.set_tracer_provider(provider)
 
-tracer = trace.get_tracer("Microsoft.DurableTask")
+tracer = trace.get_tracer("durabletask")
 
 
 async def main():
@@ -32,7 +37,8 @@ async def main():
         token_credential=None,
     )
 
-    # Create a parent span for the orchestration, matching the .NET SDK pattern
+    # Create a parent span — the SDK automatically captures this context
+    # and propagates it to the orchestration and all child activities.
     with tracer.start_as_current_span(
         "create_orchestration:OrderProcessingOrchestration",
         attributes={

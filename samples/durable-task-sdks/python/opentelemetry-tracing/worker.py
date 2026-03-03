@@ -1,4 +1,9 @@
-"""Worker with OpenTelemetry tracing for Durable Task SDK."""
+"""Worker with OpenTelemetry tracing for Durable Task SDK.
+
+The SDK automatically creates activity spans with durabletask.* tags
+and propagates W3C trace context from orchestrations to activities.
+All you need is to configure a TracerProvider with an exporter.
+"""
 import asyncio
 import os
 import time
@@ -15,7 +20,7 @@ from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configure OpenTelemetry with a service name that identifies this application
+# Configure OpenTelemetry — the SDK uses this tracer provider automatically
 resource = Resource.create({"service.name": "DistributedTracingSample"})
 provider = TracerProvider(resource=resource)
 otlp_endpoint = os.environ.get("OTEL_EXPORTER_OTLP_ENDPOINT", "http://localhost:4317")
@@ -23,52 +28,32 @@ exporter = OTLPSpanExporter(endpoint=otlp_endpoint, insecure=True)
 provider.add_span_processor(BatchSpanProcessor(exporter))
 trace.set_tracer_provider(provider)
 
-tracer = trace.get_tracer("Microsoft.DurableTask")
 
-
-def _activity_span(activity_name: str, task_id: int = 0):
-    """Create an activity span with durable task metadata tags."""
-    span = tracer.start_span(
-        f"activity:{activity_name}",
-        attributes={
-            "durabletask.task.name": activity_name,
-            "durabletask.type": "activity",
-            "durabletask.task.task_id": task_id,
-        },
-    )
-    return span
-
+# Activities — no manual span creation needed. The SDK wraps each
+# activity execution in an "activity:<name>" span automatically.
 
 def validate_order(ctx, order_id: str) -> str:
-    span = _activity_span("ValidateOrder", task_id=1)
-    with trace.use_span(span, end_on_exit=True):
-        logger.info(f"Validating order: {order_id}")
-        time.sleep(0.1)
-        return f"Validated({order_id})"
+    logger.info(f"Validating order: {order_id}")
+    time.sleep(0.1)
+    return f"Validated({order_id})"
 
 
 def process_payment(ctx, input: str) -> str:
-    span = _activity_span("ProcessPayment", task_id=2)
-    with trace.use_span(span, end_on_exit=True):
-        logger.info(f"Processing payment for: {input}")
-        time.sleep(0.2)
-        return f"Paid({input})"
+    logger.info(f"Processing payment for: {input}")
+    time.sleep(0.2)
+    return f"Paid({input})"
 
 
 def ship_order(ctx, input: str) -> str:
-    span = _activity_span("ShipOrder", task_id=3)
-    with trace.use_span(span, end_on_exit=True):
-        logger.info(f"Shipping: {input}")
-        time.sleep(0.15)
-        return f"Shipped({input})"
+    logger.info(f"Shipping: {input}")
+    time.sleep(0.15)
+    return f"Shipped({input})"
 
 
 def send_notification(ctx, input: str) -> str:
-    span = _activity_span("SendNotification", task_id=4)
-    with trace.use_span(span, end_on_exit=True):
-        logger.info(f"Notifying customer: {input}")
-        time.sleep(0.05)
-        return f"Notified({input})"
+    logger.info(f"Notifying customer: {input}")
+    time.sleep(0.05)
+    return f"Notified({input})"
 
 
 def order_processing_orchestration(ctx, order_id: str):
