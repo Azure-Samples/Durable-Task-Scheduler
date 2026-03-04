@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.17.1" />
+    <PackageReference Include="Azure.Identity" Version="1.18.0" />
     <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />    
     <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.21.0" />
     <PackageReference Include="Microsoft.DurableTask.Generators" Version="2.0.0-preview.1" OutputItemType="Analyzer" />
