@@ -23,7 +23,7 @@
 ---
 ## What is Durable Task?
 
-Durable Task is Microsoft's technology for building workflows and orchestrations as ordinary code that automatically survives failures. Instead of managing complex retry logic, state machines, or message queues, you express your business logic as straightforward functions - Durable Task handles state persistence, automatic recovery, and distributed coordination for you. 
+[Durable Task](http://aka.ms/durabletask) is Microsoft's technology for building workflows and orchestrations as ordinary code that automatically survives failures. Instead of managing complex retry logic, state machines, or message queues, you express your business logic as straightforward functions - Durable Task handles state persistence, automatic recovery, and distributed coordination for you. 
 
 Workflows can run for hours, days, or even months, reliably resuming from the last completed step after any crash, restart, or redeployment. Common use cases include distributed transactions, multi-agent AI orchestration, data processing pipelines, and infrastructure management.
 
