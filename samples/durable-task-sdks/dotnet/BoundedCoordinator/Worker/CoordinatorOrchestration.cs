@@ -49,7 +49,7 @@ public class CoordinatorOrchestration : TaskOrchestrator<CoordinatorState?, Coor
         await Task.WhenAll(childTasks);
 
         logger.LogInformation("Batch {BatchNumber} complete. {Count} items processed.",
-            state.BatchNumber, batch.Items.Count);
+            state.BatchNumber + 1, batch.Items.Count);
 
         // Step 4: ContinueAsNew with compact carry-forward state.
         // This resets the orchestration history, preventing unbounded growth.

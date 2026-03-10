@@ -4,7 +4,6 @@ using Microsoft.DurableTask.Worker.AzureManaged;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using BoundedCoordinator;
 
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 

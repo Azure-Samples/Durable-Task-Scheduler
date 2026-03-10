@@ -28,8 +28,7 @@ ServiceProvider serviceProvider = services.BuildServiceProvider();
 DurableTaskClient client = serviceProvider.GetRequiredService<DurableTaskClient>();
 
 string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
-    "CoordinatorOrchestration",
-    input: default(object));
+    "CoordinatorOrchestration");
 
 logger.LogInformation("Started CoordinatorOrchestration, instanceId={InstanceId}", instanceId);
 
