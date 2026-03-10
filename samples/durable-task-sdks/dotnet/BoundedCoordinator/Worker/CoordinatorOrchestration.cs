@@ -63,7 +63,7 @@ public class CoordinatorOrchestration : TaskOrchestrator<CoordinatorState?, Coor
             return default!; // unreachable after ContinueAsNew
         }
 
-        return new CoordinatorResult(state.BatchNumber, Completed: true);
+        return new CoordinatorResult(state.BatchNumber + 1, Completed: true);
     }
 }
 

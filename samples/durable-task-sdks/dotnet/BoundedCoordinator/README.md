@@ -17,7 +17,7 @@ This pattern is important because:
 
 ## Prerequisites
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 2. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
 
 ## Quick Run
@@ -61,7 +61,7 @@ public override async Task RunAsync(TaskOrchestrationContext context, object? in
     while (true)
     {
         var event = await context.WaitForExternalEvent<WorkItem>("new-item");
-        await context.CallSubOrchestrationAsync("ProcessItem", event);
+        await context.CallSubOrchestratorAsync("ProcessItem", event);
         // History grows by several events each iteration and is never reset
     }
 }

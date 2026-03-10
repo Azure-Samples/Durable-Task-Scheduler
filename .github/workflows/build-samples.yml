@@ -52,6 +52,9 @@ jobs:
       - name: Build DTS - EternalOrchestrations
         run: dotnet build samples/durable-task-sdks/dotnet/EternalOrchestrations/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/EternalOrchestrations/Worker/Worker.csproj
 
+      - name: Build DTS - BoundedCoordinator
+        run: dotnet build samples/durable-task-sdks/dotnet/BoundedCoordinator/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/BoundedCoordinator/Worker/Worker.csproj
+
       - name: Build DTS - ScheduleWebApp
         run: dotnet build samples/durable-task-sdks/dotnet/ScheduleWebApp/ScheduleWebApp.csproj
 
