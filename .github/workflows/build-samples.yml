@@ -219,6 +219,10 @@ jobs:
       - name: Build DF JS - HelloCities
         run: cd samples/durable-functions/javascript/HelloCities && npm install
 
+      # Durable Functions TypeScript samples
+      - name: Build DF TS - HelloCities
+        run: cd samples/durable-functions/typescript/HelloCities && npm install && npm run build
+
       # Frontend (React app)
       - name: Build DF - AiAgentTravelPlanOrchestrator Frontend
         run: cd samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/Frontend && npm install && npm run build
