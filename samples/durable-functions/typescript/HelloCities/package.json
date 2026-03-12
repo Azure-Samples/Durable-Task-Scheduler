@@ -1,0 +1,19 @@
+{
+  "name": "durable-functions-hello-cities-ts",
+  "version": "1.0.0",
+  "description": "Durable Functions TypeScript quickstart with Durable Task Scheduler",
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "durable-functions": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.0.0"
+  }
+}
