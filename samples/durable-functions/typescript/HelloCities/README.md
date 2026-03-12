@@ -11,7 +11,7 @@ This quickstart demonstrates Durable Functions with TypeScript (Node.js v4 progr
 
 ## Prerequisites
 
-1. [Node.js 18+](https://nodejs.org/)
+1. [Node.js 20+](https://nodejs.org/)
 2. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 3. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
 
