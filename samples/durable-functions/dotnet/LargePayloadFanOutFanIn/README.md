@@ -7,6 +7,8 @@ products:
 - durable-functions
 - dts
 - azure
+- entra-id
+urlFragment: large-payload-fan-out-fan-in-dotnet
 languages:
 - csharp
 - bicep

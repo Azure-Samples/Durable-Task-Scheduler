@@ -1,7 +1,7 @@
 #!/bin/bash
 
 
-commands=("azd" "az" "func" "dotnet")
+commands=("azd" "az" "func" "dotnet" "curl")
 
 for cmd in "${commands[@]}"; do
   if ! command -v "$cmd" &>/dev/null; then
@@ -34,7 +34,6 @@ while IFS= read -r line; do
   value=${value#\"}
   value=${value%\"}
   export "$name=$value"
-  echo "$name=$value"
 done <<< "$output"
 
 echo ""

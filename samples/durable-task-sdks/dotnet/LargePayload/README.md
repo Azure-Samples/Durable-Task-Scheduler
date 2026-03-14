@@ -1,7 +1,5 @@
 # Large Payload Support — Durable Task SDK (.NET)
 
-.NET | Durable Task SDK
-
 ## Description
 
 This sample shows how the Durable Task SDK externalizes payloads to Azure Blob Storage so an orchestration can safely process data that is **larger than 1 MB**.
@@ -10,7 +8,7 @@ The flow is intentionally simple:
 
 1. The client starts an orchestration with a payload larger than 1 MB.
 2. The worker echoes that payload through an activity.
-3. The sample prints whether the serialized orchestration input and output were replaced with blob references.
+3. The sample prints whether payload blobs were created during the run.
 
 This is the pattern you need when your durable workflow would otherwise hit the Durable Task Scheduler message-size limit.
 

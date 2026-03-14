@@ -85,7 +85,7 @@ builder.Services.AddDurableTaskWorker(worker =>
 using IHost host = builder.Build();
 await host.StartAsync();
 
-await using DurableTaskClient client = host.Services.GetRequiredService<DurableTaskClient>();
+DurableTaskClient client = host.Services.GetRequiredService<DurableTaskClient>();
 BlobContainerClient payloadContainerClient = CreatePayloadContainerClient(payloadStorageSettings);
 int payloadBlobCountBeforeRun = await GetBlobCountAsync(payloadContainerClient);
 

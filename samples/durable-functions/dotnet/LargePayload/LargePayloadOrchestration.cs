@@ -43,12 +43,14 @@ public static class LargePayloadOrchestration
 
         string echoedPayload = await context.CallActivityAsync<string>(nameof(EchoLargePayload), request.Payload)
             ?? throw new InvalidOperationException("The activity did not return a payload.");
+        int orchestrationInputBytes = GetUtf8ByteCount(request.Payload);
+        int activityOutputBytes = GetUtf8ByteCount(echoedPayload);
 
         return new LargePayloadSummary(
             RequestedPayloadBytes: request.RequestedPayloadBytes,
-            OrchestrationInputBytes: GetUtf8ByteCount(request.Payload),
-            ActivityOutputBytes: GetUtf8ByteCount(echoedPayload),
-            ExceededOneMiB: request.RequestedPayloadBytes > OneMiB,
+            OrchestrationInputBytes: orchestrationInputBytes,
+            ActivityOutputBytes: activityOutputBytes,
+            ExceededOneMiB: Math.Max(orchestrationInputBytes, activityOutputBytes) > OneMiB,
             PayloadsMatch: string.Equals(request.Payload, echoedPayload, StringComparison.Ordinal));
     }
 

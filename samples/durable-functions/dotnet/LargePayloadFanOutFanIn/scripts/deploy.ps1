@@ -32,7 +32,6 @@ $output -split "`n" | ForEach-Object {
         $name = $name.Trim('"')
         $value = $value.Trim('"')
         [System.Environment]::SetEnvironmentVariable($name, $value)
-        Write-Output "$name=$value"
     }
 }
 
