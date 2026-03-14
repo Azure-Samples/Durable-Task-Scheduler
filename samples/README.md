@@ -42,6 +42,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | |
 | AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | |
 | AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | |
+| Large Payload | [✅](./durable-task-sdks/dotnet/LargePayload) | | | |
 
 ### Durable Functions
 
@@ -52,6 +53,8 @@ A quick-reference matrix showing which patterns are available in each language a
 | Order Processor | [✅](./durable-functions/dotnet/OrderProcessor) | | | |
 | Saga Pattern | [✅](./durable-functions/dotnet/Saga) | | | |
 | Distributed Tracing | [✅](./durable-functions/dotnet/DistributedTracing) | | | |
+| Large Payload | [✅](./durable-functions/dotnet/LargePayload) | | | |
+| Large Payload Fan-out/Fan-in | [✅](./durable-functions/dotnet/LargePayloadFanOutFanIn) | | | |
 | PDF Summarizer | [✅](./durable-functions/dotnet/PdfSummarizer) | [✅](./durable-functions/python/pdf-summarizer) | | |
 | AI Travel Planner | [✅](./durable-functions/dotnet/AiAgentTravelPlanOrchestrator) | | | |
 | Aspire Integration | [✅](./durable-functions/dotnet/AzureFunctionsAndDtsWithAspire) | | | |
@@ -77,6 +80,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | [Sub-Orchestrations](./durable-task-sdks/dotnet/SubOrchestrations) | Sub-orchestrations | Parent/child orchestration composition for order processing |
 | [Eternal Orchestrations](./durable-task-sdks/dotnet/EternalOrchestrations) | Eternal Orchestrations | Indefinitely running orchestration with ContinueAsNew |
 | [OpenTelemetry Tracing](./durable-task-sdks/dotnet/OpenTelemetryTracing) | Observability | Distributed tracing with OpenTelemetry and Jaeger |
+| [Large Payload](./durable-task-sdks/dotnet/LargePayload) | Large Payload | Blob-backed payload externalization for orchestration inputs and outputs larger than 1 MB |
 
 ### Python
 
@@ -126,6 +130,8 @@ A quick-reference matrix showing which patterns are available in each language a
 | [Order Processor](./durable-functions/dotnet/OrderProcessor) | Order Workflow | End-to-end order processing workflow |
 | [Saga Pattern](./durable-functions/dotnet/Saga) | Saga | Compensating transactions for distributed operations |
 | [Aspire Integration](./durable-functions/dotnet/AzureFunctionsAndDtsWithAspire) | Aspire | Azure Functions + DTS with Aspire |
+| [Large Payload](./durable-functions/dotnet/LargePayload) | Large Payload | Single round-trip orchestration that externalizes payloads larger than 1 MB to blob storage |
+| [Large Payload Fan-out/Fan-in](./durable-functions/dotnet/LargePayloadFanOutFanIn) | Large Payload | Parallel orchestration that externalizes payloads larger than 1 MB for each activity result |
 | [PDF Summarizer](./durable-functions/dotnet/PdfSummarizer) | AI Pipeline | AI-powered document processing pipeline |
 | [AI Travel Planner](./durable-functions/dotnet/AiAgentTravelPlanOrchestrator) | AI Agents | Multi-agent travel planning orchestration |
 | [Distributed Tracing](./durable-functions/dotnet/DistributedTracing) | Observability | Distributed tracing with Application Insights and Jaeger |

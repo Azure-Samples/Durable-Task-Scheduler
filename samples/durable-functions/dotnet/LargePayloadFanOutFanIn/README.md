@@ -8,7 +8,7 @@ products:
 - dts
 - azure
 - entra-id
-urlFragment: large-payload-dotnet
+urlFragment: large-payload-fan-out-fan-in-dotnet
 languages:
 - csharp
 - bicep
@@ -16,20 +16,20 @@ languages:
 ---
 -->
 
-# Large Payload Support — .NET Isolated Durable Functions (Round-Trip)
+# Large Payload Support — .NET Isolated Durable Functions (Fan-out/Fan-in)
 
 This sample shows how Durable Functions can safely process orchestration data that is **larger than 1 MB** when Durable Task Scheduler is configured with **large payload storage**.
 
-If you want the same storage feature demonstrated with a parallel fan-out/fan-in orchestration, see the sibling [LargePayloadFanOutFanIn](../LargePayloadFanOutFanIn) sample. Both samples use the same DTS + blob storage configuration and deployment story; this folder is the simplest place to start.
+If you want the smallest possible example, start with the sibling [LargePayload](../LargePayload) sample. Both samples use the same DTS + blob storage configuration and deployment story; this folder keeps the original fan-out/fan-in orchestration shape.
 
-The flow is intentionally simple:
+The flow is intentionally parallel:
 
-1. An HTTP trigger starts an orchestration with a payload larger than 1 MB.
-2. The orchestrator sends that payload to a single activity.
-3. The activity echoes the payload back.
-4. The orchestration returns a small summary proving the payload survived the round-trip.
+1. An HTTP trigger starts an orchestration with a payload size larger than 1 MB.
+2. The orchestrator fans out to multiple activities.
+3. Each activity generates a payload larger than 1 MB and returns it to the orchestrator.
+4. The orchestrator fans in and returns a small summary proving every activity payload survived the round-trip.
 
-This is exactly why large payload support exists: without blob offload, a payload this size would be too large to flow through DTS messages directly.
+This is exactly why large payload support exists: without blob offload, payloads this size would be too large to flow through DTS messages directly.
 
 ## How large payload storage works
 
@@ -54,7 +54,7 @@ When a payload exceeds `largePayloadStorageThresholdBytes`, the Durable Function
 3. replaces the in-band DTS message with a small blob reference
 4. resolves that blob reference automatically before your function code reads the payload
 
-The sample uses a **1.5 MiB** payload by default and a **900,000-byte** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
+The sample uses **three 1.5 MiB activity payloads** by default and a **900,000-byte** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
 
 ## Prerequisites
 
@@ -82,7 +82,8 @@ The sample uses a **1.5 MiB** payload by default and a **900,000-byte** threshol
        "AzureWebJobsStorage": "UseDevelopmentStorage=true",
        "DTS_CONNECTION_STRING": "Endpoint=http://localhost:8080;Authentication=None",
        "TASKHUB_NAME": "default",
-       "PAYLOAD_SIZE_BYTES": "1572864"
+       "PAYLOAD_SIZE_BYTES": "1572864",
+       "ACTIVITY_COUNT": "3"
      }
    }
    ```
@@ -99,17 +100,18 @@ The sample uses a **1.5 MiB** payload by default and a **900,000-byte** threshol
    curl -X POST http://localhost:7071/api/StartLargePayload
    ```
 
-5. Poll the `StatusQueryGetUri` value from the response until the orchestration completes. The full status payload also includes the original large `input`, so focus on the `runtimeStatus` and `output` fields. The important part looks like this:
+5. Poll the `StatusQueryGetUri` value from the response until the orchestration completes. Focus on the `runtimeStatus` and `output` fields. The important part looks like this:
 
    ```json
    {
      "runtimeStatus": "Completed",
      "output": {
-       "RequestedPayloadBytes": 1572864,
-       "OrchestrationInputBytes": 1572864,
-       "ActivityOutputBytes": 1572864,
-       "ExceededOneMiB": true,
-       "PayloadsMatch": true
+       "ActivityCount": 3,
+       "RequestedPayloadBytesPerActivity": 1572864,
+       "IndividualPayloadBytes": [1572864, 1572864, 1572864],
+       "TotalPayloadBytes": 4718592,
+       "AllPayloadsExceededOneMiB": true,
+       "AllPayloadsMatchRequestedSize": true
      }
    }
    ```
@@ -123,7 +125,7 @@ The sample uses a **1.5 MiB** payload by default and a **900,000-byte** threshol
      --output table
    ```
 
-Because the payload is repetitive text and the extension uses gzip compression, the blob sizes will be much smaller than the original 1.5 MiB payload.
+Because the payload is repetitive text and the extension uses gzip compression, the blob sizes will be much smaller than the original 1.5 MiB activity payloads.
 
 ## Local settings
 
@@ -132,7 +134,8 @@ Because the payload is repetitive text and the extension uses gzip compression, 
 | `DTS_CONNECTION_STRING` | DTS emulator or Azure connection string | `Endpoint=http://localhost:8080;Authentication=None` |
 | `TASKHUB_NAME` | Task hub name | `default` |
 | `AzureWebJobsStorage` | Storage for Functions host state and payload blobs | `UseDevelopmentStorage=true` locally |
-| `PAYLOAD_SIZE_BYTES` | Payload size used by the HTTP starter | `1572864` |
+| `PAYLOAD_SIZE_BYTES` | Payload size generated by each activity | `1572864` |
+| `ACTIVITY_COUNT` | Number of parallel activity invocations | `3` |
 
 ## Deploy to Azure with AZD
 
@@ -184,7 +187,7 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
 
 ## Files to look at
 
-- `LargePayloadOrchestration.cs` — HTTP starter, orchestrator, and echo activity
+- `LargePayloadOrchestration.cs` — HTTP starter, fan-out/fan-in orchestrator, and payload-generating activity
 - `host.json` — Durable Task Scheduler + large payload configuration
 - `docker-compose.yml` — local DTS emulator + Azurite dependencies
 - `azure.yaml` and `infra/` — Azure deployment path
