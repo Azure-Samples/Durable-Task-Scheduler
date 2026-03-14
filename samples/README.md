@@ -54,6 +54,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | Saga Pattern | [✅](./durable-functions/dotnet/Saga) | | | |
 | Distributed Tracing | [✅](./durable-functions/dotnet/DistributedTracing) | | | |
 | Large Payload | [✅](./durable-functions/dotnet/LargePayload) | | | |
+| Large Payload Fan-out/Fan-in | [✅](./durable-functions/dotnet/LargePayloadFanOutFanIn) | | | |
 | PDF Summarizer | [✅](./durable-functions/dotnet/PdfSummarizer) | [✅](./durable-functions/python/pdf-summarizer) | | |
 | AI Travel Planner | [✅](./durable-functions/dotnet/AiAgentTravelPlanOrchestrator) | | | |
 | Aspire Integration | [✅](./durable-functions/dotnet/AzureFunctionsAndDtsWithAspire) | | | |
@@ -130,6 +131,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | [Saga Pattern](./durable-functions/dotnet/Saga) | Saga | Compensating transactions for distributed operations |
 | [Aspire Integration](./durable-functions/dotnet/AzureFunctionsAndDtsWithAspire) | Aspire | Azure Functions + DTS with Aspire |
 | [Large Payload](./durable-functions/dotnet/LargePayload) | Large Payload | Single round-trip orchestration that externalizes payloads larger than 1 MB to blob storage |
+| [Large Payload Fan-out/Fan-in](./durable-functions/dotnet/LargePayloadFanOutFanIn) | Large Payload | Parallel orchestration that externalizes payloads larger than 1 MB for each activity result |
 | [PDF Summarizer](./durable-functions/dotnet/PdfSummarizer) | AI Pipeline | AI-powered document processing pipeline |
 | [AI Travel Planner](./durable-functions/dotnet/AiAgentTravelPlanOrchestrator) | AI Agents | Multi-agent travel planning orchestration |
 | [Distributed Tracing](./durable-functions/dotnet/DistributedTracing) | Observability | Distributed tracing with Application Insights and Jaeger |

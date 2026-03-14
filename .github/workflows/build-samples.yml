@@ -102,6 +102,9 @@ jobs:
       - name: Build DF - LargePayload
         run: dotnet build samples/durable-functions/dotnet/LargePayload/LargePayload.csproj
 
+      - name: Build DF - LargePayloadFanOutFanIn
+        run: dotnet build samples/durable-functions/dotnet/LargePayloadFanOutFanIn/LargePayloadFanOutFanIn.csproj
+
       # Durable Functions Aspire samples (net10.0)
       - name: Build DF - AzureFunctionsAndDtsWithAspire
         run: dotnet build samples/durable-functions/dotnet/AzureFunctionsAndDtsWithAspire/AspireHost/AspireHost.csproj

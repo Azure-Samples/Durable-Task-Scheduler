@@ -1,0 +1,54 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "environmentName": {
+      "value": "${AZURE_ENV_NAME}"
+    },
+    "location": {
+      "value": "${AZURE_LOCATION}"
+    },
+    "functionSkuName": {
+      "value": "${AZURE_FUNCTION_SKU_NAME=EP1}"
+    },
+    "functionSkuTier": {
+      "value": "${AZURE_FUNCTION_SKU_TIER=ElasticPremium}"
+    },
+    "functionReservedPlan": {
+      "value": "${AZURE_FUNCTION_RESERVED_PLAN}",
+      "metadata": {
+        "description": "Set to true for Linux and false for Windows"
+      }
+    },
+    "durableFunctionServiceName": {
+      "value": "${AZURE_DURABLE_FUNCTION_SERVICE_NAME}"
+    },
+    "durableFunctionUserAssignedIdentityName": {
+      "value": "${AZURE_DURABLE_FUNCTION_USER_ASSIGNED_IDENTITY_NAME}"
+    },
+    "applicationInsightsName": {
+      "value": "${AZURE_APPLICATION_INSIGHTS_NAME}"
+    },
+    "appServicePlanName": {
+      "value": "${AZURE_APP_SERVICE_PLAN_NAME}"
+    },
+    "logAnalyticsName": {
+      "value": "${AZURE_LOG_ANALYTICS_NAME}"
+    },
+    "resourceGroupName": {
+      "value": "${AZURE_RESOURCE_GROUP_NAME}"
+    },
+    "storageAccountName": {
+      "value": "${AZURE_STORAGE_ACCOUNT_NAME}"
+    },
+    "vNetName": {
+      "value": "${AZURE_VNET_NAME}"
+    },
+    "disableLocalAuth": {
+      "value": "${AZURE_DISABLE_LOCAL_AUTH}"
+    },
+    "principalId": {
+      "value": "${AZURE_PRINCIPAL_ID}"
+    }
+  }
+}
