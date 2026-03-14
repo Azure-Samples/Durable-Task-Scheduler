@@ -1,16 +1,5 @@
-// Large Payload Sample - .NET Isolated Durable Functions with Durable Task Scheduler
-//
-// Demonstrates how to use the large payload storage feature to handle payloads
-// that exceed the Durable Task Scheduler's message size limit. When enabled,
-// payloads larger than the configured threshold are automatically offloaded to
-// Azure Blob Storage (compressed via gzip), keeping orchestration history lean
-// while supporting arbitrarily large data.
-//
-// This sample uses a fan-out/fan-in pattern: the orchestrator fans out to multiple
-// activity functions, each of which generates a large payload (configurable size).
-// The orchestrator then aggregates the results.
-
-using System.Text.Json;
+using System.Net;
+using System.Text;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.Functions.Worker.Http;
 using Microsoft.DurableTask;
@@ -21,136 +10,103 @@ namespace LargePayload;
 
 public static class LargePayloadOrchestration
 {
-    // Default payload size in KB (override via PAYLOAD_SIZE_KB app setting)
-    private const int DefaultPayloadSizeKb = 100;
+    private const int OneMiB = 1024 * 1024;
+    private const int DefaultPayloadSizeBytes = 1536 * 1024;
 
-    // Default number of parallel activities (override via ACTIVITY_COUNT app setting)
-    private const int DefaultActivityCount = 5;
-
-    // -----------------------------------------------------------------------
-    // HTTP Trigger – starts the orchestration
-    // -----------------------------------------------------------------------
     [Function("StartLargePayload")]
     public static async Task<HttpResponseData> HttpStart(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req,
         [DurableClient] DurableTaskClient client,
         FunctionContext executionContext)
     {
-        ILogger logger = executionContext.GetLogger("StartLargePayload");
-
-        // Read configuration from environment variables and pass as orchestration input
-        // (environment variable access must not happen inside the orchestrator).
-        int activityCount = int.TryParse(
-            Environment.GetEnvironmentVariable("ACTIVITY_COUNT"), out int ac) ? ac : DefaultActivityCount;
-        int payloadSizeKb = int.TryParse(
-            Environment.GetEnvironmentVariable("PAYLOAD_SIZE_KB"), out int ps) ? ps : DefaultPayloadSizeKb;
-
-        OrchestratorConfig config = new OrchestratorConfig(activityCount, payloadSizeKb);
-
+        ILogger logger = executionContext.GetLogger(nameof(HttpStart));
+        int payloadSizeBytes = GetPositiveIntSetting("PAYLOAD_SIZE_BYTES", DefaultPayloadSizeBytes);
+        string payload = CreatePayload(payloadSizeBytes);
+        LargePayloadRequest request = new(payload, payloadSizeBytes);
         string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(
-            nameof(LargePayloadFanOutFanIn), config);
+            nameof(LargePayloadRoundTrip), request);
 
-        logger.LogInformation("Started orchestration with ID = '{InstanceId}'.", instanceId);
+        logger.LogInformation(
+            "Started orchestration {InstanceId} with payload size {PayloadSizeBytes} bytes.",
+            instanceId,
+            payloadSizeBytes);
 
         return await client.CreateCheckStatusResponseAsync(req, instanceId);
     }
 
-    // -----------------------------------------------------------------------
-    // Orchestrator – fans out to N parallel activities, each producing a large payload
-    // -----------------------------------------------------------------------
-    [Function(nameof(LargePayloadFanOutFanIn))]
-    public static async Task<PayloadSummary> LargePayloadFanOutFanIn(
+    [Function(nameof(LargePayloadRoundTrip))]
+    public static async Task<LargePayloadSummary> LargePayloadRoundTrip(
         [OrchestrationTrigger] TaskOrchestrationContext context)
     {
-        ILogger logger = context.CreateReplaySafeLogger(nameof(LargePayloadFanOutFanIn));
+        LargePayloadRequest request = context.GetInput<LargePayloadRequest>()
+            ?? throw new InvalidOperationException("The orchestration input payload was not provided.");
 
-        // Read config from orchestration input (set by the HTTP trigger)
-        // to avoid non-deterministic environment variable access in the orchestrator.
-        OrchestratorConfig config = context.GetInput<OrchestratorConfig>() ?? new OrchestratorConfig();
-        int activityCount = config.ActivityCount > 0 ? config.ActivityCount : DefaultActivityCount;
-        int payloadSizeKb = config.PayloadSizeKb > 0 ? config.PayloadSizeKb : DefaultPayloadSizeKb;
+        string echoedPayload = await context.CallActivityAsync<string>(nameof(EchoLargePayload), request.Payload)
+            ?? throw new InvalidOperationException("The activity did not return a payload.");
 
-        logger.LogInformation(
-            "Starting fan-out: {Count} activities, each generating {SizeKb} KB payloads.",
-            activityCount, payloadSizeKb);
-
-        // Fan-out: schedule N activities in parallel
-        List<Task<ActivityResult>> tasks = new List<Task<ActivityResult>>();
-        for (int i = 0; i < activityCount; i++)
-        {
-            tasks.Add(context.CallActivityAsync<ActivityResult>(
-                nameof(ProcessLargeData),
-                new ActivityInput(i, payloadSizeKb)));
-        }
-
-        // Fan-in: wait for all activities to complete
-        ActivityResult[] results = await Task.WhenAll(tasks);
-
-        // Aggregate results
-        PayloadSummary summary = new PayloadSummary(
-            ItemsProcessed: results.Length,
-            TotalSizeKb: results.Sum(r => r.SizeKb),
-            IndividualSizes: results.Select(r => r.SizeKb).ToArray());
-
-        logger.LogInformation(
-            "Fan-in complete: {Count} items, {TotalKb} KB total.",
-            summary.ItemsProcessed, summary.TotalSizeKb);
-
-        return summary;
+        return new LargePayloadSummary(
+            RequestedPayloadBytes: request.RequestedPayloadBytes,
+            OrchestrationInputBytes: GetUtf8ByteCount(request.Payload),
+            ActivityOutputBytes: GetUtf8ByteCount(echoedPayload),
+            ExceededOneMiB: request.RequestedPayloadBytes > OneMiB,
+            PayloadsMatch: string.Equals(request.Payload, echoedPayload, StringComparison.Ordinal));
     }
 
-    // -----------------------------------------------------------------------
-    // Activity – generates and returns a large payload
-    // -----------------------------------------------------------------------
-    [Function(nameof(ProcessLargeData))]
-    public static ActivityResult ProcessLargeData(
-        [ActivityTrigger] ActivityInput input,
+    [Function(nameof(EchoLargePayload))]
+    public static string EchoLargePayload(
+        [ActivityTrigger] string payload,
         FunctionContext executionContext)
     {
-        ILogger logger = executionContext.GetLogger(nameof(ProcessLargeData));
+        ILogger logger = executionContext.GetLogger(nameof(EchoLargePayload));
+        int payloadBytes = GetUtf8ByteCount(payload);
 
         logger.LogInformation(
-            "Task {TaskId}: generating {SizeKb} KB payload...",
-            input.TaskId, input.PayloadSizeKb);
+            "Echoing a payload with {PayloadBytes} bytes.",
+            payloadBytes);
 
-        string payload = GenerateLargePayload(input.PayloadSizeKb);
+        if (payload.StartsWith("blob:v1:", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The activity received a payload token instead of the resolved payload.");
+        }
 
-        logger.LogInformation(
-            "Task {TaskId}: payload size = {Bytes} bytes.",
-            input.TaskId, payload.Length);
-
-        return new ActivityResult(input.TaskId, input.PayloadSizeKb, payload);
+        return payload;
     }
 
-    // -----------------------------------------------------------------------
-    // Health-check endpoint
-    // -----------------------------------------------------------------------
     [Function("Hello")]
-    public static HttpResponseData Hello(
+    public static async Task<HttpResponseData> Hello(
         [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
     {
-        HttpResponseData response = req.CreateResponse(System.Net.HttpStatusCode.OK);
-        response.WriteString("Hello from Large Payload Sample!");
+        HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
+        await response.WriteStringAsync("LargePayload sample is running. POST /api/StartLargePayload to start a >1 MB orchestration.");
         return response;
     }
 
-    // -----------------------------------------------------------------------
-    // Helper: generate a JSON payload of approximately the specified size
-    // -----------------------------------------------------------------------
-    private static string GenerateLargePayload(int sizeKb)
+    private static string CreatePayload(int payloadSizeBytes) => new('L', payloadSizeBytes);
+
+    private static int GetPositiveIntSetting(string key, int defaultValue)
     {
-        int targetBytes = sizeKb * 1024;
-        // Reserve space for JSON envelope
-        string filler = new('x', Math.Max(0, targetBytes - 100));
-        var payload = new { size_kb = sizeKb, data = filler };
-        return JsonSerializer.Serialize(payload);
+        string? rawValue = Environment.GetEnvironmentVariable(key);
+        if (string.IsNullOrWhiteSpace(rawValue))
+        {
+            return defaultValue;
+        }
+
+        if (!int.TryParse(rawValue, out int parsedValue) || parsedValue <= 0)
+        {
+            throw new InvalidOperationException($"Environment variable '{key}' must be a positive integer. Value: {rawValue}");
+        }
+
+        return parsedValue;
     }
+
+    private static int GetUtf8ByteCount(string payload) => Encoding.UTF8.GetByteCount(payload);
 }
 
-// -----------------------------------------------------------------------
-// DTOs
-// -----------------------------------------------------------------------
-public record OrchestratorConfig(int ActivityCount = 5, int PayloadSizeKb = 100);
-public record ActivityInput(int TaskId, int PayloadSizeKb);
-public record ActivityResult(int TaskId, int SizeKb, string Payload);
-public record PayloadSummary(int ItemsProcessed, int TotalSizeKb, int[] IndividualSizes);
+public sealed record LargePayloadRequest(string Payload, int RequestedPayloadBytes);
+
+public sealed record LargePayloadSummary(
+    int RequestedPayloadBytes,
+    int OrchestrationInputBytes,
+    int ActivityOutputBytes,
+    bool ExceededOneMiB,
+    bool PayloadsMatch);

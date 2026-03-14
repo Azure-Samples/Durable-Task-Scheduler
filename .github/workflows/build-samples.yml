@@ -70,6 +70,9 @@ jobs:
       - name: Build DTS - OpenTelemetryTracing
         run: dotnet build samples/durable-task-sdks/dotnet/OpenTelemetryTracing/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/OpenTelemetryTracing/Worker/Worker.csproj
 
+      - name: Build DTS - LargePayload
+        run: dotnet build samples/durable-task-sdks/dotnet/LargePayload/LargePayload.csproj
+
       - name: Build DTS - Agents/PromptChaining
         run: dotnet build samples/durable-task-sdks/dotnet/Agents/PromptChaining/Shared/Shared.csproj && dotnet build samples/durable-task-sdks/dotnet/Agents/PromptChaining/Worker/Worker.csproj && dotnet build samples/durable-task-sdks/dotnet/Agents/PromptChaining/Client/Client.csproj
 
@@ -95,6 +98,9 @@ jobs:
 
       - name: Build DF - AiAgentTravelPlanOrchestrator
         run: dotnet build samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/TravelPlannerFunctions.csproj
+
+      - name: Build DF - LargePayload
+        run: dotnet build samples/durable-functions/dotnet/LargePayload/LargePayload.csproj
 
       # Durable Functions Aspire samples (net10.0)
       - name: Build DF - AzureFunctionsAndDtsWithAspire

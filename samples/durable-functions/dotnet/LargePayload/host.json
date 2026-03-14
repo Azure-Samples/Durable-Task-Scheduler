@@ -16,14 +16,14 @@
     }
   },
   "extensions": {
-    "durableTask": {
-      "storageProvider": {
-        "type": "azureManaged",
-        "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING",
-        "largePayloadStorageEnabled": true,
-        "largePayloadStorageThresholdBytes": 10240
-      },
-      "hubName": "%TASKHUB_NAME%"
-    }
+      "durableTask": {
+        "storageProvider": {
+          "type": "azureManaged",
+          "connectionStringName": "DTS_CONNECTION_STRING",
+          "largePayloadStorageEnabled": true,
+          "largePayloadStorageThresholdBytes": 900000
+        },
+        "hubName": "%TASKHUB_NAME%"
+      }
   }
 }
