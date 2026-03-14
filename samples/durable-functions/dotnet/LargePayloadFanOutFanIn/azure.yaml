@@ -16,7 +16,7 @@ hooks:
       interactive: true
       continueOnError: false
     posix:
-      shell: sh
+      shell: bash
       run: scripts/deploy.sh
       interactive: true
       continueOnError: false

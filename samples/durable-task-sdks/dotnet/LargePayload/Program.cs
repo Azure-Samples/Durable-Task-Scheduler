@@ -114,7 +114,7 @@ Console.WriteLine($"Payload blobs added during run: {newPayloadBlobCount}");
 Console.WriteLine($"Payload offload observed: {newPayloadBlobCount > 0}");
 Console.WriteLine($"Output bytes: {GetUtf8ByteCount(echoedPayload):N0}");
 Console.WriteLine($"Round-trip payload matched: {string.Equals(largePayload, echoedPayload, StringComparison.Ordinal)}");
-Console.WriteLine("List blobs in durabletask-payloads to verify payload offload.");
+Console.WriteLine($"List blobs in {payloadStorageSettings.ContainerName} to verify payload offload.");
 
 await host.StopAsync();
 

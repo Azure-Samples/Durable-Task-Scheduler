@@ -27,8 +27,12 @@ output=$(azd env get-values)
 
 # Use a file descriptor to avoid subshell
 while IFS= read -r line; do
-  name=$(echo "$line" | cut -d'=' -f1 | sed 's/^["'\'']//;s/["'\'']$//')
-  value=$(echo "$line" | cut -d'=' -f2 | sed 's/^["'\'']//;s/["'\'']$//')
+  name=${line%%=*}
+  value=${line#*=}
+  name=${name#\"}
+  name=${name%\"}
+  value=${value#\"}
+  value=${value%\"}
   export "$name=$value"
   echo "$name=$value"
 done <<< "$output"
