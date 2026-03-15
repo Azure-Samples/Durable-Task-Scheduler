@@ -96,8 +96,18 @@ public static class LargePayloadOrchestration
 
     private static string CreatePayload(int activityNumber, int payloadSizeBytes)
     {
-        char payloadCharacter = (char)('A' + ((activityNumber - 1) % 26));
-        return new string(payloadCharacter, payloadSizeBytes);
+        // Use a deterministic, low-compressibility payload so stored blob sizes stay representative.
+        return string.Create(payloadSizeBytes, 0x00C0FFEEu + (uint)activityNumber, static (span, seed) =>
+        {
+            const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+            uint state = seed;
+
+            for (int i = 0; i < span.Length; i++)
+            {
+                state = (state * 1664525) + 1013904223;
+                span[i] = Alphabet[(int)(state >> 26)];
+            }
+        });
     }
 
     private static int GetPositiveIntSetting(string key, int defaultValue)

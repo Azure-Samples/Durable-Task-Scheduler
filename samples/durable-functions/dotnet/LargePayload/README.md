@@ -54,7 +54,7 @@ When a payload exceeds `largePayloadStorageThresholdBytes`, the Durable Function
 3. replaces the in-band DTS message with a small blob reference
 4. resolves that blob reference automatically before your function code reads the payload
 
-The sample uses a **1.5 MiB** payload by default and a **900,000-byte** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
+The sample uses a deterministic, low-compressibility **1.5 MiB** payload by default and a **900,000-byte** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
 
 ## Prerequisites
 
@@ -123,7 +123,7 @@ The sample uses a **1.5 MiB** payload by default and a **900,000-byte** threshol
      --output table
    ```
 
-Because the payload is repetitive text and the extension uses gzip compression, the blob sizes will be much smaller than the original 1.5 MiB payload.
+The extension stores payload blobs with gzip content encoding, so Azure shows the compressed on-disk size. Because this sample uses low-compressibility payload content, the stored blob sizes should stay reasonably close to the logical 1.5 MiB payload instead of collapsing to a tiny repetitive-text blob.
 
 ## Local settings
 

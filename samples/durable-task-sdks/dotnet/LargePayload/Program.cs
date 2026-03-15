@@ -4,6 +4,7 @@
 using Azure.Core;
 using Azure.Identity;
 using Azure.Storage.Blobs;
+using Azure.Storage.Blobs.Models;
 using Microsoft.DurableTask;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Client.AzureManaged;
@@ -11,20 +12,21 @@ using Microsoft.DurableTask.Worker;
 using Microsoft.DurableTask.Worker.AzureManaged;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 const int OneMiB = 1024 * 1024;
 const int DefaultPayloadSizeBytes = 1536 * 1024;
 const int DefaultExternalizeThresholdBytes = 900_000;
+const int DefaultWaitTimeoutSeconds = 120;
 const string OrchestrationName = "LargePayloadRoundTrip";
 const string ActivityName = "EchoLargePayload";
 
-HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 string schedulerConnectionString = builder.Configuration.GetValue<string>("DURABLE_TASK_SCHEDULER_CONNECTION_STRING")
     ?? "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
 
-int payloadSizeBytes = GetPositiveInt(builder.Configuration, "PAYLOAD_SIZE_BYTES", DefaultPayloadSizeBytes);
+int defaultPayloadSizeBytes = GetPositiveInt(builder.Configuration, "PAYLOAD_SIZE_BYTES", DefaultPayloadSizeBytes);
 int externalizeThresholdBytes = GetPositiveInt(builder.Configuration, "EXTERNALIZE_THRESHOLD_BYTES", DefaultExternalizeThresholdBytes);
 
 if (externalizeThresholdBytes > OneMiB)
@@ -33,6 +35,21 @@ if (externalizeThresholdBytes > OneMiB)
 }
 
 PayloadStorageSettings payloadStorageSettings = GetPayloadStorageSettings(builder.Configuration);
+LargePayloadRuntimeSettings runtimeSettings = new(defaultPayloadSizeBytes, externalizeThresholdBytes, payloadStorageSettings.ContainerName);
+
+builder.Services.AddSingleton(runtimeSettings);
+builder.Services.AddSingleton(payloadStorageSettings);
+builder.Services.AddSingleton(CreatePayloadContainerClient(payloadStorageSettings));
+
+builder.Services.AddLogging(logging =>
+{
+    logging.AddSimpleConsole(options =>
+    {
+        options.SingleLine = true;
+        options.UseUtcTimestamp = true;
+        options.TimestampFormat = "yyyy-MM-ddTHH:mm:ss.fffZ ";
+    });
+});
 
 builder.Services.AddExternalizedPayloadStore(options =>
 {
@@ -82,41 +99,152 @@ builder.Services.AddDurableTaskWorker(worker =>
     worker.UseExternalizedPayloads();
 });
 
-using IHost host = builder.Build();
-await host.StartAsync();
+WebApplication app = builder.Build();
 
-DurableTaskClient client = host.Services.GetRequiredService<DurableTaskClient>();
-BlobContainerClient payloadContainerClient = CreatePayloadContainerClient(payloadStorageSettings);
-int payloadBlobCountBeforeRun = await GetBlobCountAsync(payloadContainerClient);
+app.MapGet("/", (LargePayloadRuntimeSettings settings) =>
+    Results.Ok(new SampleInfoResponse(
+        Name: "Large Payload round-trip sample",
+        Description: "Trigger a >1 MiB orchestration payload and verify blob offload through the Durable Task SDK.",
+        DefaultPayloadSizeBytes: settings.DefaultPayloadSizeBytes,
+        ExternalizeThresholdBytes: settings.ExternalizeThresholdBytes,
+        PayloadContainerName: settings.PayloadContainerName,
+        RunEndpoint: "/api/largepayload/run",
+        StatusEndpointTemplate: "/api/largepayload/instances/{instanceId}",
+        HealthEndpoint: "/healthz")));
 
-string largePayload = CreatePayload(payloadSizeBytes);
-string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(OrchestrationName, largePayload);
+app.MapGet("/healthz", () => Results.Ok(new { status = "Healthy" }));
 
-Console.WriteLine("Large payload round-trip sample");
-Console.WriteLine($"Scheduler connection: {schedulerConnectionString}");
-Console.WriteLine($"Payload bytes: {GetUtf8ByteCount(largePayload):N0}");
-Console.WriteLine($"Payload exceeds 1 MiB: {GetUtf8ByteCount(largePayload) > OneMiB}");
-Console.WriteLine($"Externalize threshold bytes: {externalizeThresholdBytes:N0}");
-Console.WriteLine($"Instance ID: {instanceId}");
+app.MapPost("/api/largepayload/run", async (
+    RunLargePayloadRequest? request,
+    DurableTaskClient client,
+    BlobContainerClient payloadContainerClient,
+    LargePayloadRuntimeSettings settings,
+    CancellationToken cancellationToken) =>
+{
+    int requestedPayloadSizeBytes = request?.PayloadSizeBytes ?? settings.DefaultPayloadSizeBytes;
+    if (requestedPayloadSizeBytes <= 0)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(RunLargePayloadRequest.PayloadSizeBytes)] = ["PayloadSizeBytes must be a positive integer."],
+        });
+    }
 
-using CancellationTokenSource cancellationTokenSource = new(TimeSpan.FromMinutes(2));
-OrchestrationMetadata completed = await client.WaitForInstanceCompletionAsync(
-    instanceId,
-    getInputsAndOutputs: true,
-    cancellationTokenSource.Token);
+    int waitTimeoutSeconds = request?.WaitTimeoutSeconds ?? DefaultWaitTimeoutSeconds;
+    if (waitTimeoutSeconds <= 0)
+    {
+        return Results.ValidationProblem(new Dictionary<string, string[]>
+        {
+            [nameof(RunLargePayloadRequest.WaitTimeoutSeconds)] = ["WaitTimeoutSeconds must be a positive integer."],
+        });
+    }
 
-string echoedPayload = completed.ReadOutputAs<string>() ?? string.Empty;
-int payloadBlobCountAfterRun = await GetBlobCountAsync(payloadContainerClient);
-int newPayloadBlobCount = payloadBlobCountAfterRun - payloadBlobCountBeforeRun;
+    string largePayload = CreatePayload(requestedPayloadSizeBytes);
+    PayloadContainerStats payloadStatsBeforeRun = await GetPayloadContainerStatsAsync(payloadContainerClient, cancellationToken);
+    string instanceId = await client.ScheduleNewOrchestrationInstanceAsync(OrchestrationName, largePayload);
+    string statusQueryGetUri = $"/api/largepayload/instances/{instanceId}";
 
-Console.WriteLine($"Runtime status: {completed.RuntimeStatus}");
-Console.WriteLine($"Payload blobs added during run: {newPayloadBlobCount}");
-Console.WriteLine($"Payload offload observed: {newPayloadBlobCount > 0}");
-Console.WriteLine($"Output bytes: {GetUtf8ByteCount(echoedPayload):N0}");
-Console.WriteLine($"Round-trip payload matched: {string.Equals(largePayload, echoedPayload, StringComparison.Ordinal)}");
-Console.WriteLine($"List blobs in {payloadStorageSettings.ContainerName} to verify payload offload.");
+    app.Logger.LogInformation(
+        "Started large payload verification. InstanceId={InstanceId}, PayloadBytes={PayloadBytes}, ThresholdBytes={ThresholdBytes}",
+        instanceId,
+        requestedPayloadSizeBytes,
+        settings.ExternalizeThresholdBytes);
 
-await host.StopAsync();
+    using CancellationTokenSource waitForCompletionSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+    waitForCompletionSource.CancelAfter(TimeSpan.FromSeconds(waitTimeoutSeconds));
+
+    try
+    {
+        OrchestrationMetadata completed = await client.WaitForInstanceCompletionAsync(
+            instanceId,
+            getInputsAndOutputs: true,
+            waitForCompletionSource.Token);
+
+        string echoedPayload = completed.ReadOutputAs<string>() ?? string.Empty;
+        PayloadContainerStats payloadStatsAfterRun = await GetPayloadContainerStatsAsync(payloadContainerClient, cancellationToken);
+        int newPayloadBlobCount = payloadStatsAfterRun.Count - payloadStatsBeforeRun.Count;
+        long newStoredPayloadBytes = payloadStatsAfterRun.TotalStoredBytes - payloadStatsBeforeRun.TotalStoredBytes;
+        bool payloadsMatch = string.Equals(largePayload, echoedPayload, StringComparison.Ordinal);
+
+        app.Logger.LogInformation(
+            "Completed large payload verification. InstanceId={InstanceId}, RuntimeStatus={RuntimeStatus}, OffloadObserved={OffloadObserved}, StoredPayloadBytesAdded={StoredPayloadBytesAdded}, PayloadMatched={PayloadMatched}",
+            instanceId,
+            completed.RuntimeStatus,
+            newPayloadBlobCount > 0,
+            newStoredPayloadBytes,
+            payloadsMatch);
+
+        return Results.Ok(new RunLargePayloadResponse(
+            InstanceId: instanceId,
+            RuntimeStatus: completed.RuntimeStatus.ToString(),
+            RequestedPayloadBytes: GetUtf8ByteCount(largePayload),
+            PayloadExceedsOneMiB: GetUtf8ByteCount(largePayload) > OneMiB,
+            ExternalizeThresholdBytes: settings.ExternalizeThresholdBytes,
+            PayloadContainerName: settings.PayloadContainerName,
+            PayloadBlobCountBeforeRun: payloadStatsBeforeRun.Count,
+            PayloadBlobCountAfterRun: payloadStatsAfterRun.Count,
+            PayloadBlobsAddedDuringRun: newPayloadBlobCount,
+            PayloadStoredBytesBeforeRun: payloadStatsBeforeRun.TotalStoredBytes,
+            PayloadStoredBytesAfterRun: payloadStatsAfterRun.TotalStoredBytes,
+            PayloadStoredBytesAddedDuringRun: newStoredPayloadBytes,
+            PayloadOffloadObserved: newPayloadBlobCount > 0,
+            OutputBytes: GetUtf8ByteCount(echoedPayload),
+            RoundTripPayloadMatched: payloadsMatch,
+            StatusQueryGetUri: statusQueryGetUri));
+    }
+    catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+    {
+        app.Logger.LogWarning(
+            "Large payload verification timed out while waiting for completion. InstanceId={InstanceId}, WaitTimeoutSeconds={WaitTimeoutSeconds}",
+            instanceId,
+            waitTimeoutSeconds);
+
+        return Results.Accepted(
+            uri: statusQueryGetUri,
+            value: new AcceptedRunResponse(
+                InstanceId: instanceId,
+                RuntimeStatus: "Running",
+                RequestedPayloadBytes: GetUtf8ByteCount(largePayload),
+                PayloadExceedsOneMiB: GetUtf8ByteCount(largePayload) > OneMiB,
+                ExternalizeThresholdBytes: settings.ExternalizeThresholdBytes,
+                PayloadContainerName: settings.PayloadContainerName,
+                WaitTimeoutSeconds: waitTimeoutSeconds,
+                StatusQueryGetUri: statusQueryGetUri));
+    }
+});
+
+app.MapGet("/api/largepayload/instances/{instanceId}", async (
+    string instanceId,
+    DurableTaskClient client,
+    BlobContainerClient payloadContainerClient,
+    LargePayloadRuntimeSettings settings,
+    CancellationToken cancellationToken) =>
+{
+    OrchestrationMetadata? metadata = await client.GetInstanceAsync(instanceId, getInputsAndOutputs: true, cancellationToken);
+    if (metadata is null)
+    {
+        return Results.NotFound();
+    }
+
+    string? output = metadata.RuntimeStatus == OrchestrationRuntimeStatus.Completed
+        ? metadata.ReadOutputAs<string>()
+        : null;
+
+    int? outputBytes = output is not null ? GetUtf8ByteCount(output) : null;
+    PayloadContainerStats payloadStats = await GetPayloadContainerStatsAsync(payloadContainerClient, cancellationToken);
+
+    return Results.Ok(new LargePayloadStatusResponse(
+        InstanceId: metadata.InstanceId,
+        RuntimeStatus: metadata.RuntimeStatus.ToString(),
+        CreatedAt: metadata.CreatedAt,
+        PayloadContainerName: settings.PayloadContainerName,
+        CurrentPayloadBlobCount: payloadStats.Count,
+        CurrentPayloadStoredBytes: payloadStats.TotalStoredBytes,
+        OutputBytes: outputBytes,
+        FailureMessage: metadata.FailureDetails?.ErrorMessage));
+});
+
+app.Run();
 
 static TokenCredential CreateCredential(IConfiguration configuration)
 {
@@ -145,23 +273,39 @@ static BlobContainerClient CreatePayloadContainerClient(PayloadStorageSettings p
     return blobServiceClient.GetBlobContainerClient(payloadStorageSettings.ContainerName);
 }
 
-static async Task<int> GetBlobCountAsync(BlobContainerClient blobContainerClient)
+static async Task<PayloadContainerStats> GetPayloadContainerStatsAsync(BlobContainerClient blobContainerClient, CancellationToken cancellationToken)
 {
-    if (!await blobContainerClient.ExistsAsync())
+    if (!await blobContainerClient.ExistsAsync(cancellationToken))
     {
-        return 0;
+        return new PayloadContainerStats(0, 0);
     }
 
     int count = 0;
-    await foreach (var _ in blobContainerClient.GetBlobsAsync())
+    long totalStoredBytes = 0;
+    await foreach (BlobItem blob in blobContainerClient.GetBlobsAsync(cancellationToken: cancellationToken))
     {
         count++;
+        totalStoredBytes += blob.Properties.ContentLength ?? 0;
     }
 
-    return count;
+    return new PayloadContainerStats(count, totalStoredBytes);
 }
 
-static string CreatePayload(int payloadSizeBytes) => new('B', payloadSizeBytes);
+static string CreatePayload(int payloadSizeBytes)
+{
+    // Use a deterministic, low-compressibility payload so the stored blob sizes stay representative.
+    return string.Create(payloadSizeBytes, 0x00C0FFEEu, static (span, seed) =>
+    {
+        const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        uint state = seed;
+
+        for (int i = 0; i < span.Length; i++)
+        {
+            state = (state * 1664525) + 1013904223;
+            span[i] = Alphabet[(int)(state >> 26)];
+        }
+    });
+}
 
 static int GetPositiveInt(IConfiguration configuration, string key, int defaultValue)
 {
@@ -213,3 +357,64 @@ sealed record PayloadStorageSettings(
     string? ConnectionString,
     Uri? AccountUri,
     TokenCredential? Credential);
+
+sealed record LargePayloadRuntimeSettings(
+    int DefaultPayloadSizeBytes,
+    int ExternalizeThresholdBytes,
+    string PayloadContainerName);
+
+sealed record PayloadContainerStats(
+    int Count,
+    long TotalStoredBytes);
+
+sealed record SampleInfoResponse(
+    string Name,
+    string Description,
+    int DefaultPayloadSizeBytes,
+    int ExternalizeThresholdBytes,
+    string PayloadContainerName,
+    string RunEndpoint,
+    string StatusEndpointTemplate,
+    string HealthEndpoint);
+
+sealed record RunLargePayloadRequest(
+    int? PayloadSizeBytes,
+    int? WaitTimeoutSeconds);
+
+sealed record RunLargePayloadResponse(
+    string InstanceId,
+    string RuntimeStatus,
+    int RequestedPayloadBytes,
+    bool PayloadExceedsOneMiB,
+    int ExternalizeThresholdBytes,
+    string PayloadContainerName,
+    int PayloadBlobCountBeforeRun,
+    int PayloadBlobCountAfterRun,
+    int PayloadBlobsAddedDuringRun,
+    long PayloadStoredBytesBeforeRun,
+    long PayloadStoredBytesAfterRun,
+    long PayloadStoredBytesAddedDuringRun,
+    bool PayloadOffloadObserved,
+    int OutputBytes,
+    bool RoundTripPayloadMatched,
+    string StatusQueryGetUri);
+
+sealed record AcceptedRunResponse(
+    string InstanceId,
+    string RuntimeStatus,
+    int RequestedPayloadBytes,
+    bool PayloadExceedsOneMiB,
+    int ExternalizeThresholdBytes,
+    string PayloadContainerName,
+    int WaitTimeoutSeconds,
+    string StatusQueryGetUri);
+
+sealed record LargePayloadStatusResponse(
+    string InstanceId,
+    string RuntimeStatus,
+    DateTimeOffset CreatedAt,
+    string PayloadContainerName,
+    int CurrentPayloadBlobCount,
+    long CurrentPayloadStoredBytes,
+    int? OutputBytes,
+    string? FailureMessage);
