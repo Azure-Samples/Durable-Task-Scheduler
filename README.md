@@ -14,6 +14,7 @@
 - [Get Started in 5 Minutes](#-get-started-in-5-minutes)
 - [Choose Your Framework](#choose-your-framework)
 - [Samples](#samples)
+- [AI Recipes](#ai-recipes)
 - [Observability](#observability)
 - [API Reference](#api-reference)
 - [AI-Assisted Development](#ai-assisted-development)
@@ -21,15 +22,16 @@
 - [Community & Support](#community--support)
 
 ---
+
 ## What is Durable Task?
 
-[Durable Task](http://aka.ms/durabletask) is Microsoft's technology for building workflows and orchestrations as ordinary code that automatically survives failures. Instead of managing complex retry logic, state machines, or message queues, you express your business logic as straightforward functions - Durable Task handles state persistence, automatic recovery, and distributed coordination for you. 
+[Durable Task](http://aka.ms/durabletask) is Microsoft's technology for building workflows and orchestrations as ordinary code that automatically survives failures. Instead of managing complex retry logic, state machines, or message queues, you express your business logic as straightforward functions - Durable Task handles state persistence, automatic recovery, and distributed coordination for you.
 
 Workflows can run for hours, days, or even months, reliably resuming from the last completed step after any crash, restart, or redeployment. Common use cases include distributed transactions, multi-agent AI orchestration, data processing pipelines, and infrastructure management.
 
 Durable Task encompasses the Durable Task SDKs for self-hosted applications, [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview) for serverless hosting on Azure Functions, and the [Durable Task Scheduler](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler) - a fully managed backend service purpose-built for durable workloads.
 
-#### What is Durable Execution?
+### What is Durable Execution?
 
 Durable execution is an industry-wide approach to making ordinary code fault-tolerant by automatically persisting its progress.
 
@@ -63,7 +65,7 @@ docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:lates
 ### Step 2: Pick your language and run a sample
 
 | Language | Quickstart Sample | Run Command |
-|----------|-------------------|-------------|
+| ---------- | ------------------- | ------------- |
 | .NET | Function Chaining | `cd samples/durable-task-sdks/dotnet/FunctionChaining/Worker && dotnet run` |
 | Python | Function Chaining | `cd samples/durable-task-sdks/python/function-chaining && pip install -r requirements.txt && python worker.py` |
 | Java | Function Chaining | `cd samples/durable-task-sdks/java/function-chaining && ./gradlew runChainingPattern` |
@@ -78,7 +80,7 @@ Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestra
 ## Choose Your Framework
 
 | | Durable Functions | Durable Task SDKs |
-|---|---|---|
+| --- | --- | --- |
 | **Best for** | Serverless event-driven apps | Any compute (containers, VMs, etc.) |
 | **Hosting** | Azure Functions | Any host (ACA, AKS, App Service, VMs) |
 | **Triggers** | HTTP, Timer, Queue, etc. | Self-managed |
@@ -104,6 +106,24 @@ Explore production-ready examples across languages and frameworks.
 🛒 **[Order Processor](./samples/durable-functions/dotnet/OrderProcessor)** - End-to-end order workflow with inventory, payment, and notifications (Durable Functions, .NET)
 
 🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga)** - Distributed transactions with compensating actions for failure recovery (Durable Functions, .NET)
+
+### AI Recipes
+
+Step-by-step patterns for building durable AI applications — from tool-calling agents to multi-agent orchestrations. Each recipe includes an **OpenAI SDK** and/or **GitHub Copilot SDK** variant.
+
+📂 [**Full AI Recipe Catalog →**](./ai-recipes/README.md)
+
+| # | Recipe | What You'll Learn | Key Patterns |
+| --- | -------- | ------------------- | -------------- |
+| 01 | [Agentic Loop](./ai-recipes/01-agentic-loop/) | Build an autonomous tool-calling agent | While-loop, dynamic activities |
+| 02 | [Human-in-the-Loop](./ai-recipes/02-human-in-the-loop/) | Pause agents for human approval | External events, durable timers |
+| 03 | [Durable MCP Tools](./ai-recipes/03-durable-mcp-tools/) | Back MCP tools with durable workflows | FastMCP + orchestrations |
+| 04 | [RAG Pipeline](./ai-recipes/04-rag-pipeline/) | Parallel retrieval + LLM generation | Fan-out/fan-in |
+| 05 | [Structured Outputs](./ai-recipes/05-structured-outputs/) | Validate LLM output with Pydantic | Retry on validation failure |
+| 06 | [Deep Research](./ai-recipes/06-deep-research/) | Multi-step iterative research agent | Sub-orchestrations, tool calling |
+| 07 | [Multi-Agent](./ai-recipes/07-multi-agent/) | Coordinate multiple AI agents | Sub-orchestrations, durable entities |
+| 08 | [Durable Agent Session](./ai-recipes/08-durable-agent-session/) | Crash-resilient multi-turn agent | Copilot SDK + session persistence |
+| 09 | [Scheduled Agent](./ai-recipes/09-scheduled-agent/) | Timer-triggered agent runs | Eternal orchestrations, continue-as-new |
 
 ---
 
@@ -136,7 +156,7 @@ The Durable Task Scheduler provides a **built-in dashboard** for monitoring orch
 This repository includes specialized skills for AI coding assistants ([GitHub Copilot](https://github.com/features/copilot), [Claude Code](https://claude.ai/code)) to help you build durable workflows with best practices, code patterns, and contextual guidance.
 
 | Skill | Description | Path |
-|-------|-------------|------|
+| ------- | ------------- | ------ |
 | **durable-functions-dotnet** | Durable Functions with .NET isolated worker - orchestrations, activities, entities, and all workflow patterns | [Skill →](.github/skills/durable-functions-dotnet/SKILL.md) |
 | **durable-task-dotnet** | Durable Task SDK for .NET - portable orchestrations without Azure Functions dependency | [Skill →](.github/skills/durable-task-dotnet/SKILL.md) |
 | **durable-task-java** | Durable Task SDK for Java - orchestrations, activities, and common workflow patterns | [Skill →](.github/skills/durable-task-java/SKILL.md) |

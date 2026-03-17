@@ -1,0 +1,3 @@
+durabletask>=0.3.0
+durabletask-azuremanaged>=0.3.0
+github-copilot-sdk

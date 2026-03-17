@@ -1,0 +1,5 @@
+durabletask>=0.3.0
+durabletask-azuremanaged>=0.3.0
+fastmcp>=0.1.0
+httpx>=0.27.0
+python-dotenv>=1.0.0

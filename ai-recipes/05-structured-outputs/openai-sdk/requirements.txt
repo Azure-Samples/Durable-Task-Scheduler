@@ -1,0 +1,6 @@
+durabletask>=0.3.0
+durabletask-azuremanaged>=0.3.0
+openai>=1.60.0
+pydantic>=2.0
+pydantic[email]
+python-dotenv>=1.0.0

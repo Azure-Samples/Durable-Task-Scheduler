@@ -1,0 +1,4 @@
+durabletask>=0.3.0
+durabletask-azuremanaged>=0.3.0
+github-copilot-sdk>=0.1.0
+pydantic>=2.0

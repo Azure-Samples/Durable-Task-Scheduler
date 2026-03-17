@@ -437,3 +437,9 @@ out/
 **/infra/**/*.json
 !**/infra/**/*.parameters.json
 !**/infra/**/abbreviations.json
+
+# Environment and secrets files
+.env
+.secrets
+*.secrets
+.venv
