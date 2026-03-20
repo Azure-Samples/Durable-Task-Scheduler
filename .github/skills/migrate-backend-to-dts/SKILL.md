@@ -1,5 +1,5 @@
 ---
-name: durable-functions-migration
+name: migrate-backend-to-dts
 description: Migrate existing Azure Durable Functions apps from existing backend storage providers (Azure Storage, Netherite, MSSQL) to the Durable Task Scheduler. Use when switching backends, converting to azureManaged storage provider, upgrading from Azure Storage default provider, migrating from Netherite Event Hubs-based backend, migrating from Microsoft SQL Server backend, or modernizing Durable Functions infrastructure. Applies to .NET, Python, JavaScript/TypeScript, and Java Durable Functions apps that need to adopt the managed Durable Task Scheduler service.
 ---
 
