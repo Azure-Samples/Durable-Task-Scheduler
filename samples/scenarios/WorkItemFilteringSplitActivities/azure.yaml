@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+metadata:
+  template: work-item-filtering-split-activities-dotnet
+name: work-item-filtering-split-activities
+services:
+  client:
+    project: ./src/Client
+    language: csharp
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
+  orchestrator-worker:
+    project: ./src/OrchestratorWorker
+    language: csharp
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
+  validator-worker:
+    project: ./src/ValidatorWorker
+    language: csharp
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
+  shipper-worker:
+    project: ./src/ShipperWorker
+    language: csharp
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
