@@ -41,6 +41,7 @@ Each sample demonstrates a different orchestration pattern:
 - **human-interaction**: Integration of human approval steps in orchestrations
 - **monitoring**: Monitoring and tracking orchestration progress
 - **sub-orchestrations**: Composing multiple orchestrations hierarchically
+- **entities**: Stateful entities that maintain state across operations (counter example)
 
 ## Running the Samples
 
@@ -77,6 +78,10 @@ cd monitoring
 # For sub-orchestrations sample
 cd sub-orchestrations
 ./gradlew runSubOrchestrationPattern
+
+# For entities sample
+cd entities
+./gradlew runEntitiesPattern
 ```
 
 ## Testing 
