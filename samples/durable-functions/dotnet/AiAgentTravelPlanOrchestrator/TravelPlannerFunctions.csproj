@@ -11,7 +11,7 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Azure.AI.Projects" Version="1.1.0" />
     <PackageReference Include="Azure.AI.Agents.Persistent" Version="1.1.0" />
-    <PackageReference Include="Azure.Identity" Version="1.17.1" />
+    <PackageReference Include="Azure.Identity" Version="1.20.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
     <PackageReference Include="Azure.Storage.Queues" Version="12.25.0" />
     <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.51.0" />
