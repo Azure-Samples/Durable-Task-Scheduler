@@ -45,6 +45,14 @@
                 <groupId>com.microsoft.azure</groupId>
                 <artifactId>azure-functions-maven-plugin</artifactId>
                 <version>${azure.functions.maven.plugin.version}</version>
+                <executions>
+                    <execution>
+                        <id>package-functions</id>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                    </execution>
+                </executions>
                 <configuration>
                     <appName>durable-functions-hello-cities</appName>
                     <resourceGroup>java-functions-group</resourceGroup>

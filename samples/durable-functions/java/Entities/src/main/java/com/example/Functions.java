@@ -130,13 +130,7 @@ public class Functions {
         Integer state = metadata.readStateAs(Integer.class);
         return request.createResponseBuilder(HttpStatus.OK)
             .header("Content-Type", "application/json")
-            .body(String.format("{\"key\":\"%s\",\"value\":%d}", escapeJson(entityKey), state))
+            .body("{\"key\": \"" + entityKey + "\", \"value\": " + state + "}")
             .build();
-    }
-
-    private static String escapeJson(String value) {
-        return value
-            .replace("\\", "\\\\")
-            .replace("\"", "\\\"");
     }
 }
