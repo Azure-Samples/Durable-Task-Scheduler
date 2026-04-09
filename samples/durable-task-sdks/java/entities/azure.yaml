@@ -1,0 +1,15 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+metadata:
+  template: entities-java
+name: dts-entities
+infra:
+  path: ../../../infra
+services:
+  sampleapp:
+    project: .
+    language: java
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile

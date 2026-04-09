@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.example</groupId>
-    <artifactId>durable-functions-hello-cities</artifactId>
+    <artifactId>durable-functions-entities</artifactId>
     <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
@@ -14,7 +14,7 @@
         <java.version>11</java.version>
         <azure.functions.maven.plugin.version>1.41.0</azure.functions.maven.plugin.version>
         <azure.functions.java.library.version>3.2.4</azure.functions.java.library.version>
-        <durabletask.azure.functions.version>1.8.0</durabletask.azure.functions.version>
+        <durabletask.azure.functions.version>1.9.0</durabletask.azure.functions.version>
     </properties>
 
     <dependencies>
@@ -54,7 +54,7 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <appName>durable-functions-hello-cities</appName>
+                    <appName>durable-functions-entities</appName>
                     <resourceGroup>java-functions-group</resourceGroup>
                     <appServicePlanName>java-functions-app-service-plan</appServicePlanName>
                     <region>westus2</region>

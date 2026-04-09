@@ -1,0 +1,27 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+
+### Signal the counter entity: add 10
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=add&value=10
+
+### Signal the counter entity: add 5
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=add&value=5
+
+### Signal the counter entity: subtract 3
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=subtract&value=3
+
+### Signal the counter entity: reset
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=reset
+
+### Get the current counter value
+GET http://localhost:7071/api/GetCounter?key=my-counter
+
+### Start the counter orchestration
+POST http://localhost:7071/api/StartCounterOrchestration?key=my-orch-counter
+
+### Check orchestration status
+# Copy the statusQueryGetUri from the StartCounterOrchestration response above
+# and paste it below (it includes the required system key):
+GET http://localhost:7071/runtime/webhooks/durabletask/instances/{instanceId}?code={systemKey}
+
+### Get the orchestration-managed counter value
+GET http://localhost:7071/api/GetCounter?key=my-orch-counter
