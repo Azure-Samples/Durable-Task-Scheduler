@@ -1,0 +1,2 @@
+durabletask-azuremanaged[azure-blob-payloads]
+azure-identity
