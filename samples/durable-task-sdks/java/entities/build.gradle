@@ -25,8 +25,8 @@ task runEntitiesPattern(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.9.0")
-    implementation("com.microsoft:durabletask-azuremanaged:1.9.0")
+    implementation("com.microsoft:durabletask-client:1.9.1")
+    implementation("com.microsoft:durabletask-azuremanaged:1.9.1")
 
     // Logging dependencies
     implementation 'ch.qos.logback:logback-classic:1.5.32'
