@@ -119,7 +119,7 @@ Update `local.settings.json` to use a real LLM instead of the echo fallback:
 {
   "Values": {
     "AZURE_OPENAI_ENDPOINT": "https://<your-resource>.openai.azure.com",
-    "AZURE_OPENAI_DEPLOYMENT": "gpt-4o"
+    "AZURE_OPENAI_DEPLOYMENT": "<your-deployment-name>"
   }
 }
 ```

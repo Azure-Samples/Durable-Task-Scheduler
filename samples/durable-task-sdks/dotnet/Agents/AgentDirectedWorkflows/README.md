@@ -119,7 +119,7 @@ Set environment variables to use a real LLM instead of the echo fallback:
 
 ```bash
 export AZURE_OPENAI_ENDPOINT="https://<your-resource>.openai.azure.com"
-export AZURE_OPENAI_DEPLOYMENT="gpt-4o"
+export AZURE_OPENAI_DEPLOYMENT="<your-deployment-name>"
 ```
 
 The sample uses `DefaultAzureCredential` for authentication — make sure you're signed in via `az login`.
