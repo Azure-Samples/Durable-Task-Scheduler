@@ -53,6 +53,15 @@ Durable execution is an industry-wide approach to making ordinary code fault-tol
 
 ## ⚡ Get Started in 5 Minutes
 
+### Step 0: Clone the repo
+
+```bash
+git clone --recurse-submodules https://github.com/Azure-Samples/Durable-Task-Scheduler.git
+cd Durable-Task-Scheduler
+```
+
+> **Note:** The `--recurse-submodules` flag is needed to pull sample code from linked repositories. If you already cloned without it, run: `git submodule update --init --recursive`
+
 ### Step 1: Start the emulator
 
 ```bash

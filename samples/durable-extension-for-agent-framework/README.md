@@ -105,7 +105,13 @@ dotnet/
 
 ### First-time setup
 
-After cloning this repo, initialize the submodule to pull the sample code:
+Clone this repo with submodules to pull the sample code:
+
+```bash
+git clone --recurse-submodules https://github.com/Azure-Samples/Durable-Task-Scheduler.git
+```
+
+If you've already cloned without submodules, initialize them separately:
 
 ```bash
 git submodule update --init external/agent-framework
