@@ -105,6 +105,8 @@ Explore production-ready examples across languages and frameworks.
 
 🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga)** - Distributed transactions with compensating actions for failure recovery (Durable Functions, .NET)
 
+🧩 **[Durable Extension for Microsoft Agent Framework](./samples/durable-extension-for-agent-framework/)** - Make any [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) agent durable with persistent sessions, multi-agent orchestrations, and graph-based workflows (.NET, Python)
+
 ---
 
 ## Observability

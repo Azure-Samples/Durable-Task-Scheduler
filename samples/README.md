@@ -157,6 +157,47 @@ A quick-reference matrix showing which patterns are available in each language a
 
 ---
 
+## Durable Extension for Microsoft Agent Framework
+
+The [Durable Task extension for Microsoft Agent Framework](https://learn.microsoft.com/azure/durable-task/sdks/durable-agents-microsoft-agent-framework) lets you make any [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) agent durable with persistent sessions, built-in API endpoints, and distributed scaling — without changes to your agent logic. It also supports graph-based workflows via `WorkflowBuilder`.
+
+> **Setup:** These samples live in the `microsoft/agent-framework` repo and are included here via a Git submodule. Run `git submodule update --init external/agent-framework` after cloning.
+
+📂 **[Full details and sample index →](./durable-extension-for-agent-framework/)**
+
+### Durable Agents (.NET)
+
+| Sample | Hosting | Description |
+|--------|---------|-------------|
+| [Single Agent](./durable-extension-for-agent-framework/dotnet/hosting/azure-functions/01-SingleAgent) | Azure Functions | Basic durable agent with persistent sessions |
+| [Orchestration Chaining](./durable-extension-for-agent-framework/dotnet/hosting/azure-functions/02-OrchestrationChaining) | Azure Functions | Multi-agent sequential orchestration |
+| [Orchestration Concurrency](./durable-extension-for-agent-framework/dotnet/hosting/azure-functions/03-OrchestrationConcurrency) | Azure Functions | Parallel agent execution (fan-out/fan-in) |
+| [Orchestration Conditionals](./durable-extension-for-agent-framework/dotnet/hosting/azure-functions/04-OrchestrationConditionals) | Azure Functions | Conditional routing between agents |
+| [Human-in-the-Loop](./durable-extension-for-agent-framework/dotnet/hosting/azure-functions/05-HumanInTheLoop) | Azure Functions | Agent pauses for human approval |
+| [Reliable Streaming](./durable-extension-for-agent-framework/dotnet/hosting/azure-functions/06-ReliableStreaming) | Azure Functions | Real-time token streaming with durability |
+| [Single Agent](./durable-extension-for-agent-framework/dotnet/hosting/console-apps/01-SingleAgent) | Console App | Same pattern without Azure Functions |
+
+### Durable MAF Workflows (.NET)
+
+| Sample | Hosting | Description |
+|--------|---------|-------------|
+| [Sequential](./durable-extension-for-agent-framework/dotnet/durable-maf-workflows/azure-functions/01-Sequential) | Azure Functions | Order cancellation pipeline: look up → cancel → notify |
+| [Concurrent](./durable-extension-for-agent-framework/dotnet/durable-maf-workflows/azure-functions/02-Concurrent) | Azure Functions | Fan-out to multiple expert agents, fan-in to aggregate |
+| [Human-in-the-Loop](./durable-extension-for-agent-framework/dotnet/durable-maf-workflows/azure-functions/03-HumanInTheLoop) | Azure Functions | Expense reimbursement with multi-stage approvals |
+| [Sequential](./durable-extension-for-agent-framework/dotnet/durable-maf-workflows/console-apps/01-Sequential) | Console App | Sequential executor pipeline |
+| [Conditional Edges](./durable-extension-for-agent-framework/dotnet/durable-maf-workflows/console-apps/03-ConditionalEdges) | Console App | Runtime routing based on conditions |
+
+### Durable Agents (Python)
+
+| Sample | Hosting | Description |
+|--------|---------|-------------|
+| [Single Agent](./durable-extension-for-agent-framework/python/hosting/azure-functions/01-single-agent) | Azure Functions | Basic durable agent with persistent sessions |
+| [Multi-Agent Orchestration](./durable-extension-for-agent-framework/python/hosting/azure-functions/02-multi-agent-orchestration) | Azure Functions | Multiple agents in a durable orchestration |
+| [Tool Calling](./durable-extension-for-agent-framework/python/hosting/azure-functions/03-tool-calling) | Azure Functions | Agent with function tools |
+| [Single Agent](./durable-extension-for-agent-framework/python/hosting/durable-task/01-single-agent) | Durable Task SDK | Agent hosted with DT SDK directly |
+
+---
+
 ## Scenarios
 
 | Sample | Description |
