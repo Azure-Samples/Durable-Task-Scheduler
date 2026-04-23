@@ -15,7 +15,7 @@
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       },
       "tracing": {
