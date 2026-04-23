@@ -100,7 +100,7 @@ Or explicitly:
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       }
     }
@@ -207,7 +207,7 @@ High-throughput backend built on Azure Event Hubs and FASTER.
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       }
     }
@@ -305,7 +305,7 @@ Backend using SQL Server for orchestration state storage.
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       }
     }

@@ -184,9 +184,7 @@ Remove your old `storageProvider` block and replace it with the DTS configuratio
 
 For Python, JavaScript, and Java apps, migration is **configuration-only** — no code changes or package changes are required. You only need to update `host.json`.
 
-There are two key differences from .NET:
-1. The storage provider type is `"durabletask-scheduler"` (not `"azureManaged"`)
-2. The extension bundle must be updated to the Preview bundle
+There is one key difference from .NET: the extension bundle must be updated to the Preview bundle.
 
 #### Python — Migrating from Azure Storage (default)
 
@@ -217,7 +215,7 @@ There are two key differences from .NET:
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       }
     }
@@ -276,7 +274,7 @@ azure-functions-durable
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       }
     }
@@ -339,7 +337,7 @@ azure-functions-durable
     "durableTask": {
       "hubName": "default",
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING"
       }
     }
@@ -502,7 +500,7 @@ If your orchestrations pass large inputs/outputs (>10 KB), enable large payload 
   "extensions": {
     "durableTask": {
       "storageProvider": {
-        "type": "durabletask-scheduler",
+        "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING",
         "largePayloadStorageEnabled": true,
         "largePayloadStorageThresholdBytes": 10240
@@ -584,7 +582,7 @@ Durable Entities are supported on DTS with .NET isolated worker. No code changes
 
 - [ ] All in-flight orchestrations drained or terminated
 - [ ] .NET app uses isolated worker model (not in-process)
-- [ ] `host.json` updated with `azureManaged` (or `durabletask-scheduler`) storage provider
+- [ ] `host.json` updated with `azureManaged` storage provider
 - [ ] Extension bundle updated to Preview (non-.NET only)
 - [ ] Old backend NuGet packages removed (.NET only)
 - [ ] `Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged` added (.NET only)

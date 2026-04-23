@@ -285,7 +285,7 @@ az role assignment list --assignee <principal-id> --scope <scheduler-resource-id
 
 ### Orchestrations Not Starting
 
-1. Verify `host.json` has correct `storageProvider.type` (`azureManaged` for .NET, `durabletask-scheduler` for other languages)
+1. Verify `host.json` has correct `storageProvider.type` (`azureManaged`)
 2. Verify connection string is accessible (check app settings)
 3. Check Function App logs for connection errors
 4. Verify task hub exists in the scheduler resource
