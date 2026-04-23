@@ -1,0 +1,24 @@
+{
+  "version": "2.0",
+  "logging": {
+    "applicationInsights": {
+      "samplingSettings": {
+        "isEnabled": true,
+        "excludedTypes": "Request"
+      },
+      "enableLiveMetricsFilters": true
+    },
+    "logLevel": {
+      "DurableTask.AzureManagedBackend": "Information"
+    }
+  },
+  "extensions": {
+    "durableTask": {
+      "storageProvider": {
+        "type": "azureManaged",
+        "connectionStringName": "DurableTaskSchedulerConnection"
+      },
+      "hubName": "%TASKHUB_NAME%"
+    }
+  }
+}
