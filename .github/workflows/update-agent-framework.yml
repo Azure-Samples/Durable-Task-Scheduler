@@ -1,0 +1,48 @@
+name: Update agent-framework submodule
+
+on:
+  schedule:
+    - cron: '0 9 * * 1' # Every Monday at 9:00 AM UTC
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-submodule:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update submodule to latest
+        run: |
+          cd external/agent-framework
+          git fetch origin main
+          git checkout origin/main
+          cd ../..
+
+      - name: Check for changes
+        id: check
+        run: |
+          if git diff --quiet external/agent-framework; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.check.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "Update agent-framework submodule to latest"
+          title: "Update agent-framework submodule"
+          body: |
+            Automated weekly update of the `external/agent-framework` submodule to the latest commit on `main`.
+
+            This keeps the symlinked samples under `samples/durable-extension-for-agent-framework/` in sync with the upstream [microsoft/agent-framework](https://github.com/microsoft/agent-framework) repo.
+          branch: automation/update-agent-framework
+          delete-branch: true
