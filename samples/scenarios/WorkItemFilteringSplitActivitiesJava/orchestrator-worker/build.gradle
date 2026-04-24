@@ -1,0 +1,7 @@
+application {
+    mainClass = 'io.durabletask.samples.OrchestratorWorker'
+}
+
+dependencies {
+    implementation project(':shared')
+}

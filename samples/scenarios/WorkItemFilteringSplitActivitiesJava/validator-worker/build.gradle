@@ -1,0 +1,7 @@
+application {
+    mainClass = 'io.durabletask.samples.ValidatorWorker'
+}
+
+dependencies {
+    implementation project(':shared')
+}
