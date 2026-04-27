@@ -1,0 +1,80 @@
+# =============================================================================
+# Work Item Filtering — Durable Functions (Python) Demo
+# =============================================================================
+#
+# Prerequisites:
+#   1. DTS emulator: docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+#   2. Azurite:      docker run -d -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
+#   3. App running:  python -m venv .venv && .venv/Scripts/activate && pip install -r requirements.txt && func start
+#
+# Registered functions: greeting_orchestration, fan_out_orchestration,
+#   parent_orchestration, counter_orchestration, say_hello, counter_entity
+# =============================================================================
+
+@baseUrl = http://localhost:7071/api
+
+
+# --- TEST 1: Simple orchestration + activity ---
+# Expected: Completed with "Hello, World!"
+
+### Start greeting orchestration
+# @name greeting
+POST {{baseUrl}}/orchestrators/greeting
+
+### Check status (use statusQueryGetUri from response)
+GET {{baseUrl}}/instances/{{greeting.response.body.id}}
+
+
+# --- TEST 2: Fan-out/fan-in ---
+# Expected: Completed with ["Hello, Tokyo!", "Hello, London!", "Hello, Seattle!"]
+
+### Start fan-out orchestration
+# @name fanout
+POST {{baseUrl}}/orchestrators/fanout
+
+### Check status
+GET {{baseUrl}}/instances/{{fanout.response.body.id}}
+
+
+# --- TEST 3: Sub-orchestration ---
+# Expected: Completed with "Parent received: Hello, World!"
+
+### Start parent orchestration
+# @name parent
+POST {{baseUrl}}/orchestrators/parent
+
+### Check status
+GET {{baseUrl}}/instances/{{parent.response.body.id}}
+
+
+# --- TEST 4: Entity interaction ---
+# Expected: Completed with 30
+
+### Start counter orchestration
+# @name counter
+POST {{baseUrl}}/orchestrators/counter
+
+### Check status
+GET {{baseUrl}}/instances/{{counter.response.body.id}}
+
+
+# --- TEST 5: Filter isolation ---
+# Expected: Stays Pending (no worker has this function)
+
+### Start unknown orchestration
+# @name unknown
+POST {{baseUrl}}/start/SomeOtherOrchestration
+
+### Check — should be Pending
+GET {{baseUrl}}/instances/{{unknown.response.body.id}}
+
+
+# --- EXPECTED RESULTS ---
+#
+# | Test | Orchestration            | Status    | Why                       |
+# |------|--------------------------|-----------|---------------------------|
+# | 1    | greeting_orchestration   | Completed | Matches filter            |
+# | 2    | fan_out_orchestration    | Completed | Activities also filtered  |
+# | 3    | parent_orchestration     | Completed | Sub-orch also filtered    |
+# | 4    | counter_orchestration    | Completed | Entities also filtered    |
+# | 5    | SomeOtherOrchestration   | Pending   | No matching filter → held |
