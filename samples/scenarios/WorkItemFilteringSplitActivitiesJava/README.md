@@ -130,15 +130,15 @@ The client runs in a **continuous loop**, scheduling a batch of 3 orchestrations
 ### Validator Worker terminal (ValidateOrder only — no ShipOrder, no orchestrations)
 
 ```
-10:30:02 INFO  i.d.samples.ValidatorWorker - [Validator] Activity | Name=ValidateOrder | InstanceId=abc123 | Validating order 'ORD-B001-001'...
-10:30:02 INFO  i.d.samples.ValidatorWorker - [Validator] Activity | Name=ValidateOrder | InstanceId=abc123 | Result: Order ORD-B001-001 is valid
+10:30:02 INFO  i.d.samples.ValidatorWorker - [Validator] Activity | Name=ValidateOrder | Validating order 'ORD-B001-001'...
+10:30:02 INFO  i.d.samples.ValidatorWorker - [Validator] Activity | Name=ValidateOrder | Result: Order ORD-B001-001 is valid
 ```
 
 ### Shipper Worker terminal (ShipOrder only — no ValidateOrder, no orchestrations)
 
 ```
-10:30:02 INFO  i.d.samples.ShipperWorker - [Shipper] Activity | Name=ShipOrder | InstanceId=abc123 | Shipping order 'ORD-B001-001'...
-10:30:02 INFO  i.d.samples.ShipperWorker - [Shipper] Activity | Name=ShipOrder | InstanceId=abc123 | Result: Shipped with tracking TRACK-ORD-B001-001-4271
+10:30:02 INFO  i.d.samples.ShipperWorker - [Shipper] Activity | Name=ShipOrder | Shipping order 'ORD-B001-001'...
+10:30:02 INFO  i.d.samples.ShipperWorker - [Shipper] Activity | Name=ShipOrder | Result: Shipped with tracking TRACK-ORD-B001-001-4271
 ```
 
 **Key observation:** Each worker processes **only** its registered work item types. No cross-processing occurs.
