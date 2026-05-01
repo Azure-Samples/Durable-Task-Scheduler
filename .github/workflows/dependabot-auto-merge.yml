@@ -11,6 +11,7 @@ on:
 # Without this, auto-merge will merge the PR immediately with no CI gate.
 
 permissions:
+  contents: write
   pull-requests: write
 
 jobs:
