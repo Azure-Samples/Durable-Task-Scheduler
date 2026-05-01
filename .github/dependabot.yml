@@ -11,6 +11,10 @@ updates:
       - "/samples/scenarios/**"
     schedule:
       interval: "monthly"
+    groups:
+      nuget-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
 
   # Java (Maven)
   - package-ecosystem: "maven"
@@ -18,6 +22,10 @@ updates:
       - "/samples/durable-functions/java/**"
     schedule:
       interval: "monthly"
+    groups:
+      maven-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
 
   # Java (Gradle)
   - package-ecosystem: "gradle"
@@ -25,6 +33,10 @@ updates:
       - "/samples/durable-task-sdks/java/**"
     schedule:
       interval: "monthly"
+    groups:
+      gradle-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
 
   # Python (pip)
   - package-ecosystem: "pip"
@@ -33,6 +45,10 @@ updates:
       - "/samples/durable-functions/python/**"
     schedule:
       interval: "monthly"
+    groups:
+      pip-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
 
   # JavaScript (npm)
   - package-ecosystem: "npm"
@@ -41,12 +57,20 @@ updates:
       - "/samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/Frontend"
     schedule:
       interval: "monthly"
+    groups:
+      npm-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "monthly"
+    groups:
+      github-actions-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
 
   # Docker
   - package-ecosystem: "docker"
@@ -57,3 +81,7 @@ updates:
       - "/samples/durable-task-sdks/dotnet/FunctionChaining/**"
     schedule:
       interval: "monthly"
+    groups:
+      docker-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
