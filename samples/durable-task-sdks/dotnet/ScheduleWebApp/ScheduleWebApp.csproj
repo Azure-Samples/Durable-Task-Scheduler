@@ -9,15 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.17.1" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.3" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.3" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.7" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.7" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.21.0" />
-    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.21.0" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.24.1" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.24.1" />
     <PackageReference Include="Microsoft.DurableTask.ScheduledTasks" Version="1.21.0-preview.1" />
   </ItemGroup>
 </Project>

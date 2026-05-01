@@ -7,12 +7,12 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Azure.Identity" Version="1.18.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Azure.Storage.Blobs" Version="12.27.0" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.76.0" />
-    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.21.0" />
-    <PackageReference Include="Microsoft.DurableTask.Extensions.AzureBlobPayloads" Version="1.21.0" />
-    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.21.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.24.1" />
+    <PackageReference Include="Microsoft.DurableTask.Extensions.AzureBlobPayloads" Version="1.24.1" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.24.1" />
   </ItemGroup>
 
 </Project>
