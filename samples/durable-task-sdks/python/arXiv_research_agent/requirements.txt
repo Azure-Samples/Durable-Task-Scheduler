@@ -10,7 +10,7 @@ openai>=2.33.0
 azure-identity>=1.25.3
 
 # FastAPI for REST API
-fastapi>=0.109.0
+fastapi>=0.136.1
 uvicorn>=0.27.0
 
 # HTTP client
