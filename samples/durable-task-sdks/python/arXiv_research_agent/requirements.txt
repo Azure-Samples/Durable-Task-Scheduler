@@ -4,7 +4,7 @@
 durabletask-azuremanaged>=1.3.0
 
 # OpenAI SDK (Responses API)
-openai>=1.0.0
+openai>=2.33.0
 
 # Azure Identity for Entra ID authentication (optional)
 azure-identity>=1.25.3
