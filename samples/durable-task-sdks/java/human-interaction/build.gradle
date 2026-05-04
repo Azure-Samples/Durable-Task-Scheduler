@@ -10,7 +10,7 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
-def grpcVersion = '1.80.0'
+def grpcVersion = '1.81.0'
 base { archivesName = 'durabletask-samples' }
 
 repositories {
@@ -26,8 +26,8 @@ task runHumanInteraction(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.8.0")
-    implementation("com.microsoft:durabletask-azuremanaged:1.8.0")
+    implementation("com.microsoft:durabletask-client:1.9.0")
+    implementation("com.microsoft:durabletask-azuremanaged:1.9.0")
 
     // Logging dependencies
     implementation 'ch.qos.logback:logback-classic:1.5.32'
@@ -37,5 +37,5 @@ dependencies {
     implementation "io.grpc:grpc-protobuf:${grpcVersion}"
     implementation "io.grpc:grpc-stub:${grpcVersion}"
     runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
-    implementation 'com.azure:azure-identity:1.18.2'
+    implementation 'com.azure:azure-identity:1.18.3'
 }
