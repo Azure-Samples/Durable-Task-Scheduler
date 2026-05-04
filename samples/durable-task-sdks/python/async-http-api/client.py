@@ -2,18 +2,16 @@ import asyncio
 import logging
 import uuid
 import os
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel
-from azure.identity import DefaultAzureCredential
+from azure.identity.aio import DefaultAzureCredential
 from durabletask import client as durable_client
-from durabletask.azuremanaged.client import DurableTaskSchedulerClient
+from durabletask.azuremanaged.client import AsyncDurableTaskSchedulerClient
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Set up FastAPI app
-app = FastAPI(title="Durable Task Async HTTP API Sample")
 
 # Models for request and response
 class OperationRequest(BaseModel):
@@ -23,9 +21,6 @@ class OperationResponse(BaseModel):
     operation_id: str
     status_url: str
 
-# Dictionary to store client references
-client_cache = {}
-
 # Get environment variables for taskhub and endpoint with defaults
 TASKHUB = os.getenv("TASKHUB", "default")
 ENDPOINT = os.getenv("ENDPOINT", "http://localhost:8080")
@@ -33,18 +28,34 @@ ENDPOINT = os.getenv("ENDPOINT", "http://localhost:8080")
 print(f"Using taskhub: {TASKHUB}")
 print(f"Using endpoint: {ENDPOINT}")
 
-async def get_client():
-    """Get or create a Durable Task client."""
-    if "client" not in client_cache:
-        # Set credential to None for emulator, or DefaultAzureCredential for Azure
-        credential = None if ENDPOINT == "http://localhost:8080" else DefaultAzureCredential()
-        client_cache["client"] = DurableTaskSchedulerClient(
-            host_address=ENDPOINT, 
-            secure_channel=ENDPOINT != "http://localhost:8080",
-            taskhub=TASKHUB, 
-            token_credential=credential
-        )
-    return client_cache["client"]
+# Shared async client instance (managed by the app lifespan)
+_async_client: AsyncDurableTaskSchedulerClient | None = None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage the async client lifecycle with the FastAPI app."""
+    global _async_client
+    credential = None if ENDPOINT == "http://localhost:8080" else DefaultAzureCredential()
+    _async_client = AsyncDurableTaskSchedulerClient(
+        host_address=ENDPOINT,
+        secure_channel=ENDPOINT != "http://localhost:8080",
+        taskhub=TASKHUB,
+        token_credential=credential,
+    )
+    yield
+    await _async_client.close()
+    _async_client = None
+
+
+# Set up FastAPI app with lifespan
+app = FastAPI(title="Durable Task Async HTTP API Sample", lifespan=lifespan)
+
+
+async def get_client() -> AsyncDurableTaskSchedulerClient:
+    """Get the async Durable Task client."""
+    assert _async_client is not None, "Client not initialized — app not started"
+    return _async_client
 
 @app.post("/api/start-operation", response_model=OperationResponse)
 async def start_operation(request: OperationRequest):
@@ -65,8 +76,8 @@ async def start_operation(request: OperationRequest):
         "processing_time": request.processing_time
     }
     
-    # Schedule the orchestration
-    instance_id = client.schedule_new_orchestration(
+    # Schedule the orchestration using the async client
+    instance_id = await client.schedule_new_orchestration(
         "async_http_api_orchestrator", 
         input=input_data,
         instance_id=operation_id  # Use operation_id as instance_id for simplicity
@@ -91,8 +102,8 @@ async def get_operation_status(operation_id: str):
     # Get client
     client = await get_client()
     
-    # Get the orchestration status
-    status = client.get_orchestration_state(operation_id)
+    # Get the orchestration status using the async client
+    status = await client.get_orchestration_state(operation_id)
     
     if not status:
         raise HTTPException(status_code=404, detail=f"Operation {operation_id} not found")

@@ -1,0 +1,74 @@
+# For more info on HTTP files go to https://aka.ms/vs/httpfile
+
+### ============================================
+### Counter Entity Operations (basic entity)
+### ============================================
+
+### Signal the counter entity: add 10
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=add&value=10
+
+### Signal the counter entity: add 5
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=add&value=5
+
+### Signal the counter entity: subtract 3
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=subtract&value=3
+
+### Signal the counter entity: reset
+POST http://localhost:7071/api/SignalCounter?key=my-counter&op=reset
+
+### Get the current counter value
+GET http://localhost:7071/api/GetCounter?key=my-counter
+
+### Start the counter orchestration
+POST http://localhost:7071/api/StartCounterOrchestration?key=my-orch-counter
+
+### Check orchestration status
+# Copy the statusQueryGetUri from the StartCounterOrchestration response above
+# and paste it below (it includes the required system key):
+GET http://localhost:7071/runtime/webhooks/durabletask/instances/{instanceId}?code={systemKey}
+
+### Get the orchestration-managed counter value
+GET http://localhost:7071/api/GetCounter?key=my-orch-counter
+
+### ============================================
+### Account Entity Operations (entity signaling + entity starting orchestrations)
+### ============================================
+
+### 1. Initialize account-A with 1000
+POST http://localhost:7071/api/SignalAccount?key=account-A&op=deposit&value=1000
+
+### 2. Initialize account-B with 200
+POST http://localhost:7071/api/SignalAccount?key=account-B&op=deposit&value=200
+
+### 3. Check account-A balance
+GET http://localhost:7071/api/GetAccount?key=account-A
+
+### 4. Check account-B balance
+GET http://localhost:7071/api/GetAccount?key=account-B
+
+### ============================================
+### Locking Entities (TransferFunds with Critical Section)
+### ============================================
+
+### 5. Transfer 300 from account-A to account-B (locks both entities atomically)
+POST http://localhost:7071/api/TransferFunds?from=account-A&to=account-B&amount=300
+
+### 6. Verify account-A balance after transfer (should be 700)
+GET http://localhost:7071/api/GetAccount?key=account-A
+
+### 7. Verify account-B balance after transfer (should be 500)
+GET http://localhost:7071/api/GetAccount?key=account-B
+
+### ============================================
+### Entity Signaling Other Entities
+### ============================================
+
+### 8. Large deposit (>= 500) triggers account entity to signal audit entity
+POST http://localhost:7071/api/SignalAccount?key=account-A&op=deposit&value=600
+
+### ============================================
+### Entity Starting Orchestrations
+### ============================================
+
+### 9. Large withdrawal (>= 500) triggers account entity to start AuditOrchestration
+POST http://localhost:7071/api/SignalAccount?key=account-A&op=withdraw&value=500

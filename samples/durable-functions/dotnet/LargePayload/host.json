@@ -20,8 +20,8 @@
         "storageProvider": {
           "type": "azureManaged",
           "connectionStringName": "DTS_CONNECTION_STRING",
-          "largePayloadStorageEnabled": true,
-          "largePayloadStorageThresholdBytes": 900000
+          "payloadStorageEnabled": true,
+          "payloadStorageThresholdBytes": 900000
         },
         "hubName": "%TASKHUB_NAME%"
       }

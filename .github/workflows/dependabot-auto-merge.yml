@@ -1,0 +1,32 @@
+name: Dependabot auto-merge
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+# IMPORTANT: For auto-merge to actually wait for CI before merging,
+# the build-samples.yml jobs (dotnet, java, python, javascript, typescript)
+# must be configured as REQUIRED status checks on the `main` branch.
+# Configure under repo Settings -> Branches -> branch protection rule for `main`.
+# Without this, auto-merge will merge the PR immediately with no CI gate.
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - name: Fetch Dependabot metadata
+        id: metadata
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Enable auto-merge
+        run: gh pr merge --auto --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

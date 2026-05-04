@@ -1,0 +1,7 @@
+durabletask>=1.4.0
+durabletask-azuremanaged>=1.4.0
+fastapi>=0.136.1
+uvicorn>=0.46.0
+redis>=5.0.0
+openai>=2.33.0
+azure-identity>=1.25.3

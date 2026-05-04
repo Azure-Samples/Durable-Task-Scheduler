@@ -10,8 +10,8 @@ java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
 }
-def grpcVersion = '1.78.0'
-def openTelemetryVersion = '1.58.0'
+def grpcVersion = '1.80.0'
+def openTelemetryVersion = '1.61.0'
 base { archivesName = 'durabletask-samples' }
 
 application {
@@ -30,8 +30,8 @@ task runOpenTelemetryTracingPattern(type: JavaExec) {
 }
 
 dependencies {
-    implementation("com.microsoft:durabletask-client:1.7.0")
-    implementation("com.microsoft:durabletask-azuremanaged:1.7.0")
+    implementation("com.microsoft:durabletask-client:1.8.0")
+    implementation("com.microsoft:durabletask-azuremanaged:1.8.0")
 
     // Logging dependencies
     implementation 'ch.qos.logback:logback-classic:1.5.32'

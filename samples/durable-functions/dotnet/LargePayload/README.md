@@ -40,14 +40,14 @@ The sample enables these settings in `host.json`:
   "storageProvider": {
     "type": "azureManaged",
     "connectionStringName": "DTS_CONNECTION_STRING",
-    "largePayloadStorageEnabled": true,
-    "largePayloadStorageThresholdBytes": 900000
+    "payloadStorageEnabled": true,
+    "payloadStorageThresholdBytes": 900000
   },
   "hubName": "%TASKHUB_NAME%"
 }
 ```
 
-When a payload exceeds `largePayloadStorageThresholdBytes`, the Durable Functions extension:
+When a payload exceeds `payloadStorageThresholdBytes`, the Durable Functions extension:
 
 1. compresses the payload with gzip
 2. stores it in blob storage using `AzureWebJobsStorage`

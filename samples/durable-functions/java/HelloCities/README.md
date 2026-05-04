@@ -14,33 +14,48 @@ This quickstart demonstrates Durable Functions with Java using the Durable Task 
 1. [Java 11+](https://adoptium.net/) (JDK)
 2. [Maven](https://maven.apache.org/download.cgi)
 3. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
-4. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
+4. [Docker](https://www.docker.com/products/docker-desktop/) (for the DTS emulator and Azurite)
 
 ## Quick Run
 
-1. Start the emulator:
+1. Start the Durable Task Scheduler emulator:
    ```bash
-   docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+   docker run --name dtsemulator -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
    ```
 
-2. Build and run:
+2. Start Azurite for Azure Functions host storage:
+   ```bash
+   docker run --name azurite -d -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
+   ```
+
+3. Build the sample:
    ```bash
    cd samples/durable-functions/java/HelloCities
    mvn clean package
-   func start
    ```
 
-3. Trigger the function chaining orchestration:
+4. Run the Functions host:
+   ```bash
+   mvn azure-functions:run
+   ```
+
+5. Trigger the function chaining orchestration:
    ```bash
    curl -X POST http://localhost:7071/api/StartChaining
    ```
 
-4. Trigger the fan-out/fan-in orchestration:
+6. Trigger the fan-out/fan-in orchestration:
    ```bash
    curl -X POST http://localhost:7071/api/StartFanOutFanIn
    ```
 
-5. View in the dashboard: http://localhost:8082
+7. View in the dashboard: http://localhost:8082
+
+## Notes
+
+- `mvn clean package` is configured to stage the Azure Functions app so `mvn azure-functions:run` works as a separate second step.
+- `AzureWebJobsStorage=UseDevelopmentStorage=true` requires Azurite to be running locally.
+- `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` in `local.settings.json` points to the local DTS emulator on `http://localhost:8080`.
 
 ## Expected Output
 

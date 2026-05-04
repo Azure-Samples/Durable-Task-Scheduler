@@ -53,6 +53,15 @@ Durable execution is an industry-wide approach to making ordinary code fault-tol
 
 ## ⚡ Get Started in 5 Minutes
 
+### Step 0: Clone the repo
+
+```bash
+git clone --recurse-submodules https://github.com/Azure-Samples/Durable-Task-Scheduler.git
+cd Durable-Task-Scheduler
+```
+
+> **Note:** The `--recurse-submodules` flag is needed to pull sample code from linked repositories. If you already cloned without it, run: `git submodule update --init --recursive`
+
 ### Step 1: Start the emulator
 
 ```bash
@@ -104,6 +113,8 @@ Explore production-ready examples across languages and frameworks.
 🛒 **[Order Processor](./samples/durable-functions/dotnet/OrderProcessor)** - End-to-end order workflow with inventory, payment, and notifications (Durable Functions, .NET)
 
 🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga)** - Distributed transactions with compensating actions for failure recovery (Durable Functions, .NET)
+
+🧩 **[Durable Extension for Microsoft Agent Framework](./samples/durable-extension-for-agent-framework/)** - Make any [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) agent durable with persistent sessions, multi-agent orchestrations, and graph-based workflows (.NET, Python)
 
 ---
 

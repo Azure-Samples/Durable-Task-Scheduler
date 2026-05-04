@@ -1,0 +1,5 @@
+azure-functions
+azure-functions-durable
+redis
+openai>=2.33.0
+azure-identity>=1.25.3

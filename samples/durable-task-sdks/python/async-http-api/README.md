@@ -243,3 +243,31 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 5. Review the execution details
 
 The dashboard helps you understand how the async HTTP API pattern works behind the scenes, showing how the durable orchestration provides the backend processing for the asynchronous API endpoints.
+
+## Async Client
+
+This sample uses `AsyncDurableTaskSchedulerClient` — the native async/await client — instead of the synchronous `DurableTaskSchedulerClient`. This is the recommended approach for FastAPI and other async web frameworks because it avoids blocking the event loop when communicating with the scheduler.
+
+Key differences from the synchronous client:
+
+```python
+from azure.identity.aio import DefaultAzureCredential  # Async credential
+from durabletask.azuremanaged.client import AsyncDurableTaskSchedulerClient
+
+# Create the async client
+client = AsyncDurableTaskSchedulerClient(
+    host_address=endpoint,
+    secure_channel=True,
+    taskhub=taskhub,
+    token_credential=DefaultAzureCredential(),
+)
+
+# All client methods are awaitable
+instance_id = await client.schedule_new_orchestration("my_orchestrator", input=data)
+state = await client.get_orchestration_state(instance_id)
+
+# Close the client when done
+await client.close()
+```
+
+The async client supports the same operations as the sync client: scheduling, querying, raising events, terminating, suspending, resuming, restarting, and purging orchestrations.
