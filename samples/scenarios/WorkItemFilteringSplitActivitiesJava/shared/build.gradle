@@ -1,1 +1,2 @@
 // Shared library — connection helper and common utilities
+apply plugin: 'java-library'

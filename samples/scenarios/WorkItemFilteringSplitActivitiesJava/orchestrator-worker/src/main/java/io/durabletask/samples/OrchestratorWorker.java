@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Orchestrator Worker — runs only the {@code OrderProcessingOrchestration}.
@@ -70,8 +71,14 @@ public final class OrchestratorWorker {
         logger.info("[Orchestrator] Starting... waiting for orchestration work items only.");
         worker.start();
 
-        // Keep the process alive
+        // Graceful shutdown on SIGTERM (e.g., Container Apps scale-in)
         logger.info("[Orchestrator] Worker started. Press Ctrl+C to exit.");
-        Thread.currentThread().join();
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("[Orchestrator] Shutting down...");
+            worker.close();
+            shutdownLatch.countDown();
+        }));
+        shutdownLatch.await();
     }
 }

@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Client — schedules orchestrations in a continuous loop and prints results.
@@ -105,8 +106,18 @@ public final class Client {
         logger.info("\n=== FINAL RESULTS: {} completed, {} failed across {} batches ===",
                 totalCompleted, totalFailed, batchNumber);
 
-        // Keep the process alive so Container Apps doesn't mark it as failed
+        // Graceful shutdown on SIGTERM (e.g., Container Apps scale-in)
         logger.info("Demo complete. Staying alive — press Ctrl+C to exit.");
-        Thread.currentThread().join();
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("Shutting down client...");
+            try {
+                client.close();
+            } catch (Exception e) {
+                logger.warn("Error closing client", e);
+            }
+            shutdownLatch.countDown();
+        }));
+        shutdownLatch.await();
     }
 }

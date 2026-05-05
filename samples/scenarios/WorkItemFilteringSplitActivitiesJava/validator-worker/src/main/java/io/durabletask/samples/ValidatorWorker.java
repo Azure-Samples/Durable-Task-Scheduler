@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Validator Worker — runs only the {@code ValidateOrder} activity.
@@ -58,8 +59,14 @@ public final class ValidatorWorker {
         logger.info("[Validator] Starting... waiting for ValidateOrder activity work items only.");
         worker.start();
 
-        // Keep the process alive
+        // Graceful shutdown on SIGTERM (e.g., Container Apps scale-in)
         logger.info("[Validator] Worker started. Press Ctrl+C to exit.");
-        Thread.currentThread().join();
+        CountDownLatch shutdownLatch = new CountDownLatch(1);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            logger.info("[Validator] Shutting down...");
+            worker.close();
+            shutdownLatch.countDown();
+        }));
+        shutdownLatch.await();
     }
 }

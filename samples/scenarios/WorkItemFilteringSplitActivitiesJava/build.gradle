@@ -4,7 +4,6 @@
 
 subprojects {
     apply plugin: 'java'
-    apply plugin: 'application'
 
     group 'io.durabletask.samples'
     version = '0.1.0'
