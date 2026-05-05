@@ -1,0 +1,37 @@
+// Root build file for the Work Item Filtering Split Activities Java sample.
+// Each subproject (client, orchestrator-worker, validator-worker, shipper-worker)
+// has its own build.gradle with project-specific settings.
+
+subprojects {
+    apply plugin: 'java'
+
+    group 'io.durabletask.samples'
+    version = '0.1.0'
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    repositories {
+        mavenLocal()
+        mavenCentral()
+    }
+
+    def grpcVersion = '1.80.0'
+
+    dependencies {
+        implementation 'com.microsoft:durabletask-client:1.9.0'
+        implementation 'com.microsoft:durabletask-azuremanaged:1.9.0'
+        implementation 'com.azure:azure-identity:1.18.2'
+
+        // Logging
+        implementation 'ch.qos.logback:logback-classic:1.5.32'
+        implementation 'org.slf4j:slf4j-api:2.0.17'
+
+        // gRPC
+        implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+        implementation "io.grpc:grpc-stub:${grpcVersion}"
+        runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
+    }
+}

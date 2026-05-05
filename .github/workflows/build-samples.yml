@@ -150,9 +150,19 @@ jobs:
       - name: Build DTS - opentelemetry-tracing
         run: cd samples/durable-task-sdks/java/opentelemetry-tracing && chmod +x gradlew && ./gradlew build
 
+      - name: Build DTS - entities
+        run: cd samples/durable-task-sdks/java/entities && chmod +x gradlew && ./gradlew build
+
+      # Scenario samples (Gradle)
+      - name: Build Scenario - WorkItemFilteringSplitActivitiesJava
+        run: cd samples/scenarios/WorkItemFilteringSplitActivitiesJava && chmod +x gradlew && ./gradlew build
+
       # Durable Functions samples (Maven)
       - name: Build DF - HelloCities
         run: cd samples/durable-functions/java/HelloCities && mvn compile --batch-mode
+
+      - name: Build DF - Entities
+        run: cd samples/durable-functions/java/Entities && mvn compile --batch-mode
 
   python:
     name: Python Samples
