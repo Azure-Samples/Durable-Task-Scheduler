@@ -23,7 +23,7 @@ public final class ValidatorWorker {
     public static void main(String[] args) throws IOException, InterruptedException {
         String connectionString = ConnectionHelper.getConnectionString();
 
-        logger.info("[Validator] Connection: {}", connectionString);
+        logger.info("[Validator] Connection: {}", ConnectionHelper.redact(connectionString));
         logger.info("[Validator] This worker registers ONLY the ValidateOrder activity.");
 
         // Build the worker with only the ValidateOrder activity registered.

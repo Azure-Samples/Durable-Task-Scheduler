@@ -23,7 +23,7 @@ public final class OrchestratorWorker {
     public static void main(String[] args) throws IOException, InterruptedException {
         String connectionString = ConnectionHelper.getConnectionString();
 
-        logger.info("[Orchestrator] Connection: {}", connectionString);
+        logger.info("[Orchestrator] Connection: {}", ConnectionHelper.redact(connectionString));
         logger.info("[Orchestrator] This worker registers ONLY the orchestration. No activities.");
 
         // Build the worker with only the orchestration registered.

@@ -24,7 +24,7 @@ public final class ShipperWorker {
     public static void main(String[] args) throws IOException, InterruptedException {
         String connectionString = ConnectionHelper.getConnectionString();
 
-        logger.info("[Shipper] Connection: {}", connectionString);
+        logger.info("[Shipper] Connection: {}", ConnectionHelper.redact(connectionString));
         logger.info("[Shipper] This worker registers ONLY the ShipOrder activity.");
 
         // Build the worker with only the ShipOrder activity registered.

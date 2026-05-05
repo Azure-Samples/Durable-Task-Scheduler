@@ -17,6 +17,24 @@ final class ConnectionHelper {
     private ConnectionHelper() {
     }
 
+    /**
+     * Returns a redacted version of a connection string safe for logging.
+     * Preserves Endpoint, TaskHub, and Authentication but redacts ClientID and other sensitive fields.
+     */
+    static String redact(String connectionString) {
+        if (connectionString == null) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String part : connectionString.split(";")) {
+            String key = part.split("=", 2)[0].trim();
+            if (key.equalsIgnoreCase("Endpoint") || key.equalsIgnoreCase("TaskHub")
+                    || key.equalsIgnoreCase("Authentication")) {
+                if (sb.length() > 0) sb.append(';');
+                sb.append(part);
+            }
+        }
+        return sb.toString();
+    }
+
     static String getConnectionString() {
         String connectionString = System.getenv("DURABLE_TASK_CONNECTION_STRING");
         if (connectionString != null) {

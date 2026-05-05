@@ -26,7 +26,7 @@ public final class Client {
         String connectionString = ConnectionHelper.getConnectionString();
 
         logger.info("=== Work Item Filtering Demo — Client ===");
-        logger.info("Connection: {}", connectionString);
+        logger.info("Connection: {}", ConnectionHelper.redact(connectionString));
 
         // Create the Durable Task client
         DurableTaskClient client = DurableTaskSchedulerClientExtensions
