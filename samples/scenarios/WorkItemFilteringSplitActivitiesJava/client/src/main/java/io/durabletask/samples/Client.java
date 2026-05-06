@@ -73,13 +73,19 @@ public final class Client {
                     OrchestrationMetadata result = client.waitForInstanceCompletion(
                             id, Duration.ofSeconds(120), true);
 
-                    if (result.getRuntimeStatus() == OrchestrationRuntimeStatus.COMPLETED) {
+                    if (result == null) {
+                        batchFailed++;
+                        logger.warn("TIMEOUT   | InstanceId={} | Timed out after 120s", id);
+                    } else if (result.getRuntimeStatus() == OrchestrationRuntimeStatus.COMPLETED) {
                         batchCompleted++;
                         logger.info("COMPLETED | InstanceId={} | Output: {}",
                                 result.getInstanceId(), result.readOutputAs(String.class));
-                    } else {
+                    } else if (result.getRuntimeStatus() == OrchestrationRuntimeStatus.FAILED) {
                         batchFailed++;
                         logger.error("FAILED    | InstanceId={} | Status={}",
+                                result.getInstanceId(), result.getRuntimeStatus());
+                    } else {
+                        logger.warn("PENDING   | InstanceId={} | Status={}",
                                 result.getInstanceId(), result.getRuntimeStatus());
                     }
                 } catch (Exception ex) {

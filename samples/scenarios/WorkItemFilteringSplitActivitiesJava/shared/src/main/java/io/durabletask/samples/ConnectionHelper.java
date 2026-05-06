@@ -2,6 +2,8 @@
 // Licensed under the MIT License.
 package io.durabletask.samples;
 
+import java.net.URI;
+
 /**
  * Shared helper for building DTS connection strings from environment variables.
  *
@@ -52,7 +54,7 @@ final class ConnectionHelper {
         }
 
         String managedIdentityClientId = System.getenv("AZURE_MANAGED_IDENTITY_CLIENT_ID");
-        boolean isLocalEmulator = endpoint.equals("http://localhost:8080");
+        boolean isLocalEmulator = isLocalEndpoint(endpoint);
 
         if (isLocalEmulator) {
             return String.format("Endpoint=%s;TaskHub=%s;Authentication=None", endpoint, taskHub);
@@ -61,6 +63,15 @@ final class ConnectionHelper {
                     endpoint, taskHub, managedIdentityClientId);
         } else {
             return String.format("Endpoint=%s;TaskHub=%s;Authentication=DefaultAzure", endpoint, taskHub);
+        }
+    }
+
+    private static boolean isLocalEndpoint(String endpoint) {
+        try {
+            String host = URI.create(endpoint).getHost();
+            return "localhost".equalsIgnoreCase(host) || "127.0.0.1".equals(host);
+        } catch (IllegalArgumentException e) {
+            return false;
         }
     }
 }
