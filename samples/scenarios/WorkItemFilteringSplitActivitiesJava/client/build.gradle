@@ -1,0 +1,9 @@
+apply plugin: 'application'
+
+application {
+    mainClass = 'io.durabletask.samples.Client'
+}
+
+dependencies {
+    implementation project(':shared')
+}

@@ -1,0 +1,36 @@
+metadata:
+  template: work-item-filtering-split-activities-java
+  name: work-item-filtering-split-activities-java
+services:
+  client:
+    project: .
+    language: java
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./client/Dockerfile
+      context: .
+  orchestrator-worker:
+    project: .
+    language: java
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./orchestrator-worker/Dockerfile
+      context: .
+  validator-worker:
+    project: .
+    language: java
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./validator-worker/Dockerfile
+      context: .
+  shipper-worker:
+    project: .
+    language: java
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./shipper-worker/Dockerfile
+      context: .
