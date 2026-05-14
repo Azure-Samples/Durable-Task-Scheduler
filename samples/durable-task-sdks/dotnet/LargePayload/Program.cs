@@ -53,7 +53,7 @@ builder.Services.AddLogging(logging =>
 
 builder.Services.AddExternalizedPayloadStore(options =>
 {
-    options.ExternalizeThresholdBytes = externalizeThresholdBytes;
+    options.ThresholdBytes = externalizeThresholdBytes;
     options.ContainerName = payloadStorageSettings.ContainerName;
 
     if (!string.IsNullOrWhiteSpace(payloadStorageSettings.ConnectionString))
