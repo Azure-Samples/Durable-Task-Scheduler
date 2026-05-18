@@ -1,0 +1,92 @@
+# =============================================================================
+# Work Item Filtering — Durable Functions (.NET) Demo
+# =============================================================================
+#
+# Prerequisites:
+#   1. DTS emulator: docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+#   2. Azurite:      docker run -d -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
+#   3. App running:  func start --port 7071
+#
+# This app registers: GreetingOrchestration, FanOutOrchestration,
+#   ParentOrchestration, CounterOrchestration, SayHello, CounterEntity
+#
+# With workItemFilteringEnabled: true, DTS only dispatches matching work.
+# Unmatched orchestrations stay Pending — proving filter isolation.
+# =============================================================================
+
+@baseUrl = http://localhost:7071/api
+
+
+# --- TEST 1: Simple orchestration + activity ---
+# Expected: Completed with "Hello, World!"
+
+### Start GreetingOrchestration
+# @name greeting
+POST {{baseUrl}}/orchestrators/greeting
+
+### Check status
+GET {{baseUrl}}/instances/{{greeting.response.body.id}}
+
+
+# --- TEST 2: Fan-out/fan-in (parallel activities) ---
+# Expected: Completed with ["Hello, Tokyo!", "Hello, London!", "Hello, Seattle!"]
+
+### Start FanOutOrchestration
+# @name fanout
+POST {{baseUrl}}/orchestrators/fanout
+
+### Check status
+GET {{baseUrl}}/instances/{{fanout.response.body.id}}
+
+
+# --- TEST 3: Sub-orchestration ---
+# Expected: Completed with "Parent received: Hello, World!"
+
+### Start ParentOrchestration
+# @name parent
+POST {{baseUrl}}/orchestrators/parent
+
+### Check status
+GET {{baseUrl}}/instances/{{parent.response.body.id}}
+
+
+# --- TEST 4: Entity interaction ---
+# Expected: Completed with 30 (10 + 20)
+
+### Start CounterOrchestration
+# @name counter
+POST {{baseUrl}}/orchestrators/counter
+
+### Check status
+GET {{baseUrl}}/instances/{{counter.response.body.id}}
+
+
+# --- TEST 5: Filter isolation — unknown orchestration ---
+# Expected: Stays Pending (no worker has this function registered)
+
+### Start an orchestration this app does NOT have
+# @name unknown
+POST {{baseUrl}}/start/SomeOtherOrchestration
+
+### Check status — should be Pending
+GET {{baseUrl}}/instances/{{unknown.response.body.id}}
+
+### Check again after 15 seconds — still Pending
+GET {{baseUrl}}/instances/{{unknown.response.body.id}}
+
+
+# --- TEST 6: View all instances ---
+
+### List all orchestration instances
+GET http://localhost:7071/runtime/webhooks/durabletask/instances
+
+
+# --- EXPECTED RESULTS ---
+#
+# | Test | Orchestration            | Status    | Why                         |
+# |------|--------------------------|-----------|-----------------------------|
+# | 1    | GreetingOrchestration    | Completed | Matches filter              |
+# | 2    | FanOutOrchestration      | Completed | Activities also filtered    |
+# | 3    | ParentOrchestration      | Completed | Sub-orch also filtered      |
+# | 4    | CounterOrchestration     | Completed | Entities also filtered      |
+# | 5    | SomeOtherOrchestration   | Pending   | No matching filter → held   |
