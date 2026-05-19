@@ -96,51 +96,46 @@ def counter_entity(context: df.DurableEntityContext):
 # HTTP triggers
 # =============================================================================
 
-@bp.durable_client_input(client_name="client")
 @app.route(route="orchestrators/greeting", methods=["POST"])
+@app.durable_client_input(client_name="client")
 async def start_greeting(req: func.HttpRequest, client) -> func.HttpResponse:
     """Start the greeting orchestration."""
-    client = df.DurableOrchestrationClient(client)
     instance_id = await client.start_new("greeting_orchestration")
     return client.create_check_status_response(req, instance_id)
 
 
-@bp.durable_client_input(client_name="client")
 @app.route(route="orchestrators/fanout", methods=["POST"])
+@app.durable_client_input(client_name="client")
 async def start_fan_out(req: func.HttpRequest, client) -> func.HttpResponse:
     """Start the fan-out orchestration."""
-    client = df.DurableOrchestrationClient(client)
     instance_id = await client.start_new("fan_out_orchestration")
     return client.create_check_status_response(req, instance_id)
 
 
-@bp.durable_client_input(client_name="client")
 @app.route(route="orchestrators/parent", methods=["POST"])
+@app.durable_client_input(client_name="client")
 async def start_parent(req: func.HttpRequest, client) -> func.HttpResponse:
     """Start the parent orchestration."""
-    client = df.DurableOrchestrationClient(client)
     instance_id = await client.start_new("parent_orchestration")
     return client.create_check_status_response(req, instance_id)
 
 
-@bp.durable_client_input(client_name="client")
 @app.route(route="orchestrators/counter", methods=["POST"])
+@app.durable_client_input(client_name="client")
 async def start_counter(req: func.HttpRequest, client) -> func.HttpResponse:
     """Start the counter orchestration (entity interaction)."""
-    client = df.DurableOrchestrationClient(client)
     instance_id = await client.start_new("counter_orchestration")
     return client.create_check_status_response(req, instance_id)
 
 
-@bp.durable_client_input(client_name="client")
 @app.route(route="start/{name}", methods=["POST"])
+@app.durable_client_input(client_name="client")
 async def start_any(req: func.HttpRequest, client) -> func.HttpResponse:
     """Generic starter — can schedule any orchestration by name.
     Useful for testing filter isolation: schedule an orchestration this app
     does NOT have and observe it stays Pending.
     """
     name = req.route_params.get("name")
-    client = df.DurableOrchestrationClient(client)
     instance_id = await client.start_new(name)
     return client.create_check_status_response(req, instance_id)
 

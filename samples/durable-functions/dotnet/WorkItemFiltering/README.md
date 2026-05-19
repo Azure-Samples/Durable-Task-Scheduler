@@ -91,12 +91,33 @@ No code changes are needed — filtering is automatic based on the functions reg
 
 ## Multi-App Scenario
 
-To see filter isolation in action across two apps:
+A sibling project [`WorkItemFiltering.AppB`](../WorkItemFiltering.AppB/) registers an entirely **different** set of functions (`OrdersOrchestration`, `ShipOrder` activity) against the **same** DTS task hub (`default`). The scheduler routes each work item to whichever app's filter matches.
 
-1. Create a second Function app with **different** orchestrations/activities
-2. Point both apps to the **same** DTS task hub
-3. Enable `workItemFilteringEnabled: true` in both
-4. Schedule orchestrations — each app only processes its own functions
+Run both apps together with the included script:
+
+```powershell
+# From samples/durable-functions/dotnet/
+.\run-both.ps1
+```
+
+The script builds both projects, starts App A on `:7071` and App B on `:7072`, and exercises five scenarios:
+
+| # | Scenario                                                       | Expected            |
+|---|----------------------------------------------------------------|---------------------|
+| 1 | App A orchestration, scheduled from App A client               | `Completed`         |
+| 2 | App B orchestration, scheduled from App B client               | `Completed`         |
+| 3 | **Cross-app:** App B's `OrdersOrchestration` from App A client | `Completed` on B    |
+| 4 | **Cross-app:** App A's `GreetingOrchestration` from App B client | `Completed` on A  |
+| 5 | Orchestration neither app has registered                       | `Pending` (forever) |
+
+Scenarios 3 and 4 are the point: the client app does not need to host the orchestrator. Without `workItemFilteringEnabled`, both apps would race to dispatch every work item and one would fail with *"function does not exist"*. With filtering on, the scheduler delivers only matching work to each app.
+
+Helpful flags:
+
+```powershell
+.\run-both.ps1 -StartOnly   # leave both running for manual testing
+.\run-both.ps1 -StopOnly    # kill any running func hosts
+```
 
 ## Viewing in the Dashboard
 

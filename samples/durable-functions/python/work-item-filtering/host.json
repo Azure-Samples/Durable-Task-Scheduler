@@ -2,7 +2,11 @@
   "version": "2.0",
   "logging": {
     "logLevel": {
-      "DurableTask.Core": "Warning"
+      "default": "Information",
+      "DurableTask.AzureStorage": "Warning",
+      "DurableTask.Core": "Warning",
+      "Microsoft.DurableTask": "Information",
+      "Host.Triggers.DurableTask": "Information"
     }
   },
   "extensions": {
@@ -14,9 +18,5 @@
         "workItemFilteringEnabled": true
       }
     }
-  },
-  "extensionBundle": {
-    "id": "Microsoft.Azure.Functions.ExtensionBundle",
-    "version": "[4.*, 5.0.0)"
   }
 }

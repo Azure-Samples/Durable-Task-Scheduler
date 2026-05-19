@@ -11,8 +11,21 @@ This sample includes orchestrations, activities, entities, sub-orchestrations, a
 ## Prerequisites
 
 1. [Python 3.9+](https://www.python.org/downloads/)
-2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator and Azurite)
-3. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
+2. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) — required to build the manual extension bundle (see below)
+3. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator and Azurite)
+4. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
+
+## Extension Management
+
+This sample does **not** use the Azure Functions extension bundle. Instead it pins the Durable Task `azureManaged` provider to a specific version via [`extensions.csproj`](extensions.csproj) — required so the app picks up updates to `Microsoft.Azure.WebJobs.Extensions.DurableTask.AzureManaged` ahead of the public bundle.
+
+Before the first run, install the extensions into `bin/`:
+
+```powershell
+func extensions install
+```
+
+Core Tools reads `extensions.csproj`, restores the pinned packages, and generates `bin/extensions.json` with the Durable + AzureManaged DLLs so the Functions host loads them at startup.
 
 ## Quick Run
 
@@ -26,12 +39,13 @@ This sample includes orchestrations, activities, entities, sub-orchestrations, a
    docker run --name azurite -d -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
    ```
 
-3. Set up the Python environment and start the Function app:
+3. Set up the Python environment, build the extensions, and start the Function app:
    ```bash
    python -m venv .venv
    source .venv/bin/activate      # Linux/macOS
    # .venv\Scripts\activate       # Windows
    pip install -r requirements.txt
+   func extensions install
    func start
    ```
 
@@ -115,6 +129,42 @@ To use a Durable Task Scheduler in Azure instead of the emulator, update `local.
 - [Work Item Filtering (.NET)](../../dotnet/WorkItemFiltering/) — Same feature in .NET
 - [WorkItemFilteringSplitActivities](../../../scenarios/WorkItemFilteringSplitActivities/) — Multi-worker scenario using Durable Task SDK
 - [Fan-out/Fan-in (Python)](../fan-out-fan-in/) — Fan-out pattern without filtering
+
+## Multi-App Scenario
+
+A sibling project [`work-item-filtering-app-b`](../work-item-filtering-app-b/) registers an entirely **different** set of functions (`orders_orchestration`, `ship_order` activity) against the **same** DTS task hub (`default`). The scheduler routes each work item to whichever app's filter matches.
+
+Run both apps together with the included script:
+
+```powershell
+# From samples/durable-functions/python/
+.\run-both.ps1
+```
+
+The script:
+
+1. Creates a shared venv at `python/.venv-wif` and installs `requirements.txt`
+2. Builds `extensions.csproj` for both apps (App A and App B)
+3. Starts App A on `:7071` and App B on `:7072`
+4. Exercises five scenarios:
+
+| # | Scenario                                                       | Expected            |
+|---|----------------------------------------------------------------|---------------------|
+| 1 | App A orchestration, scheduled from App A client               | `Completed`         |
+| 2 | App B orchestration, scheduled from App B client               | `Completed`         |
+| 3 | **Cross-app:** App B's `orders_orchestration` from App A client | `Completed` on B   |
+| 4 | **Cross-app:** App A's `greeting_orchestration` from App B client | `Completed` on A |
+| 5 | Orchestration neither app has registered                       | `Pending` (forever) |
+
+Scenarios 3 and 4 are the point: the client app does not need to host the orchestrator. Without `workItemFilteringEnabled`, both apps would race to dispatch every work item and one would fail with *"function does not exist"*. With filtering on, the scheduler delivers only matching work to each app.
+
+Helpful flags:
+
+```powershell
+.\run-both.ps1 -StartOnly   # leave both running for manual testing
+.\run-both.ps1 -StopOnly    # kill any running func hosts
+.\run-both.ps1 -SkipSetup   # skip venv + extension build
+```
 
 ## Learn More
 
