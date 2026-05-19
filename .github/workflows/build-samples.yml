@@ -105,6 +105,12 @@ jobs:
       - name: Build DF - LargePayloadFanOutFanIn
         run: dotnet build samples/durable-functions/dotnet/LargePayloadFanOutFanIn/LargePayloadFanOutFanIn.csproj
 
+      - name: Build DF - WorkItemFiltering
+        run: dotnet build samples/durable-functions/dotnet/WorkItemFiltering/WorkItemFiltering.csproj
+
+      - name: Build DF - WorkItemFiltering.AppB
+        run: dotnet build samples/durable-functions/dotnet/WorkItemFiltering.AppB/AppB.csproj
+
       # Durable Functions Aspire samples (net10.0)
       - name: Build DF - AzureFunctionsAndDtsWithAspire
         run: dotnet build samples/durable-functions/dotnet/AzureFunctionsAndDtsWithAspire/AspireHost/AspireHost.csproj
@@ -208,6 +214,12 @@ jobs:
 
       - name: Install DF - pdf-summarizer
         run: pip install -r samples/durable-functions/python/pdf-summarizer/requirements.txt
+
+      - name: Install DF - work-item-filtering
+        run: pip install -r samples/durable-functions/python/work-item-filtering/requirements.txt
+
+      - name: Install DF - work-item-filtering-app-b
+        run: pip install -r samples/durable-functions/python/work-item-filtering-app-b/requirements.txt
 
       # Syntax check all Python files
       - name: Syntax check Python files
