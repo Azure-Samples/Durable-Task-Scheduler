@@ -24,8 +24,8 @@
 # @name greeting
 POST {{baseUrl}}/orchestrators/greeting
 
-### Check status
-GET {{baseUrl}}/instances/{{greeting.response.body.id}}
+### Check status (uses statusQueryGetUri returned by the starter)
+GET {{greeting.response.body.statusQueryGetUri}}
 
 
 # --- TEST 2: Fan-out/fan-in (parallel activities) ---
@@ -36,7 +36,7 @@ GET {{baseUrl}}/instances/{{greeting.response.body.id}}
 POST {{baseUrl}}/orchestrators/fanout
 
 ### Check status
-GET {{baseUrl}}/instances/{{fanout.response.body.id}}
+GET {{fanout.response.body.statusQueryGetUri}}
 
 
 # --- TEST 3: Sub-orchestration ---
@@ -47,7 +47,7 @@ GET {{baseUrl}}/instances/{{fanout.response.body.id}}
 POST {{baseUrl}}/orchestrators/parent
 
 ### Check status
-GET {{baseUrl}}/instances/{{parent.response.body.id}}
+GET {{parent.response.body.statusQueryGetUri}}
 
 
 # --- TEST 4: Entity interaction ---
@@ -58,7 +58,7 @@ GET {{baseUrl}}/instances/{{parent.response.body.id}}
 POST {{baseUrl}}/orchestrators/counter
 
 ### Check status
-GET {{baseUrl}}/instances/{{counter.response.body.id}}
+GET {{counter.response.body.statusQueryGetUri}}
 
 
 # --- TEST 5: Filter isolation — unknown orchestration ---
@@ -69,10 +69,10 @@ GET {{baseUrl}}/instances/{{counter.response.body.id}}
 POST {{baseUrl}}/start/SomeOtherOrchestration
 
 ### Check status — should be Pending
-GET {{baseUrl}}/instances/{{unknown.response.body.id}}
+GET {{unknown.response.body.statusQueryGetUri}}
 
 ### Check again after 15 seconds — still Pending
-GET {{baseUrl}}/instances/{{unknown.response.body.id}}
+GET {{unknown.response.body.statusQueryGetUri}}
 
 
 # --- TEST 6: View all instances ---

@@ -5,7 +5,9 @@
 # Prerequisites:
 #   1. DTS emulator: docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
 #   2. Azurite:      docker run -d -p 10000:10000 -p 10001:10001 -p 10002:10002 mcr.microsoft.com/azure-storage/azurite
-#   3. App running:  python -m venv .venv && .venv/Scripts/activate && pip install -r requirements.txt && func start
+#   3. App running:
+#      Linux/macOS: python -m venv .venv && source .venv/bin/activate && pip install -r requirements.txt && func extensions install && func start
+#      Windows:     python -m venv .venv && .\.venv\Scripts\activate && pip install -r requirements.txt && func extensions install && func start
 #
 # Registered functions: greeting_orchestration, fan_out_orchestration,
 #   parent_orchestration, counter_orchestration, say_hello, counter_entity
@@ -21,8 +23,8 @@
 # @name greeting
 POST {{baseUrl}}/orchestrators/greeting
 
-### Check status (use statusQueryGetUri from response)
-GET {{baseUrl}}/instances/{{greeting.response.body.id}}
+### Check status (uses statusQueryGetUri returned by the starter)
+GET {{greeting.response.body.statusQueryGetUri}}
 
 
 # --- TEST 2: Fan-out/fan-in ---
@@ -33,7 +35,7 @@ GET {{baseUrl}}/instances/{{greeting.response.body.id}}
 POST {{baseUrl}}/orchestrators/fanout
 
 ### Check status
-GET {{baseUrl}}/instances/{{fanout.response.body.id}}
+GET {{fanout.response.body.statusQueryGetUri}}
 
 
 # --- TEST 3: Sub-orchestration ---
@@ -44,7 +46,7 @@ GET {{baseUrl}}/instances/{{fanout.response.body.id}}
 POST {{baseUrl}}/orchestrators/parent
 
 ### Check status
-GET {{baseUrl}}/instances/{{parent.response.body.id}}
+GET {{parent.response.body.statusQueryGetUri}}
 
 
 # --- TEST 4: Entity interaction ---
@@ -55,7 +57,7 @@ GET {{baseUrl}}/instances/{{parent.response.body.id}}
 POST {{baseUrl}}/orchestrators/counter
 
 ### Check status
-GET {{baseUrl}}/instances/{{counter.response.body.id}}
+GET {{counter.response.body.statusQueryGetUri}}
 
 
 # --- TEST 5: Filter isolation ---
@@ -66,7 +68,7 @@ GET {{baseUrl}}/instances/{{counter.response.body.id}}
 POST {{baseUrl}}/start/SomeOtherOrchestration
 
 ### Check — should be Pending
-GET {{baseUrl}}/instances/{{unknown.response.body.id}}
+GET {{unknown.response.body.statusQueryGetUri}}
 
 
 # --- EXPECTED RESULTS ---

@@ -32,10 +32,10 @@ def orders_orchestration(context: df.DurableOrchestrationContext):
     return result
 
 
-@bp.activity_trigger(input_name="orderId")
-def ship_order(orderId: str) -> str:
-    logging.info("App B shipping %s", orderId)
-    return f"Shipped {orderId} from App B"
+@bp.activity_trigger(input_name="order_id")
+def ship_order(order_id: str) -> str:
+    logging.info("App B shipping %s", order_id)
+    return f"Shipped {order_id} from App B"
 
 
 @app.route(route="orchestrators/orders", methods=["POST"])
