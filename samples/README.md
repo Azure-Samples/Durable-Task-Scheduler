@@ -46,10 +46,10 @@ A quick-reference matrix showing which patterns are available in each language a
 
 ### Durable Functions
 
-| Pattern | .NET | Python | Java | JavaScript |
-|---------|------|--------|------|------------|
-| Hello Cities (Quickstart) | [✅](./durable-functions/dotnet/HelloCities) | | [✅](./durable-functions/java/HelloCities) | [✅](./durable-functions/javascript/HelloCities) |
-| Fan-out/Fan-in | | [✅](./durable-functions/python/fan-out-fan-in) | [✅](./durable-functions/java/HelloCities) | [✅](./durable-functions/javascript/HelloCities) |
+| Pattern | .NET | Python | Java | JavaScript | PowerShell |
+|---------|------|--------|------|------------|------------|
+| Hello Cities (Quickstart) | [✅](./durable-functions/dotnet/HelloCities) | | [✅](./durable-functions/java/HelloCities) | [✅](./durable-functions/javascript/HelloCities) | [✅](./durable-functions/powershell/HelloCities) |
+| Fan-out/Fan-in | | [✅](./durable-functions/python/fan-out-fan-in) | [✅](./durable-functions/java/HelloCities) | [✅](./durable-functions/javascript/HelloCities) | [✅](./durable-functions/powershell/HelloCities) |
 | Order Processor | [✅](./durable-functions/dotnet/OrderProcessor) | | | |
 | Saga Pattern | [✅](./durable-functions/dotnet/Saga) | | | |
 | Distributed Tracing | [✅](./durable-functions/dotnet/DistributedTracing) | | | |
@@ -154,6 +154,12 @@ A quick-reference matrix showing which patterns are available in each language a
 | Sample | Pattern | Description |
 |--------|---------|-------------|
 | [Hello Cities](./durable-functions/javascript/HelloCities) | Function Chaining, Fan-out/Fan-in | JavaScript quickstart with sequential and parallel orchestration patterns |
+
+### PowerShell
+
+| Sample | Pattern | Description |
+|--------|---------|-------------|
+| [Hello Cities](./durable-functions/powershell/HelloCities) | Function Chaining, Fan-out/Fan-in | PowerShell quickstart with sequential and parallel orchestration patterns |
 
 ---
 

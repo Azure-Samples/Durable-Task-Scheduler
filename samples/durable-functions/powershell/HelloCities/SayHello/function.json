@@ -1,0 +1,9 @@
+{
+  "bindings": [
+    {
+      "name": "city",
+      "type": "activityTrigger",
+      "direction": "in"
+    }
+  ]
+}
