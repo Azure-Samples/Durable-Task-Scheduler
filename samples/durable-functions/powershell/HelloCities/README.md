@@ -27,7 +27,7 @@ This quickstart demonstrates Durable Functions with PowerShell using the Durable
    cd samples/durable-functions/powershell/HelloCities
    ```
 
-3. Run the function app:
+3. The included `local.settings.json` is pre-configured to connect to the emulator. Run the function app:
    ```bash
    func start
    ```
