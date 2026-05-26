@@ -27,31 +27,49 @@ This quickstart demonstrates Durable Functions with PowerShell using the Durable
    cd samples/durable-functions/powershell/HelloCities
    ```
 
-3. Run the function app:
+3. Create a `local.settings.json` file:
+   ```json
+   {
+     "IsEncrypted": false,
+     "Values": {
+       "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+       "FUNCTIONS_WORKER_RUNTIME": "powershell",
+       "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
+     }
+   }
+   ```
+
+4. Run the function app:
    ```bash
    func start
    ```
 
-4. Trigger the function chaining orchestration:
+5. Trigger the function chaining orchestration:
    ```bash
    curl -X POST http://localhost:7071/api/StartChaining
    ```
 
-5. Trigger the fan-out/fan-in orchestration:
+6. Trigger the fan-out/fan-in orchestration:
    ```bash
    curl -X POST http://localhost:7071/api/StartFanOutFanIn
    ```
 
-6. View in the dashboard: http://localhost:8082
+7. View in the dashboard: http://localhost:8082
 
 ## Expected Output
 
-The chaining orchestration greets Tokyo, Seattle, and London sequentially:
+The HTTP triggers return a **202 Accepted** response with status query URLs. Use the `statusQueryGetUri` from the response to poll for completion:
+
+```bash
+curl http://localhost:7071/runtime/webhooks/durabletask/instances/<instanceId>
+```
+
+Once completed, the chaining orchestration output greets Tokyo, Seattle, and London sequentially:
 ```json
 ["Hello Tokyo!", "Hello Seattle!", "Hello London!"]
 ```
 
-The fan-out/fan-in orchestration greets all five cities in parallel and returns combined results:
+The fan-out/fan-in orchestration output greets all five cities in parallel and returns combined results:
 ```json
 ["Hello Tokyo!", "Hello Seattle!", "Hello London!", "Hello Paris!", "Hello Berlin!"]
 ```
@@ -60,10 +78,13 @@ The fan-out/fan-in orchestration greets all five cities in parallel and returns 
 
 To use a Durable Task Scheduler in Azure instead of the emulator:
 
-1. Set the connection string in `local.settings.json`:
+1. Update the connection string in `local.settings.json`:
    ```json
    {
+     "IsEncrypted": false,
      "Values": {
+       "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+       "FUNCTIONS_WORKER_RUNTIME": "powershell",
        "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=<your-scheduler-endpoint>;TaskHub=<your-taskhub>;Authentication=ManagedIdentity"
      }
    }
