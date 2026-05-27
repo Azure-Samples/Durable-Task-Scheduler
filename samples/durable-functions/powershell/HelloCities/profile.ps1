@@ -11,6 +11,10 @@
 #       are not automatically available inside your function scripts unless you
 #       explicitly pass them in or define them in a shared module.
 
+# Register HttpStatusCode type accelerator (required by Durable Functions module)
+$accelerator = [PowerShell].Assembly.GetType("System.Management.Automation.TypeAccelerators")
+$accelerator::Add('HttpStatusCode', [System.Net.HttpStatusCode])
+
 # Authenticate with Azure PowerShell using MSI (if deployed to Azure)
 if ($env:MSI_SECRET) {
     Disable-AzContextAutosave -Scope Process | Out-Null

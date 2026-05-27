@@ -1,3 +1,4 @@
 @{
-    'Az.Accounts' = '4.*'
+    # Managed dependencies - add modules here if needed
+    # 'Az.Accounts' = '4.*'
 }
