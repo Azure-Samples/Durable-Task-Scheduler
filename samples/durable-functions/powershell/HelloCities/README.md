@@ -61,7 +61,8 @@ This quickstart demonstrates Durable Functions with PowerShell using the Durable
 The HTTP triggers return a **202 Accepted** response with status query URLs. Use the `statusQueryGetUri` from the response to poll for completion:
 
 ```bash
-curl http://localhost:7071/runtime/webhooks/durabletask/instances/<instanceId>
+# Replace with the statusQueryGetUri value from the 202 response
+curl "<statusQueryGetUri>"
 ```
 
 Once completed, the chaining orchestration output greets Tokyo, Seattle, and London sequentially:
