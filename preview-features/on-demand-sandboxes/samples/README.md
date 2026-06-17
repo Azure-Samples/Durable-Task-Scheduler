@@ -8,8 +8,8 @@ aggregates the answer.
 
 | Directory | Implementation | SDK |
 | --- | --- | --- |
-| [`dotnet/`](dotnet/README.md) | .NET 10 | [durabletask-dotnet #736](https://github.com/microsoft/durabletask-dotnet/pull/736) |
-| [`python/`](python/README.md) | Python 3.12 | [durabletask-python #151](https://github.com/microsoft/durabletask-python/pull/151) |
+| [`dotnet/`](dotnet/README.md) | .NET 10 | `Microsoft.DurableTask.*.AzureManaged.Sandboxes` 1.25.0-preview.2 |
+| [`python/`](python/README.md) | Python 3.12 | `durabletask-azuremanaged` 1.6.0 |
 
 Both implementations follow the same shape: a main/declarer app hosts the
 orchestrator and in-process activities and declares the sandbox worker profile,

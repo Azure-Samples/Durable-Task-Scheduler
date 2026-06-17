@@ -13,15 +13,11 @@
     <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="$(DtsSdkRoot)Client/AzureManaged/Client.AzureManaged.csproj" />
-    <ProjectReference Include="$(DtsSdkRoot)Client/AzureManaged.Sandboxes/Client.AzureManaged.Sandboxes.csproj" />
-    <ProjectReference Include="$(DtsSdkRoot)Worker/AzureManaged/Worker.AzureManaged.csproj" />
-    <ProjectReference Include="$(DtsSdkRoot)Worker/AzureManaged.Sandboxes/Worker.AzureManaged.Sandboxes.csproj" />
-    <ProjectReference Include="$(DtsSdkRoot)Analyzers/Analyzers.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    <ProjectReference Include="$(DtsSdkRoot)Generators/Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged.Sandboxes" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged.Sandboxes" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Generators" Version="$(DtsSdkVersion)" />
   </ItemGroup>
 
 </Project>

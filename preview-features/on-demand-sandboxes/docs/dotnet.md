@@ -21,8 +21,17 @@ Azure-managed client and worker packages:
 - `Microsoft.DurableTask.Worker.AzureManaged.Sandboxes` — sandbox-worker side
   (`UseSandboxWorker()`).
 
-Reference both from your orchestrator app, and the worker package from the sandbox worker
-image project.
+Add the client and worker packages to your orchestrator app, and the worker package to
+the sandbox worker image project:
+
+```bash
+# Orchestrator / declarer app
+dotnet add package Microsoft.DurableTask.Client.AzureManaged.Sandboxes --version 1.25.0-preview.2
+dotnet add package Microsoft.DurableTask.Worker.AzureManaged.Sandboxes --version 1.25.0-preview.2
+
+# Sandbox worker image project
+dotnet add package Microsoft.DurableTask.Worker.AzureManaged.Sandboxes --version 1.25.0-preview.2
+```
 
 ## Step 1 — Declare a sandbox worker profile
 

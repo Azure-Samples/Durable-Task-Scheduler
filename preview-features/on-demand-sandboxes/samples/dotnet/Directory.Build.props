@@ -1,11 +1,11 @@
 <Project>
 
   <!--
-    Path to the durabletask-dotnet private-preview SDK source tree.
-    Override on the command line: dotnet build /p:DtsSdkRoot=/some/path/durabletask-dotnet/src/
+    Durable Task on-demand sandbox preview package version.
+    Override on the command line: dotnet build /p:DtsSdkVersion=<version>
   -->
   <PropertyGroup>
-    <DtsSdkRoot Condition="'$(DtsSdkRoot)' == ''">$(MSBuildThisFileDirectory)../../../durabletask-dotnet/src/</DtsSdkRoot>
+    <DtsSdkVersion Condition="'$(DtsSdkVersion)' == ''">1.25.0-preview.2</DtsSdkVersion>
   </PropertyGroup>
 
 </Project>

@@ -13,19 +13,12 @@ configuration.
 
 ## Install the SDK
 
-The on-demand sandbox APIs ship in a preview package namespace,
-`durabletask.azuremanaged.preview.sandboxes`. During private preview they're installed
-from the `durabletask-python` preview source tree
-([PR microsoft/durabletask-python#151](https://github.com/microsoft/durabletask-python/pull/151)):
+The on-demand sandbox APIs ship under the `durabletask.azuremanaged.preview.sandboxes`
+namespace. Install the Durable Task packages:
 
 ```bash
-pip install -e /path/to/durabletask-python \
-            -e /path/to/durabletask-python/durabletask-azuremanaged
+pip install durabletask==1.6.0 durabletask-azuremanaged==1.6.0
 ```
-
-> [!NOTE]
-> The on-demand sandbox APIs live under the
-> `durabletask.azuremanaged.preview.sandboxes` namespace.
 
 ## Step 1 — Declare a sandbox worker profile
 
@@ -176,9 +169,8 @@ declarer app and the remote worker stay in sync. When the worker connects, it re
 registered activity names, and DTS validates they match the declaration before
 advertising worker capacity.
 
-Build and push the image with a `Containerfile`/`Dockerfile` that installs the preview
-SDK and your activity's dependencies, then copies in the worker entry point. During
-private preview the SDK is provided from source as a named build context:
+Build and push the image with a `Containerfile`/`Dockerfile` that installs the SDK and
+your activity's dependencies, then copies in the worker entry point:
 
 ```dockerfile
 # syntax=docker/dockerfile:1.7
@@ -190,12 +182,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
 
-# Install the durabletask-python preview SDK (with the sandboxes extension),
-# plus your activity dependencies.
-COPY --from=sdk . /src/durabletask-python
-RUN pip install --no-cache-dir \
-        /src/durabletask-python \
-        /src/durabletask-python/durabletask-azuremanaged
+# Install the Durable Task SDK (with the sandboxes extension), plus your
+# activity dependencies.
+RUN pip install --no-cache-dir durabletask==1.6.0 durabletask-azuremanaged==1.6.0
 
 COPY remote_worker.py /app/remote_worker.py
 COPY activities.py /app/activities.py
@@ -204,10 +193,7 @@ ENTRYPOINT ["python", "/app/remote_worker.py"]
 ```
 
 ```bash
-docker build \
-  -f Containerfile \
-  --build-context sdk=/path/to/durabletask-python \
-  -t <container image reference> .
+docker build -f Containerfile -t <container image reference> .
 docker push <container image reference>
 ```
 

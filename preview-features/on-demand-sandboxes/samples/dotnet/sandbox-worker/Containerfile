@@ -1,11 +1,10 @@
 # syntax=docker/dockerfile:1.7
 #
-# Build from the demo root with two contexts:
+# Build from the demo root:
 #
 #   docker build \
 #     --platform linux/amd64 \
 #     -f sandbox-worker/Containerfile \
-#     --build-context sdk=/Users/<you>/durabletask-dotnet \
 #     -t <acr>.azurecr.io/dts-codegen-sandbox:<tag> \
 #     .
 #
@@ -13,16 +12,14 @@
 # binary segfaults under Docker's arm64 emulation on Apple Silicon. amd64 protoc
 # works under Rosetta and matches what DTS sandboxes run anyway.
 #
-# The `sdk` build context points at the durabletask-dotnet repo. The main context
-# is this demo. The sandbox worker is a .NET app that shells out to python3, so
-# we install pandas in the runtime stage.
+# The sandbox worker is a .NET app that shells out to python3, so we install
+# pandas in the runtime stage.
 
 FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 
-WORKDIR /src
-COPY --from=sdk . /src/durabletask-dotnet
-COPY . /src/dts-ondemand-sandbox-codegen-demo
+WORKDIR /src/dts-ondemand-sandbox-codegen-demo
+COPY . .
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo/sandbox-worker
 RUN case "$TARGETARCH" in \
@@ -35,7 +32,6 @@ RUN case "$TARGETARCH" in \
         -r "$runtime_identifier" \
         --self-contained false \
         -o /app/publish \
-        /p:DtsSdkRoot=/src/durabletask-dotnet/src/ \
         /p:DebugSymbols=false \
         /p:DebugType=None \
     && find /app/publish -type f \( -name '*.xml' -o -name '*.pdb' \) -delete

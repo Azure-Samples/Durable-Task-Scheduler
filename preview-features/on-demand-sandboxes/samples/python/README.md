@@ -2,8 +2,7 @@
 
 The Python port of the [.NET demo](../dotnet/README.md). A three-step Durable Task
 workflow that demonstrates the **On-demand Sandboxes** preview of Azure Durable
-Task Scheduler (DTS), using the
-[`durabletask.azuremanaged.preview.sandboxes`](https://github.com/microsoft/durabletask-python/pull/151)
+Task Scheduler (DTS), using the `durabletask.azuremanaged.preview.sandboxes`
 package.
 
 ```
@@ -45,7 +44,6 @@ python/
 - An Azure Container Registry the sandbox platform can pull from
 - Two user-assigned managed identities (image pull + scheduler connect)
 - An Azure OpenAI deployment of a chat model (GPT-4o, GPT-4.1, etc.)
-- The `durabletask-python` preview source checked out (PR #151)
 
 ## Install
 
@@ -53,14 +51,12 @@ From the `python/` directory:
 
 ```bash
 pip install -r requirements.txt
-# Durable Task preview SDK from source (PR microsoft/durabletask-python#151):
-pip install -e /path/to/durabletask-python -e /path/to/durabletask-python/durabletask-azuremanaged
+pip install durabletask==1.6.0 durabletask-azuremanaged==1.6.0
 ```
 
 ## Build the sandbox image
 
-From the `python/` directory, pass the durabletask-python checkout as the `sdk`
-build context:
+From the `python/` directory:
 
 ```bash
 ACR=<your-acr-name>
@@ -68,7 +64,6 @@ IMAGE=$ACR.azurecr.io/dts-codegen-sandbox-python:v1
 
 docker build \
   -f Containerfile \
-  --build-context sdk=$HOME/durabletask-python \
   -t $IMAGE \
   .
 

@@ -1,11 +1,9 @@
 # syntax=docker/dockerfile:1.7
 #
-# Build from the python/ demo directory with the durabletask-python preview SDK
-# (PR microsoft/durabletask-python#151) provided as a named build context:
+# Build from the python/ demo directory:
 #
 #   docker build \
 #     -f Containerfile \
-#     --build-context sdk=/path/to/durabletask-python \
 #     -t <acr>.azurecr.io/dts-codegen-sandbox-python:v1 \
 #     .
 #
@@ -19,12 +17,11 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
 
-# Install the durabletask-python preview SDK (with the sandboxes extension),
-# plus pandas for the LLM-generated scripts the sandbox executes.
-COPY --from=sdk . /src/durabletask-python
+# Install the Durable Task SDK (with the sandboxes extension), plus pandas for
+# the LLM-generated scripts the sandbox executes.
 RUN pip install --no-cache-dir \
-        /src/durabletask-python \
-        /src/durabletask-python/durabletask-azuremanaged \
+        durabletask==1.6.0 \
+        durabletask-azuremanaged==1.6.0 \
         azure-identity \
         "pandas==2.2.*"
 

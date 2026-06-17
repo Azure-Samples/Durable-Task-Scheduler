@@ -86,17 +86,8 @@ dts-ondemand-sandbox-codegen-demo/
 - A DTS scheduler + task hub you can hit
 - An Azure Container Registry with anonymous pull enabled (so DTS can fetch the sandbox image)
 - An Azure OpenAI deployment of a chat model (GPT-4o, GPT-4.1, etc.)
-- The `durabletask-dotnet` repo checked out alongside (or override `DtsSdkRoot`)
-
-Default layout assumed:
-
-```
-~/durabletask-dotnet/                 # private preview SDK source
-~/workspace/dts-ondemand-sandbox-codegen-demo/   # this repo
-```
-
-If your durabletask-dotnet checkout lives elsewhere, override `DtsSdkRoot` on every
-`dotnet` and `docker build` command (examples below).
+- The Durable Task on-demand sandbox preview packages (`1.25.0-preview.2`) available on
+  a NuGet feed you can restore from
 
 ## Build the sandbox image
 
@@ -109,7 +100,6 @@ IMAGE=$ACR.azurecr.io/dts-codegen-sandbox:v1
 docker build \
   --platform linux/amd64 \
   -f sandbox-worker/Containerfile \
-  --build-context sdk=$HOME/durabletask-dotnet \
   -t $IMAGE \
   .
 
