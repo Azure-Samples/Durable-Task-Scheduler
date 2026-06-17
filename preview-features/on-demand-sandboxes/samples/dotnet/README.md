@@ -64,14 +64,19 @@ flowchart LR
 
 ```
 dts-ondemand-sandbox-codegen-demo/
-├── Directory.Build.props          # Points at the durabletask-dotnet SDK source
+├── Directory.Build.props          # Pins the DTS preview package version
 ├── data/sales_q1.csv              # Sample dataset (~35 rows)
-├── main-app/                      # Orchestrator host (.NET 10)
+├── azure.yaml                     # azd service + hooks (Deploy to Azure)
+├── infra/                         # Bicep: AKS, ACR, identity, Azure OpenAI, scheduler wiring
+├── scripts/                       # acr-build.sh + attach-scheduler-identity.sh (azd hooks)
+├── main-app/                      # Orchestrator host (.NET 10), deployed to AKS
 │   ├── Program.cs
 │   ├── AnalyzeSalesOrchestrator.cs
 │   ├── Activities.cs              # GenerateCode + FormatAnswer (in-process)
 │   ├── Contracts.cs
-│   └── TaskNames.cs
+│   ├── TaskNames.cs
+│   ├── Containerfile              # main-app image
+│   └── manifests/                 # K8s deployment template
 └── sandbox-worker/                # Built into the sandbox container image
     ├── Program.cs                 # UseSandboxWorker()
     ├── ExecuteCodeActivity.cs     # Shells out to python3
@@ -138,6 +143,76 @@ The main-app console shows the AOAI-generated Python (prefixed `[generate]`) bef
 it's handed off to the sandbox. The sandbox container logs (prefixed `[sandbox]`)
 stream through the DTS dashboard's **On-demand Sandboxes** tab while `ExecuteCode`
 runs — that's where you see the code, dataset load, execution timing, and script output.
+
+## Deploy to Azure (AKS) with `azd`
+
+The `infra/` folder and `azure.yaml` deploy the **main-app** orchestrator to **Azure
+Kubernetes Service** with [`azd`](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd).
+The sandbox worker image is built and pushed to ACR; DTS starts it on demand, so it is
+never deployed to the cluster.
+
+> The Durable Task Scheduler is **not created** by this template — you pass in an
+> existing one. On-demand Sandboxes is a private-preview feature that must be enabled on
+> the scheduler out of band, so the scheduler is patched separately and supplied here by
+> name.
+
+### What gets provisioned
+
+| Resource | Purpose |
+|----------|---------|
+| **AKS cluster** | Hosts the `main-app` orchestrator pod (workload identity enabled) |
+| **Azure Container Registry** | Stores the main-app and sandbox-worker images (built server-side via ACR Tasks) |
+| **User-assigned managed identity** + federated credential | Pod auth to DTS/Azure OpenAI, ACR pull for the sandbox, and the sandbox's connection back to DTS |
+| **Azure OpenAI** + `gpt-4o` deployment | Backs the in-process `GenerateCode` activity |
+| **VNet** | Network isolation for AKS |
+
+The deployment also **ensures the task hub** exists, grants the identity the roles it
+needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
+`postprovision` hook **attaches the identity to your scheduler** (a merge-safe PATCH).
+
+### Prerequisites
+
+- An existing **DTS scheduler** with the On-demand Sandboxes preview enabled, and its
+  resource group name.
+- [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), and [kubectl](https://kubernetes.io/docs/tasks/tools/).
+- Azure OpenAI quota for `gpt-4o` in your target region.
+
+### Deploy
+
+```bash
+azd auth login && az login
+
+# Point the template at your existing (preview-enabled) scheduler.
+azd env set DTS_SCHEDULER_NAME "<scheduler-name>"
+azd env set DTS_SCHEDULER_RESOURCE_GROUP "<scheduler-resource-group>"
+# Optional overrides: DTS_TASK_HUB (default: default), AZURE_OPENAI_LOCATION
+
+azd up
+```
+
+`azd` provisions the resources, builds both images via ACR Tasks, attaches the identity
+to your scheduler, and deploys the `main-app` pod. If you don't set `DTS_SCHEDULER_NAME`
+/ `DTS_SCHEDULER_RESOURCE_GROUP` first, `azd` prompts for them.
+
+### Verify
+
+```bash
+az aks get-credentials --resource-group <rg-name> --name <aks-name>   # from `azd env get-values`
+kubectl get pods
+kubectl logs -l app=mainapp --tail=50
+```
+
+The `main-app` pod runs the orchestration; `[sandbox]` logs from `ExecuteCode` stream in
+the DTS dashboard's **On-demand Sandboxes** tab.
+
+### Clean up
+
+```bash
+azd down
+```
+
+This removes the resources the template created. Your scheduler is left untouched (it was
+not created here); detach the identity manually if you no longer need it.
 
 ## Sample questions to try
 

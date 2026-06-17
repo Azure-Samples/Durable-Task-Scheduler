@@ -16,7 +16,7 @@
     <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="$(DtsSdkVersion)" />
     <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged.Sandboxes" Version="$(DtsSdkVersion)" />
     <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="$(DtsSdkVersion)" />
-    <PackageReference Include="Microsoft.DurableTask.Generators" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Generators" Version="$(DtsGeneratorsVersion)" />
   </ItemGroup>
 
 </Project>

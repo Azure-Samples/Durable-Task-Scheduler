@@ -1,0 +1,57 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: mainapp
+  namespace: default
+  annotations:
+    azure.workload.identity/client-id: {{ .Env.AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID }}
+  labels:
+    azure.workload.identity/use: "true"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mainapp
+  namespace: default
+  labels:
+    app: mainapp
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mainapp
+  template:
+    metadata:
+      labels:
+        app: mainapp
+        azure.workload.identity/use: "true"
+    spec:
+      serviceAccountName: mainapp
+      containers:
+        - name: mainapp
+          image: {{ .Env.SERVICE_MAINAPP_IMAGE_NAME }}
+          env:
+            - name: DTS_ENDPOINT
+              value: {{ .Env.DTS_ENDPOINT }}
+            - name: DTS_TASK_HUB
+              value: {{ .Env.DTS_TASK_HUB }}
+            - name: AOAI_ENDPOINT
+              value: {{ .Env.AOAI_ENDPOINT }}
+            - name: AOAI_DEPLOYMENT
+              value: {{ .Env.AOAI_DEPLOYMENT }}
+            - name: AZURE_CLIENT_ID
+              value: {{ .Env.AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID }}
+            # The sandbox worker profile (WorkerProfiles.cs) reads these:
+            - name: DTS_SANDBOX_CONTAINER_IMAGE
+              value: {{ .Env.DTS_SANDBOX_CONTAINER_IMAGE }}
+            - name: DTS_SANDBOX_IMAGE_PULL_UMI_CLIENT_ID
+              value: {{ .Env.AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID }}
+            - name: DTS_SANDBOX_SCHEDULER_UMI_CLIENT_ID
+              value: {{ .Env.AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID }}
+          resources:
+            requests:
+              cpu: 250m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 512Mi
