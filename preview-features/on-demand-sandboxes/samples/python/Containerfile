@@ -1,0 +1,34 @@
+# syntax=docker/dockerfile:1.7
+#
+# Build from the python/ demo directory with the durabletask-python preview SDK
+# (PR microsoft/durabletask-python#151) provided as a named build context:
+#
+#   docker build \
+#     -f Containerfile \
+#     --build-context sdk=/path/to/durabletask-python \
+#     -t <acr>.azurecr.io/dts-codegen-sandbox-python:v1 \
+#     .
+#
+# Private preview requires the image to be publicly pullable by the sandbox platform.
+
+FROM python:3.12-slim AS runtime
+WORKDIR /app
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
+
+# Install the durabletask-python preview SDK (with the sandboxes extension),
+# plus pandas for the LLM-generated scripts the sandbox executes.
+COPY --from=sdk . /src/durabletask-python
+RUN pip install --no-cache-dir \
+        /src/durabletask-python \
+        /src/durabletask-python/durabletask-azuremanaged \
+        azure-identity \
+        "pandas==2.2.*"
+
+COPY remote_worker.py /app/remote_worker.py
+COPY activities.py /app/activities.py
+
+ENTRYPOINT ["python", "/app/remote_worker.py"]

@@ -1,0 +1,11 @@
+<Project>
+
+  <!--
+    Path to the durabletask-dotnet private-preview SDK source tree.
+    Override on the command line: dotnet build /p:DtsSdkRoot=/some/path/durabletask-dotnet/src/
+  -->
+  <PropertyGroup>
+    <DtsSdkRoot Condition="'$(DtsSdkRoot)' == ''">$(MSBuildThisFileDirectory)../../../durabletask-dotnet/src/</DtsSdkRoot>
+  </PropertyGroup>
+
+</Project>

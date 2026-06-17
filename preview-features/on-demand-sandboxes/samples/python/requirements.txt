@@ -1,0 +1,9 @@
+# Declarer-app (main_app.py) dependencies.
+#
+# The Durable Task SDK itself ships from the durabletask-python preview source
+# tree (PR microsoft/durabletask-python#151) and is installed separately, e.g.:
+#
+#   pip install -e /path/to/durabletask-python -e /path/to/durabletask-python/durabletask-azuremanaged
+#
+azure-identity>=1.16
+openai>=1.40
