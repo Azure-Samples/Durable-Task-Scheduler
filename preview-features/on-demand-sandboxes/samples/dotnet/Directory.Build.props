@@ -1,0 +1,13 @@
+<Project>
+
+  <!--
+    Durable Task on-demand sandbox preview package version.
+    Override on the command line: dotnet build /p:DtsSdkVersion=<version>
+  -->
+  <PropertyGroup>
+    <DtsSdkVersion Condition="'$(DtsSdkVersion)' == ''">1.25.0-preview.2</DtsSdkVersion>
+    <!-- Microsoft.DurableTask.Generators ships on its own version line, separate from the SDK. -->
+    <DtsGeneratorsVersion Condition="'$(DtsGeneratorsVersion)' == ''">2.1.0-preview.2</DtsGeneratorsVersion>
+  </PropertyGroup>
+
+</Project>

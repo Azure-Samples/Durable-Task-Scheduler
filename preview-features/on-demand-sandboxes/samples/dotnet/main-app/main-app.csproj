@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>CodegenMainApp</AssemblyName>
+    <RootNamespace>Demo.Codegen.MainApp</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged.Sandboxes" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="$(DtsSdkVersion)" />
+    <PackageReference Include="Microsoft.DurableTask.Generators" Version="$(DtsGeneratorsVersion)" />
+  </ItemGroup>
+
+</Project>
