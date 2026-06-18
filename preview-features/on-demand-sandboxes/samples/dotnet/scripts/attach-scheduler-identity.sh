@@ -8,7 +8,7 @@
 # NOTE: enabling the On-demand Sandboxes preview *feature* on the scheduler is a
 # separate, out-of-band step handled during private-preview onboarding.
 
-set -euo pipefail
+set -eu
 
 SUBSCRIPTION_ID="${AZURE_SUBSCRIPTION_ID:?AZURE_SUBSCRIPTION_ID must be set}"
 SCHEDULER_NAME="${DTS_SCHEDULER_NAME:?DTS_SCHEDULER_NAME must be set}"

@@ -7,7 +7,7 @@
 #   - sandbox    : the worker image DTS starts on demand. Not deployed to AKS; its full
 #                  image reference is handed to the app via DTS_SANDBOX_CONTAINER_IMAGE.
 
-set -euo pipefail
+set -eu
 
 REGISTRY="${AZURE_CONTAINER_REGISTRY_NAME:?AZURE_CONTAINER_REGISTRY_NAME must be set}"
 REGISTRY_ENDPOINT="${AZURE_CONTAINER_REGISTRY_ENDPOINT:?AZURE_CONTAINER_REGISTRY_ENDPOINT must be set}"

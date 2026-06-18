@@ -12,10 +12,10 @@ metadata:
 name: dts-ondemand-sandboxes-dotnet
 hooks:
   predeploy:
-    shell: bash
+    shell: sh
     run: ./scripts/acr-build.sh
   postprovision:
-    shell: bash
+    shell: sh
     run: ./scripts/attach-scheduler-identity.sh
 services:
   mainapp:
