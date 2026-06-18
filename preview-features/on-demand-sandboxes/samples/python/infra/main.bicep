@@ -20,7 +20,7 @@ param principalId string = ''
 
 // AKS parameters
 param aksClusterName string = ''
-param kubernetesVersion string = '1.32'
+param kubernetesVersion string = ''
 param aksVmSize string = 'standard_d4s_v5'
 param aksNodeCount int = 2
 
