@@ -9,8 +9,8 @@ param location string = resourceGroup().location
 @description('Tags to apply to the AKS cluster')
 param tags object = {}
 
-@description('The Kubernetes version for the AKS cluster')
-param kubernetesVersion string = '1.32'
+@description('The Kubernetes version for the AKS cluster. Leave empty to use the AKS default supported version.')
+param kubernetesVersion string = ''
 
 @description('The VM size for the default node pool')
 param agentVMSize string = 'standard_d4s_v5'
@@ -45,7 +45,7 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-01' = {
     type: 'SystemAssigned'
   }
   properties: {
-    kubernetesVersion: kubernetesVersion
+    kubernetesVersion: !empty(kubernetesVersion) ? kubernetesVersion : null
     dnsPrefix: name
     enableRBAC: true
     agentPoolProfiles: [
