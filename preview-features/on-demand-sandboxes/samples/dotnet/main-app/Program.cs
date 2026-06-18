@@ -115,6 +115,12 @@ else
     Console.WriteLine(result?.ReadOutputAs<string>() ?? "<no output>");
 }
 
-await host.StopAsync();
+// The app runs a single orchestration above. When deployed as an always-on
+// Deployment, we keep the process alive afterwards so the pod stays Running
+// instead of exiting (which would make Kubernetes restart it and schedule a
+// new orchestration on every restart). Block until the host receives SIGTERM.
+Console.WriteLine();
+Console.WriteLine("[demo] Orchestration complete. Idling; press Ctrl+C or send SIGTERM to exit.");
+await host.WaitForShutdownAsync();
 return 0;
 

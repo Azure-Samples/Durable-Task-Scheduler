@@ -12,6 +12,7 @@ untrusted, so it never executes inside this process.
 
 import os
 import sys
+import time
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
@@ -251,6 +252,18 @@ def main() -> int:
             print(state.serialized_output)
         elif state and state.failure_details:
             print(f"[failure] {state.failure_details}")
+
+        # The app runs a single orchestration above. When deployed as an always-on
+        # Deployment, we keep the process (and worker) alive afterwards so the pod
+        # stays Running instead of exiting -- exiting would make Kubernetes restart
+        # the pod and schedule a new orchestration on every restart. Idle until the
+        # pod receives SIGTERM (or Ctrl+C locally).
+        print("\n[demo] Orchestration complete. Idling; send SIGTERM or Ctrl+C to exit.")
+        try:
+            while True:
+                time.sleep(3600)
+        except KeyboardInterrupt:
+            pass
     return 0
 
 
