@@ -19,6 +19,9 @@
       },
       "taskHubName": {
         "value": "${DTS_TASK_HUB=default}"
+      },
+      "openAiLocation": {
+        "value": "${AZURE_OPENAI_LOCATION=eastus}"
       }
     }
 }

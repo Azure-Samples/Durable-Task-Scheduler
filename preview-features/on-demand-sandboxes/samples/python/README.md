@@ -113,8 +113,7 @@ on demand, so it is never deployed to the cluster.
 | **AKS cluster** | Hosts the `main_app` orchestrator pod (workload identity enabled) |
 | **Azure Container Registry** | Stores the main-app and sandbox-worker images (built server-side via ACR Tasks) |
 | **User-assigned managed identity** + federated credential | Pod auth to DTS/Azure OpenAI, ACR pull for the sandbox, and the sandbox's connection back to DTS |
-| **Azure OpenAI** + `gpt-4o` deployment | Backs the in-process `generate_code` activity |
-| **VNet** | Network isolation for AKS |
+| **Azure OpenAI** + `gpt-5.1` deployment | Backs the in-process `generate_code` activity |
 
 The deployment also **ensures the task hub** exists, grants the identity the roles it
 needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
@@ -125,7 +124,8 @@ needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
 - An existing **DTS scheduler** with the On-demand Sandboxes preview enabled, and its
   resource group name.
 - [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), and [kubectl](https://kubernetes.io/docs/tasks/tools/).
-- Azure OpenAI quota for `gpt-4o` in your target region.
+- Azure OpenAI quota for `gpt-5.1` (`GlobalStandard`) in your target region (default
+  `eastus`; override with `AZURE_OPENAI_LOCATION`).
 
 ### Deploy
 
