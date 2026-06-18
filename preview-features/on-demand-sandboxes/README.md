@@ -13,7 +13,6 @@ an existing scheduler or create a new one in any of these regions:
 - West US 3 (`westus3`)
 - North Europe (`northeurope`)
 - Australia East (`australiaeast`)
-- South Africa North (`southafricanorth`)
 
 Reply to us with your scheduler name and the region it's in, and we'll enable On-demand
 Sandboxes on it.

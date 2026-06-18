@@ -147,7 +147,7 @@ never deployed to the cluster.
 > existing one. On-demand Sandboxes is a private-preview feature that must be enabled on
 > the scheduler out of band, so the scheduler is patched separately and supplied here by
 > name. The scheduler must be in a supported preview region: East US 2, West US 3, North
-> Europe, Australia East, or South Africa North.
+> Europe, or Australia East.
 
 ### What gets provisioned
 
