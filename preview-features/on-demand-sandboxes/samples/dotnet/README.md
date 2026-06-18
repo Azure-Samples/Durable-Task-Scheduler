@@ -3,14 +3,6 @@
 A three-step Durable Task workflow that demonstrates the **On-demand Sandboxes** preview
 of Azure Durable Task Scheduler (DTS).
 
-```
-   ┌─────────────────────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐
-   │  GenerateCode           │    │  ExecuteCode            │    │  FormatAnswer           │
-   │  (in-process .NET)      │ -> │  (on-demand sandbox)    │ -> │  (in-process .NET)      │
-   │  Azure OpenAI -> Python │    │  python3 + pandas       │    │  Pretty-print answer    │
-   └─────────────────────────┘    └─────────────────────────┘    └─────────────────────────┘
-```
-
 The orchestrator asks a natural-language question over `data/sales_q1.csv`. The LLM
 returns a self-contained pandas script. That script is **untrusted** code, so it runs in
 a DTS-managed on-demand sandbox - not in the orchestrator's process. The first and last
@@ -58,7 +50,7 @@ flowchart LR
 - The orchestrator and its in-process activities (`GenerateCode`, `FormatAnswer`) run in the always-on `main-app` process and exchange work items with the DTS task hub.
 - `ExecuteCode` is declared as an on-demand sandbox activity by the `code-executor` worker profile (see `main-app/WorkerProfiles.cs`). The activity is never registered in the main app.
 - When the orchestrator calls `ExecuteCode`, the DTS on-demand sandbox runtime provisions a sandbox container from the profile's image. The sandbox picks up the work item, runs it, returns the result, and is scaled back to zero when idle.
-- The orchestrator's call site (`CallActivityAsync(TaskNames.ExecuteCode, ...)`) is identical to any other activity call — the "this runs in a sandbox" decision lives entirely in the worker profile declaration.
+- The orchestrator's call site (`CallActivityAsync(TaskNames.ExecuteCode, ...)`) is identical to any other activity call. The "this runs in a sandbox" decision lives entirely in the worker profile declaration.
 
 ## Layout
 
@@ -142,7 +134,7 @@ The orchestrator prints the question, the orchestration id, and the final answer
 The main-app console shows the AOAI-generated Python (prefixed `[generate]`) before
 it's handed off to the sandbox. The sandbox container logs (prefixed `[sandbox]`)
 stream through the DTS dashboard's **On-demand Sandboxes** tab while `ExecuteCode`
-runs — that's where you see the code, dataset load, execution timing, and script output.
+runs. That's where you see the code, dataset load, execution timing, and script output.
 
 ## Deploy to Azure (AKS) with `azd`
 
@@ -151,7 +143,7 @@ Kubernetes Service** with [`azd`](https://learn.microsoft.com/azure/developer/az
 The sandbox worker image is built and pushed to ACR; DTS starts it on demand, so it is
 never deployed to the cluster.
 
-> The Durable Task Scheduler is **not created** by this template — you pass in an
+> The Durable Task Scheduler is **not created** by this template. You pass in an
 > existing one. On-demand Sandboxes is a private-preview feature that must be enabled on
 > the scheduler out of band, so the scheduler is patched separately and supplied here by
 > name.
@@ -163,8 +155,7 @@ never deployed to the cluster.
 | **AKS cluster** | Hosts the `main-app` orchestrator pod (workload identity enabled) |
 | **Azure Container Registry** | Stores the main-app and sandbox-worker images (built server-side via ACR Tasks) |
 | **User-assigned managed identity** + federated credential | Pod auth to DTS/Azure OpenAI, ACR pull for the sandbox, and the sandbox's connection back to DTS |
-| **Azure OpenAI** + `gpt-4o` deployment | Backs the in-process `GenerateCode` activity |
-| **VNet** | Network isolation for AKS |
+| **Azure OpenAI** + `gpt-5.1` deployment | Backs the in-process `GenerateCode` activity |
 
 The deployment also **ensures the task hub** exists, grants the identity the roles it
 needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
@@ -175,7 +166,8 @@ needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
 - An existing **DTS scheduler** with the On-demand Sandboxes preview enabled, and its
   resource group name.
 - [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), and [kubectl](https://kubernetes.io/docs/tasks/tools/).
-- Azure OpenAI quota for `gpt-4o` in your target region.
+- Azure OpenAI quota for `gpt-5.1` (`GlobalStandard`) in your target region (default
+  `eastus`; override with `AZURE_OPENAI_LOCATION`).
 
 ### Deploy
 

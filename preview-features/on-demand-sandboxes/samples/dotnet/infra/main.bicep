@@ -84,19 +84,6 @@ module identity './app/user-assigned-identity.bicep' = {
 }
 
 // ============================
-// Networking
-// ============================
-
-module vnet './core/networking/vnet.bicep' = {
-  scope: rg
-  params: {
-    name: '${abbrs.networkVirtualNetworks}${resourceToken}'
-    location: location
-    tags: tags
-  }
-}
-
-// ============================
 // Container Registry
 // ============================
 
@@ -138,7 +125,6 @@ module aksCluster './core/host/aks-cluster.bicep' = {
     kubernetesVersion: kubernetesVersion
     agentVMSize: aksVmSize
     agentCount: aksNodeCount
-    subnetId: vnet.outputs.aksSubnetId
     containerRegistryName: containerRegistry.outputs.name
   }
 }

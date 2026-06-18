@@ -1,14 +1,14 @@
-# On-demand Sandboxes — Python guide
+# On-demand Sandboxes: Python guide
 
 > **Status:** Private preview · [Back to overview](./README.md)
 
 This guide walks through using On-demand Sandboxes with the **Python** Durable Task SDK.
-Make sure you've reviewed the [prerequisites](./README.md#prerequisites) first.
+Make sure you've read the [overview](./README.md) first.
 
 On-demand Sandboxes use a two-part model: a **sandbox worker profile** (the *declarer
 app*) that tells DTS which activities to offload, and a **worker image** that contains
 those activity implementations. Your orchestrator still calls activities the same way it
-always has—the decision to run one in a sandbox lives entirely in the profile
+always has. The decision to run one in a sandbox lives entirely in the profile
 configuration.
 
 ## Install the SDK
@@ -20,7 +20,7 @@ namespace. Install the Durable Task packages:
 pip install durabletask==1.6.0 durabletask-azuremanaged==1.6.0
 ```
 
-## Step 1 — Declare a sandbox worker profile
+## Step 1: Declare a sandbox worker profile
 
 The declarer app uses a decorated profile class to declare the remote worker image and
 activity ownership, then enables sandbox activities on the DTS client. The profile sets
@@ -100,7 +100,7 @@ with DurableTaskSchedulerWorker(
     print(state.serialized_output if state else "no result")
 ```
 
-`enable_sandbox_activities()` is the key call—it registers the declared profiles with DTS
+`enable_sandbox_activities()` is the key call. It registers the declared profiles with DTS
 so it can route those activities to the sandbox image. `use_work_item_filters()` keeps
 sandbox activities from being dispatched to this in-process worker.
 
@@ -110,28 +110,108 @@ sandbox activities from being dispatched to this in-process worker.
 > The image-pull identity must have the **AcrPull** role on your container registry, and
 > the worker/scheduler identity must have whatever roles your activity code needs on the
 > downstream services it calls (you can use the same identity for both or split them). See
-> [Configure the scheduler identity for image pull](./README.md#configure-the-scheduler-identity-for-image-pull).
+> [Configure the scheduler identity for image pull](#configure-the-scheduler-identity-for-image-pull).
 
-For the meaning, accepted values, and defaults of each profile option, see the
-[worker profile configuration reference](./README.md#worker-profile-configuration-reference).
-In short: `image.image_ref` is the image with your activity implementations;
-`image.managed_identity_client_id` is the managed identity DTS uses to **pull the worker
-image** from your registry (needs **AcrPull**), while
-`scheduler_managed_identity_client_id` is the managed identity the **sandbox worker uses
-to connect back to DTS** and that the activity code runs as when it calls other services;
-`cpu` / `memory` set the per-sandbox resource shape; `max_concurrent_activities` sets
-concurrency; `environment_variables` injects customer environment variables; and
-`add_activity(...)` selects the activities to offload (only added activities run in
-DTS-managed isolated compute; everything else stays in-process).
-
-The orchestrator call site doesn't change—it calls `REMOTE_HELLO` the same way it would
+The orchestrator call site doesn't change. It calls `REMOTE_HELLO` the same way it would
 call any activity, and DTS routes it to the sandbox.
 
-## Step 2 — Build the worker image
+### Worker profile configuration reference
+
+The table below lists each profile option, what it controls, its accepted values, and its
+default.
+
+| Setting | What it controls | Accepted values | Default |
+| --- | --- | --- | --- |
+| `image.image_ref` | The container image that holds your activity implementations. | A full OCI image reference, by tag (`myregistry.azurecr.io/workers/hello:1.0`) or digest (`myregistry.azurecr.io/workers/hello@sha256:...`). | *Required* |
+| `image.managed_identity_client_id` | The client ID of the user-assigned managed identity DTS uses to **pull the worker image** from your registry. This identity needs the **AcrPull** role on the registry. | A user-assigned managed identity client ID (GUID). Must be attached to the scheduler. | *Required* |
+| `scheduler_managed_identity_client_id` | The client ID of the user-assigned managed identity the **sandbox worker uses to connect back to DTS**, and that the activity code runs as when calling other services. | A user-assigned managed identity client ID (GUID). Must be attached to the scheduler. Can be the same identity as the image-pull identity or a different one. | *Required* |
+| `cpu` | CPU quantity declared for each sandbox. | A positive CPU quantity, expressed in millicores (`500m`, `1000m`) or whole/fractional cores (`2`, `0.5`). | `1000m` (1 vCPU) |
+| `memory` | Memory quantity declared for each sandbox. | A positive memory quantity, such as `256Mi`, `1Gi`, or a bare number interpreted as MiB (`2048`). | `2048Mi` |
+| `max_concurrent_activities` | How many activities a single sandbox worker instance processes concurrently. | An integer greater than `0`. There is no enforced upper bound; size it to what your activity and resource shape can handle. | `100` |
+| `environment_variables` | Customer environment variables injected into the sandbox at runtime. | A map of string keys to string values. | Empty |
+| *(profile id)* | Friendly profile id that groups the image, resources, and activities for monitoring and reuse. | A non-empty string, unique across your declared profiles. | `default` |
+| `add_activity(...)` | The activity names this profile offloads to the sandbox. | One or more activity names. At least one is required; an activity can belong to only one profile. | *Required* |
+
+> [!NOTE]
+> CPU and memory must be positive resource quantities. The platform may apply additional
+> per-preview ceilings on the total CPU and memory a sandbox can request. Check your
+> private preview onboarding details for the current limits.
+
+## Configure the scheduler identity for image pull
+
+To start a sandbox, DTS pulls your worker image from your container registry on your
+behalf. It does this using a **user-assigned managed identity** attached to the scheduler.
+That identity must be granted the **AcrPull** role on the Azure Container Registry that
+hosts your worker image, and the scheduler must have the identity attached.
+
+> [!IMPORTANT]
+> Only **user-assigned** managed identities are supported. System-assigned managed
+> identities are not supported at this time.
+
+The worker profile distinguishes two identities, and you can use the same identity for
+both or split them:
+
+- **Image-pull identity** (`options.image.managed_identity_client_id`): the identity DTS
+  uses to **pull the worker image** from your registry. This identity needs the **AcrPull**
+  role on the registry.
+- **Worker/scheduler identity** (`options.scheduler_managed_identity_client_id`): the
+  identity the **sandbox worker uses to connect back to Durable Task Scheduler**, and the
+  identity your activity code runs as when it calls other services (for example, Storage,
+  Key Vault, or a database). Grant this identity whatever roles your activity code needs on
+  those downstream services.
+
+Both identities must be attached to the scheduler. Using two separate identities lets you
+scope image-pull permissions narrowly while granting your activity code only the
+downstream permissions it needs.
+
+### 1. Grant the identity the AcrPull role on your registry
+
+Assign the **AcrPull** role to the **image-pull** user-assigned managed identity, scoped
+to your registry:
+
+```bash
+az role assignment create \
+  --assignee "<image-pull-identity-principal-id>" \
+  --role "AcrPull" \
+  --scope "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.ContainerRegistry/registries/<registry-name>"
+```
+
+Without this role assignment, DTS cannot pull the worker image and the sandbox will fail
+to start. If your activity code calls other Azure services, grant the **worker/scheduler**
+identity the roles it needs on those services as well.
+
+### 2. Attach the identity to the scheduler
+
+The scheduler must have the user-assigned identity attached. The
+[`durabletask` Azure CLI extension](https://learn.microsoft.com/cli/azure/durabletask)
+provides identity commands that handle this for you. Install it with
+`az extension add --name durabletask` if you haven't already.
+
+Attach the identity to an existing scheduler:
+
+```bash
+az durabletask scheduler identity assign \
+  --resource-group "<resource-group>" \
+  --name "<scheduler-name>" \
+  --user-assigned "/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.ManagedIdentity/userAssignedIdentities/<identity-name>"
+```
+
+To attach multiple identities (for example, separate image-pull and worker/scheduler
+identities), pass several space-separated resource IDs to `--user-assigned`. Verify what's
+attached with `az durabletask scheduler identity show --resource-group "<resource-group>" --name "<scheduler-name>"`.
+
+Once the identities are attached to the scheduler (the image-pull identity with the
+**AcrPull** role on your registry), reference their client IDs on the worker profile
+(`options.image.managed_identity_client_id` and
+`options.scheduler_managed_identity_client_id`) so DTS uses the image-pull identity to pull
+the image and the worker/scheduler identity for the sandbox worker to connect back to DTS
+and call downstream services.
+
+## Step 2: Build the worker image
 
 The worker image runs `SandboxWorker()`, registers the activity implementations it owns,
 and starts. The sandbox worker does **not** configure the DTS endpoint, task hub, profile
-id, or credentials—`SandboxWorker()` reads the runtime settings (such as `DTS_ENDPOINT`,
+id, or credentials. `SandboxWorker()` reads the runtime settings (such as `DTS_ENDPOINT`,
 `DTS_TASK_HUB`, `DTS_WORKER_PROFILE_ID`, and `DTS_SANDBOX_ID`) from environment variables
 that DTS injects when it starts the container.
 
@@ -202,17 +282,17 @@ Then set the image reference on the declarer profile (for example, via the
 image-pull managed identity you configured on the profile, which must have the
 **AcrPull** role on your registry.
 
-## Step 3 — View logs in the DTS dashboard
+## Step 3: View logs in the DTS dashboard
 
 Once your sandbox activities are running, you can view their execution logs directly in
-the Durable Task Scheduler dashboard. See
-[View logs in the DTS dashboard](./README.md#view-logs-in-the-dts-dashboard) in the
-overview for details.
+the Durable Task Scheduler dashboard. The dashboard shows real-time output from your
+managed workers, including stdout, stderr, and activity lifecycle events, giving you full
+visibility into what's happening inside the sandbox without configuring external log
+sinks or building your own observability pipeline.
 
 ## Next steps
 
-- [Worker profile configuration reference](./README.md#worker-profile-configuration-reference)
-- [Configure the scheduler identity for image pull](./README.md#configure-the-scheduler-identity-for-image-pull)
+- [Configure the scheduler identity for image pull](#configure-the-scheduler-identity-for-image-pull)
 - [End-to-end Python sample](../samples/python)
 - [.NET guide](./dotnet.md)
 - [Back to overview](./README.md)

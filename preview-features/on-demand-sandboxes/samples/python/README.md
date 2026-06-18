@@ -5,17 +5,9 @@ workflow that demonstrates the **On-demand Sandboxes** preview of Azure Durable
 Task Scheduler (DTS), using the `durabletask.azuremanaged.preview.sandboxes`
 package.
 
-```
-   ┌─────────────────────────┐    ┌─────────────────────────┐    ┌─────────────────────────┐
-   │  generate_code          │    │  execute_code           │    │  format_answer          │
-   │  (in-process Python)    │ -> │  (on-demand sandbox)    │ -> │  (in-process Python)    │
-   │  Azure OpenAI -> Python │    │  python3 + pandas       │    │  Pick top region        │
-   └─────────────────────────┘    └─────────────────────────┘    └─────────────────────────┘
-```
-
 The orchestrator asks a natural-language question over `data/sales_q1.csv`. The LLM
 returns a self-contained pandas script. That script is **untrusted** code, so it runs
-in a DTS-managed on-demand sandbox — not in the orchestrator's process. The first and
+in a DTS-managed on-demand sandbox, not in the orchestrator's process. The first and
 last activities stay in-process; `execute_code` is fanned out one sandbox execution
 per region partition.
 
@@ -109,7 +101,7 @@ Kubernetes Service** with [`azd`](https://learn.microsoft.com/azure/developer/az
 The sandbox worker image (`remote_worker.py`) is built and pushed to ACR; DTS starts it
 on demand, so it is never deployed to the cluster.
 
-> The Durable Task Scheduler is **not created** by this template — you pass in an
+> The Durable Task Scheduler is **not created** by this template. You pass in an
 > existing one. On-demand Sandboxes is a private-preview feature that must be enabled on
 > the scheduler out of band, so the scheduler is patched separately and supplied here by
 > name.
