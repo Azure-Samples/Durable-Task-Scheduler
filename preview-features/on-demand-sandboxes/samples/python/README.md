@@ -104,7 +104,8 @@ on demand, so it is never deployed to the cluster.
 > The Durable Task Scheduler is **not created** by this template. You pass in an
 > existing one. On-demand Sandboxes is a private-preview feature that must be enabled on
 > the scheduler out of band, so the scheduler is patched separately and supplied here by
-> name.
+> name. The scheduler must be in a supported preview region: East US 2, West US 3, North
+> Europe, Australia East, or South Africa North.
 
 ### What gets provisioned
 
