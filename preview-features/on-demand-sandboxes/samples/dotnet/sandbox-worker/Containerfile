@@ -15,7 +15,7 @@
 # The sandbox worker is a .NET app that shells out to python3, so we install
 # pandas in the runtime stage.
 
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo

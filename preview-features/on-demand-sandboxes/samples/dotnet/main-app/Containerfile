@@ -9,7 +9,7 @@
 # under Docker's arm64 emulation on Apple Silicon. amd64 works under Rosetta and matches
 # what the cluster runs.
 
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo

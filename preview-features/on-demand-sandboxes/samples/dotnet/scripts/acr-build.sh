@@ -21,10 +21,13 @@ build() {
     local full_image="${REGISTRY_ENDPOINT}/${image_repo}:${TAG}"
 
     echo "==> Building ${image_repo}:${TAG} via ACR Tasks (--platform linux/amd64)..." >&2
+    # The classic ACR builder does not auto-populate the BuildKit TARGETARCH arg, so we
+    # pass it explicitly. We always build linux/amd64 here, so amd64 is correct.
     az acr build \
         --registry "${REGISTRY}" \
         --image "${image_repo}:${TAG}" \
         --platform linux/amd64 \
+        --build-arg TARGETARCH=amd64 \
         --file "${containerfile}" \
         . \
         --no-logs \
