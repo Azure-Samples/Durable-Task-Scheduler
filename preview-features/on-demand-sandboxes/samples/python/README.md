@@ -1,7 +1,6 @@
 # On-demand Sandboxes demo (Python): LLM-generated code interpreter
 
-The Python port of the [.NET demo](../dotnet/README.md). A three-step Durable Task
-workflow that demonstrates the **On-demand Sandboxes** preview of Azure Durable
+A three-step Durable Task workflow that demonstrates the **On-demand Sandboxes** preview of Azure Durable
 Task Scheduler (DTS), using the `durabletask.azuremanaged.preview.sandboxes`
 package.
 
@@ -33,14 +32,20 @@ python/
   registered on the main app worker.
 - `generate_code` and `format_answer` run in-process in the main app worker.
 
-## Prerequisites
+## Prerequisites (local development)
+
+These prerequisites are for running the sample **locally** (building the sandbox image
+and running the orchestrator on your machine). To deploy to Azure instead, skip to
+[Deploy to Azure (AKS) with `azd`](#deploy-to-azure-aks-with-azd), which has its own
+prerequisites.
 
 - Python 3.12+
 - Docker (to build the sandbox image)
+- Azure CLI (`az`), signed in with access to the scheduler, ACR, and Azure OpenAI
 - A DTS scheduler + task hub with the On-demand Sandboxes preview enabled
-- An Azure Container Registry the sandbox platform can pull from
+- An Azure Container Registry the image-pull identity can pull from (granted AcrPull)
 - Two user-assigned managed identities (image pull + scheduler connect)
-- An Azure OpenAI deployment of a chat model (GPT-4o, GPT-4.1, etc.)
+- An Azure OpenAI deployment of a chat model (GPT-5.1, GPT-5, GPT-4.1, etc.)
 
 ## Install
 
@@ -63,10 +68,16 @@ docker build \
   -t $IMAGE \
   .
 
-# Enable anonymous pull so DTS can fetch the sandbox image without credentials
-az acr update --name $ACR --anonymous-pull-enabled true
 az acr login --name $ACR
 docker push $IMAGE
+
+# DTS pulls the sandbox image using the image-pull managed identity (not anonymous
+# pull). Grant that identity AcrPull on the registry -- use the same UMI you pass as
+# DTS_SANDBOX_IMAGE_PULL_UMI_CLIENT_ID when running the orchestrator.
+az role assignment create \
+  --assignee "<image-pull UMI client ID>" \
+  --role AcrPull \
+  --scope "$(az acr show --name $ACR --query id -o tsv)"
 ```
 
 ## Run the orchestrator
@@ -119,7 +130,7 @@ The deployment also **ensures the task hub** exists, grants the identity the rol
 needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
 `postprovision` hook **attaches the identity to your scheduler** (a merge-safe PATCH).
 
-### Prerequisites
+### Prerequisites (Azure deployment)
 
 - An existing **DTS scheduler** with the On-demand Sandboxes preview enabled, and its
   resource group name.
