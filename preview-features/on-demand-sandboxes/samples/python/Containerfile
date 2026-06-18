@@ -20,7 +20,6 @@ ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
 # Install the Durable Task SDK (with the sandboxes extension), plus pandas for
 # the LLM-generated scripts the sandbox executes.
 RUN pip install --no-cache-dir \
-        durabletask==1.6.0 \
         durabletask-azuremanaged==1.6.0 \
         azure-identity \
         "pandas==2.2.*"

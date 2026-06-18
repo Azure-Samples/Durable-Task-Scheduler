@@ -14,10 +14,11 @@ configuration.
 ## Install the SDK
 
 The on-demand sandbox APIs ship under the `durabletask.azuremanaged.preview.sandboxes`
-namespace. Install the Durable Task packages:
+namespace. Install the Azure-managed Durable Task package (it pulls in the core
+`durabletask` SDK):
 
 ```bash
-pip install durabletask==1.6.0 durabletask-azuremanaged==1.6.0
+pip install durabletask-azuremanaged==1.6.0
 ```
 
 ## Step 1: Declare a sandbox worker profile
@@ -264,7 +265,7 @@ ENV GRPC_DEFAULT_SSL_ROOTS_FILE_PATH=/etc/ssl/certs/ca-certificates.crt
 
 # Install the Durable Task SDK (with the sandboxes extension), plus your
 # activity dependencies.
-RUN pip install --no-cache-dir durabletask==1.6.0 durabletask-azuremanaged==1.6.0
+RUN pip install --no-cache-dir durabletask-azuremanaged==1.6.0
 
 COPY remote_worker.py /app/remote_worker.py
 COPY activities.py /app/activities.py

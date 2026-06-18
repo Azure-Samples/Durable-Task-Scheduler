@@ -48,7 +48,6 @@ From the `python/` directory:
 
 ```bash
 pip install -r requirements.txt
-pip install durabletask==1.6.0 durabletask-azuremanaged==1.6.0
 ```
 
 ## Build the sandbox image
