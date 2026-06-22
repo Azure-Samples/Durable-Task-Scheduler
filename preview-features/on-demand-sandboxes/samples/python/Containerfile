@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-#
 # Build from the python/ demo directory:
 #
 #   docker build \
@@ -8,6 +6,9 @@
 #     .
 #
 # Private preview requires the image to be publicly pullable by the sandbox platform.
+#
+# No `# syntax` directive: built remotely via ACR Tasks (scripts/acr-build.sh), whose
+# classic builder does not support BuildKit syntax.
 
 FROM python:3.12-slim AS runtime
 WORKDIR /app

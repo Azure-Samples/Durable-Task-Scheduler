@@ -115,6 +115,12 @@ else
     Console.WriteLine(result?.ReadOutputAs<string>() ?? "<no output>");
 }
 
-await host.StopAsync();
+// Schedule exactly once. Don't exit the process: this runs as an always-on Container App,
+// so returning would let Container Apps restart the replica and re-run Main (scheduling a
+// new orchestration every time). Instead, keep the host running so the worker stays
+// connected to DTS and ready to serve sandbox work items, and block until shutdown.
+Console.WriteLine();
+Console.WriteLine("Orchestration complete. Worker host staying alive; press Ctrl+C to exit.");
+await host.WaitForShutdownAsync();
 return 0;
 

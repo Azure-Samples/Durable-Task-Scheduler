@@ -1,29 +1,20 @@
-# syntax=docker/dockerfile:1.7
+# Builds the orchestrator (main-app) image deployed to Azure Container Apps.
 #
-# Builds the orchestrator (main-app) image deployed to Azure Container Apps. Build from the
-# .NET sample root so Directory.Build.props and the data/ folder are in the build context:
-#
-#   docker build --platform linux/amd64 -f main-app/Containerfile -t <acr>/main-app:<tag> .
-#
-# --platform linux/amd64 is required: the Grpc.Tools linux_arm64 protoc binary segfaults
-# under Docker's arm64 emulation on Apple Silicon. amd64 works under Rosetta and matches
-# what Container Apps runs.
+# Built amd64-only: azd builds this remotely via ACR Tasks (azure.yaml docker.remoteBuild),
+# whose classic builder runs on amd64 and does not support BuildKit syntax (no `# syntax`
+# directive, no `--platform=$TARGETPLATFORM`/`ARG TARGETARCH`). Container Apps also runs
+# amd64, so the runtime identifier is pinned to linux-x64. Building amd64 also sidesteps
+# the Grpc.Tools linux_arm64 protoc segfault seen under arm64 emulation on Apple Silicon.
 
-FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
-ARG TARGETARCH
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo
 COPY . .
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo/main-app
-RUN case "$TARGETARCH" in \
-        amd64) runtime_identifier=linux-x64 ;; \
-        arm64) runtime_identifier=linux-arm64 ;; \
-        *) echo "Unsupported target architecture: $TARGETARCH" >&2; exit 1 ;; \
-    esac \
-    && dotnet publish main-app.csproj \
+RUN dotnet publish main-app.csproj \
         -c Release \
-        -r "$runtime_identifier" \
+        -r linux-x64 \
         --self-contained false \
         -o /app/publish \
         /p:DebugSymbols=false \
