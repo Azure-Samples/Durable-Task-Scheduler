@@ -2,11 +2,12 @@
 # Builds the two container images for the On-demand Sandboxes demo server-side using
 # ACR Tasks (az acr build) — no local Docker required. Called by azd as a predeploy hook.
 #
-#   - main-app  : the orchestrator (main_app.py), deployed to AKS (azd reads
-#                 SERVICE_MAINAPP_IMAGE_NAME and skips its own build/push).
+#   - main-app  : the orchestrator (main_app.py), deployed to Azure Container Apps (azd
+#                 reads SERVICE_MAINAPP_IMAGE_NAME and skips its own build/push).
 #   - sandbox   : the worker image (remote_worker.py) DTS starts on demand. Not deployed
-#                 to AKS; its full image reference is handed to the app via
-#                 DTS_SANDBOX_CONTAINER_IMAGE.
+#                 as an azd service; its image reference is set on the Container App by
+#                 infra/main.bicep (DTS_SANDBOX_CONTAINER_IMAGE), so it is pushed to that
+#                 exact tag here.
 
 set -euo pipefail
 
@@ -17,13 +18,14 @@ TAG="azd-deploy-$(date +%s)"
 
 build() {
     local image_repo="$1"   # e.g. dts-ondemand-sandboxes/main-app-<env>
-    local containerfile="$2"
-    local full_image="${REGISTRY_ENDPOINT}/${image_repo}:${TAG}"
+    local image_tag="$2"
+    local containerfile="$3"
+    local full_image="${REGISTRY_ENDPOINT}/${image_repo}:${image_tag}"
 
-    echo "==> Building ${image_repo}:${TAG} via ACR Tasks (--platform linux/amd64)..." >&2
+    echo "==> Building ${image_repo}:${image_tag} via ACR Tasks (--platform linux/amd64)..." >&2
     az acr build \
         --registry "${REGISTRY}" \
-        --image "${image_repo}:${TAG}" \
+        --image "${image_repo}:${image_tag}" \
         --platform linux/amd64 \
         --file "${containerfile}" \
         . \
@@ -33,13 +35,14 @@ build() {
     echo "${full_image}"
 }
 
-MAIN_APP_IMAGE="$(build "dts-ondemand-sandboxes/main-app-${ENV_NAME}" "Containerfile.mainapp")"
-SANDBOX_IMAGE="$(build "dts-ondemand-sandboxes/sandbox-worker-${ENV_NAME}" "Containerfile")"
+# main-app uses a unique tag so azd rolls out a new Container App revision each deploy.
+MAIN_APP_IMAGE="$(build "dts-ondemand-sandboxes/main-app-${ENV_NAME}" "${TAG}" "Containerfile.mainapp")"
+# The sandbox image uses a stable 'latest' tag matching DTS_SANDBOX_CONTAINER_IMAGE in
+# infra/main.bicep; DTS pulls it fresh each time it starts a sandbox.
+SANDBOX_IMAGE="$(build "dts-ondemand-sandboxes/sandbox-worker-${ENV_NAME}" "latest" "Containerfile")"
 
 # azd uses SERVICE_<NAME>_IMAGE_NAME to skip its own build and deploy this image instead.
 azd env set SERVICE_MAINAPP_IMAGE_NAME "${MAIN_APP_IMAGE}"
-# The app declares the sandbox worker profile using this image reference.
-azd env set DTS_SANDBOX_CONTAINER_IMAGE "${SANDBOX_IMAGE}"
 
 echo "==> main-app image  : ${MAIN_APP_IMAGE}"
 echo "==> sandbox image   : ${SANDBOX_IMAGE}"

@@ -1,13 +1,13 @@
 # syntax=docker/dockerfile:1.7
 #
-# Builds the orchestrator (main-app) image deployed to AKS. Build from the .NET sample
-# root so Directory.Build.props and the data/ folder are in the build context:
+# Builds the orchestrator (main-app) image deployed to Azure Container Apps. Build from the
+# .NET sample root so Directory.Build.props and the data/ folder are in the build context:
 #
 #   docker build --platform linux/amd64 -f main-app/Containerfile -t <acr>/main-app:<tag> .
 #
 # --platform linux/amd64 is required: the Grpc.Tools linux_arm64 protoc binary segfaults
 # under Docker's arm64 emulation on Apple Silicon. amd64 works under Rosetta and matches
-# what the cluster runs.
+# what Container Apps runs.
 
 FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH

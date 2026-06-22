@@ -1,24 +1,24 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-# On-demand Sandboxes (Python) on Azure Kubernetes Service.
+# On-demand Sandboxes (Python) on Azure Container Apps.
 #
-# Only the orchestrator (main_app.py) is deployed to AKS. The sandbox worker image
-# (remote_worker.py) is built and pushed to ACR by the predeploy hook; DTS starts it on
-# demand, so it is not an azd service. Images are built server-side with ACR Tasks
-# (az acr build) to avoid local Docker builds.
+# Only the orchestrator (main_app.py) is deployed to Azure Container Apps. The sandbox
+# worker image (remote_worker.py) is built and pushed to ACR by the predeploy hook; DTS
+# starts it on demand, so it is not an azd service. Images are built server-side with ACR
+# Tasks (az acr build) to avoid local Docker builds.
 
 metadata:
-  template: dts-ondemand-sandboxes-python-aks
+  template: dts-ondemand-sandboxes-python-aca
 name: dts-ondemand-sandboxes-python
 hooks:
   predeploy:
-    shell: bash
+    shell: sh
     run: ./scripts/acr-build.sh
   postprovision:
-    shell: bash
+    shell: sh
     run: ./scripts/attach-scheduler-identity.sh
 services:
   mainapp:
     project: .
     language: python
-    host: aks
+    host: containerapp
