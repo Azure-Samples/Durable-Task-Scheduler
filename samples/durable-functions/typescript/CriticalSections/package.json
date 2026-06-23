@@ -1,0 +1,19 @@
+{
+  "name": "durable-functions-critical-sections-ts",
+  "version": "1.0.0",
+  "description": "Durable Functions TypeScript sample: entity critical sections (locks) with the Durable Task Scheduler backend",
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "tsc",
+    "prestart": "npm run build",
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "durable-functions": "^3.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "typescript": "^5.2.0"
+  }
+}
