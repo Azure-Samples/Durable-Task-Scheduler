@@ -18,12 +18,11 @@ python/
 ├── main_app.py          # Declarer app: orchestrator + in-process activities + profile
 ├── remote_worker.py     # Sandbox worker image entrypoint: runs execute_code via python3
 ├── Containerfile        # Builds the remote worker (sandbox) image
-├── Containerfile.mainapp # Builds the main_app image deployed to AKS
+├── Containerfile.mainapp # Builds the main_app image deployed to Azure Container Apps
 ├── requirements.txt     # Declarer-app dependencies
 ├── azure.yaml           # azd service + hooks (Deploy to Azure)
-├── infra/               # Bicep: AKS, ACR, identity, Azure OpenAI, scheduler wiring
+├── infra/               # Bicep: Container Apps, ACR, identity, Azure OpenAI, scheduler wiring
 ├── scripts/             # acr-build.sh + attach-scheduler-identity.sh (azd hooks)
-├── manifests/           # K8s deployment template for main_app
 └── data/sales_q1.csv    # Sample dataset (~300 rows)
 ```
 
@@ -104,12 +103,12 @@ The declarer prints a dataset preview, the AOAI-generated Python (prefixed
 logs (prefixed `[sandbox]`) stream through the DTS dashboard's **On-demand
 Sandboxes** tab while `execute_code` runs.
 
-## Deploy to Azure (AKS) with `azd`
+## Deploy to Azure (Container Apps) with `azd`
 
 The `infra/` folder and `azure.yaml` deploy the **main_app** orchestrator to **Azure
-Kubernetes Service** with [`azd`](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd).
+Container Apps** with [`azd`](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd).
 The sandbox worker image (`remote_worker.py`) is built and pushed to ACR; DTS starts it
-on demand, so it is never deployed to the cluster.
+on demand, so it is never deployed as a Container App.
 
 > The Durable Task Scheduler is **not created** by this template. You pass in an
 > existing one. On-demand Sandboxes is a private-preview feature that must be enabled on
@@ -121,9 +120,9 @@ on demand, so it is never deployed to the cluster.
 
 | Resource | Purpose |
 |----------|---------|
-| **AKS cluster** | Hosts the `main_app` orchestrator pod (workload identity enabled) |
+| **Azure Container Apps environment** + **main_app container app** | Hosts the `main_app` orchestrator (user-assigned identity attached) |
 | **Azure Container Registry** | Stores the main-app and sandbox-worker images (built server-side via ACR Tasks) |
-| **User-assigned managed identity** + federated credential | Pod auth to DTS/Azure OpenAI, ACR pull for the sandbox, and the sandbox's connection back to DTS |
+| **User-assigned managed identity** | Container App auth to DTS/Azure OpenAI, ACR pull for the sandbox, and the sandbox's connection back to DTS |
 | **Azure OpenAI** + `gpt-5.1` deployment | Backs the in-process `generate_code` activity |
 
 The deployment also **ensures the task hub** exists, grants the identity the roles it
@@ -134,7 +133,7 @@ needs (AcrPull, Durable Task data access, Cognitive Services OpenAI User), and a
 
 - An existing **DTS scheduler** with the On-demand Sandboxes preview enabled, and its
   resource group name.
-- [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd), [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), and [kubectl](https://kubernetes.io/docs/tasks/tools/).
+- [Azure Developer CLI (`azd`)](https://learn.microsoft.com/azure/developer/azure-developer-cli/install-azd) and [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli).
 - Azure OpenAI quota for `gpt-5.1` (`GlobalStandard`) in your target region (default
   `eastus`; override with `AZURE_OPENAI_LOCATION`).
 
@@ -152,18 +151,17 @@ azd up
 ```
 
 `azd` provisions the resources, builds both images via ACR Tasks, attaches the identity
-to your scheduler, and deploys the `main_app` pod. If you don't set `DTS_SCHEDULER_NAME`
-/ `DTS_SCHEDULER_RESOURCE_GROUP` first, `azd` prompts for them.
+to your scheduler, and deploys the `main_app` container app. If you don't set
+`DTS_SCHEDULER_NAME` / `DTS_SCHEDULER_RESOURCE_GROUP` first, `azd` prompts for them.
 
 ### Verify
 
 ```bash
-az aks get-credentials --resource-group <rg-name> --name <aks-name>   # from `azd env get-values`
-kubectl get pods
-kubectl logs -l app=mainapp --tail=50
+# Stream main_app logs from the container app (name from `azd env get-values`).
+az containerapp logs show --name <container-app-name> --resource-group <rg-name> --follow
 ```
 
-The `main_app` pod runs the orchestration; `[sandbox]` logs from `execute_code` stream in
+The `main_app` container runs the orchestration; `[sandbox]` logs from `execute_code` stream in
 the DTS dashboard's **On-demand Sandboxes** tab.
 
 ### Clean up

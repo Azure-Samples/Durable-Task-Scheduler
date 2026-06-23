@@ -1,19 +1,14 @@
-# syntax=docker/dockerfile:1.7
+# Builds the on-demand sandbox worker image that DTS starts on demand.
 #
-# Build from the demo root:
+# Built amd64-only: built remotely via ACR Tasks (scripts/acr-build.sh runs
+# `az acr build --platform linux/amd64`), whose classic builder runs on amd64 and does not
+# support BuildKit syntax (no `# syntax` directive, no `--platform=$TARGETPLATFORM`/
+# `ARG TARGETARCH`). DTS sandboxes run amd64, so the runtime identifier is pinned to
+# linux-x64. Building amd64 also sidesteps the Grpc.Tools linux_arm64 protoc segfault seen
+# under arm64 emulation on Apple Silicon.
 #
-#   docker build \
-#     --platform linux/amd64 \
-#     -f sandbox-worker/Containerfile \
-#     -t <acr>.azurecr.io/dts-codegen-sandbox:<tag> \
-#     .
-#
-# ⚠️ --platform linux/amd64 is required. The Grpc.Tools 2.78.0 linux_arm64 protoc
-# binary segfaults under Docker's arm64 emulation on Apple Silicon. amd64 protoc
-# works under Rosetta and matches what DTS sandboxes run anyway.
-#
-# The sandbox worker is a .NET app that shells out to python3, so we install
-# pandas in the runtime stage.
+# The sandbox worker is a .NET app that shells out to python3, so we install pandas in the
+# runtime stage.
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 ARG TARGETARCH
@@ -22,14 +17,9 @@ WORKDIR /src/dts-ondemand-sandbox-codegen-demo
 COPY . .
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo/sandbox-worker
-RUN case "$TARGETARCH" in \
-        amd64) runtime_identifier=linux-x64 ;; \
-        arm64) runtime_identifier=linux-arm64 ;; \
-        *) echo "Unsupported target architecture: $TARGETARCH" >&2; exit 1 ;; \
-    esac \
-    && dotnet publish sandbox-worker.csproj \
+RUN dotnet publish sandbox-worker.csproj \
         -c Release \
-        -r "$runtime_identifier" \
+        -r linux-x64 \
         --self-contained false \
         -o /app/publish \
         /p:DebugSymbols=false \

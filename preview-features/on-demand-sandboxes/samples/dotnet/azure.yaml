@@ -1,14 +1,17 @@
 # yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
 
-# On-demand Sandboxes (.NET) on Azure Kubernetes Service.
+# On-demand Sandboxes (.NET) on Azure Container Apps.
 #
-# Only the orchestrator (main-app) is deployed to AKS. The sandbox worker image is
-# built and pushed to ACR by the predeploy hook; DTS starts it on demand, so it is
-# not an azd service. Images are built server-side with ACR Tasks (az acr build) to
-# avoid local Docker builds (the Grpc.Tools arm64 protoc segfaults on Apple Silicon).
+# Only the orchestrator (main-app) is deployed to Azure Container Apps. azd builds its
+# image from main-app/Containerfile via a remote ACR build (remoteBuild: true) so the
+# data/ folder and DEMO_CSV_PATH baked into the Containerfile end up in the running image,
+# and so the Grpc.Tools arm64 protoc segfault on Apple Silicon is avoided (ACR builds amd64).
+#
+# The sandbox worker image is built and pushed to ACR by the predeploy hook; DTS starts it
+# on demand, so it is not an azd service.
 
 metadata:
-  template: dts-ondemand-sandboxes-dotnet-aks
+  template: dts-ondemand-sandboxes-dotnet-aca
 name: dts-ondemand-sandboxes-dotnet
 hooks:
   predeploy:
@@ -29,4 +32,11 @@ services:
   mainapp:
     project: ./main-app
     language: csharp
-    host: aks
+    host: containerapp
+    docker:
+      # Paths are relative to the service project (./main-app). The build context is the
+      # .NET sample root so Directory.Build.props and data/ are available to the build.
+      path: ./Containerfile
+      context: ../
+      platform: linux/amd64
+      remoteBuild: true

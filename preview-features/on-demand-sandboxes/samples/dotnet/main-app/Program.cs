@@ -115,12 +115,12 @@ else
     Console.WriteLine(result?.ReadOutputAs<string>() ?? "<no output>");
 }
 
-// The app runs a single orchestration above. When deployed as an always-on
-// Deployment, we keep the process alive afterwards so the pod stays Running
-// instead of exiting (which would make Kubernetes restart it and schedule a
-// new orchestration on every restart). Block until the host receives SIGTERM.
+// Schedule exactly once. Don't exit the process: this runs as an always-on Container App,
+// so returning would let Container Apps restart the replica and re-run Main (scheduling a
+// new orchestration every time). Instead, keep the host running so the worker stays
+// connected to DTS and ready to serve sandbox work items, and block until shutdown.
 Console.WriteLine();
-Console.WriteLine("[demo] Orchestration complete. Idling; press Ctrl+C or send SIGTERM to exit.");
+Console.WriteLine("Orchestration complete. Worker host staying alive; press Ctrl+C to exit.");
 await host.WaitForShutdownAsync();
 return 0;
 

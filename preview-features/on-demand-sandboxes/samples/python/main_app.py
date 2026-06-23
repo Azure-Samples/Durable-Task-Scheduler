@@ -12,7 +12,7 @@ untrusted, so it never executes inside this process.
 
 import os
 import sys
-import time
+import threading
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
@@ -253,15 +253,14 @@ def main() -> int:
         elif state and state.failure_details:
             print(f"[failure] {state.failure_details}")
 
-        # The app runs a single orchestration above. When deployed as an always-on
-        # Deployment, we keep the process (and worker) alive afterwards so the pod
-        # stays Running instead of exiting -- exiting would make Kubernetes restart
-        # the pod and schedule a new orchestration on every restart. Idle until the
-        # pod receives SIGTERM (or Ctrl+C locally).
-        print("\n[demo] Orchestration complete. Idling; send SIGTERM or Ctrl+C to exit.")
+        # Schedule exactly once. Don't exit the process: this runs as an always-on Container
+        # App, so returning would let Container Apps restart the replica and re-run main()
+        # (scheduling a new orchestration every time). Instead, keep the worker running so it
+        # stays connected to DTS and ready to serve sandbox work items, and block until the
+        # container receives a shutdown signal.
+        print("\nOrchestration complete. Worker host staying alive; press Ctrl+C to exit.")
         try:
-            while True:
-                time.sleep(3600)
+            threading.Event().wait()
         except KeyboardInterrupt:
             pass
     return 0

@@ -1,9 +1,10 @@
-# syntax=docker/dockerfile:1.7
-#
-# Builds the orchestrator (main_app.py) image deployed to AKS. Build from the python/
-# sample directory so requirements.txt and data/ are in the build context:
+# Builds the orchestrator (main_app.py) image deployed to Azure Container Apps. Build from
+# the python/ sample directory so requirements.txt and data/ are in the build context:
 #
 #   docker build -f Containerfile.mainapp -t <acr>/main-app:<tag> .
+#
+# No `# syntax` directive: azd builds this remotely via ACR Tasks (azure.yaml
+# docker.remoteBuild), whose classic builder does not support BuildKit syntax.
 
 FROM python:3.12-slim AS runtime
 WORKDIR /app
