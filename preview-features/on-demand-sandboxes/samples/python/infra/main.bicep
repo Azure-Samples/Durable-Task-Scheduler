@@ -1,10 +1,10 @@
 targetScope = 'subscription'
 
 // Provisions the Azure resources to run the On-demand Sandboxes code-interpreter demo
-// in the cloud: the orchestrator (main-app) runs on AKS, and DTS starts the sandbox
-// worker image on demand. The Durable Task Scheduler is NOT created here — it is passed
-// in as an existing resource (schedulerName + schedulerResourceGroupName) because it is
-// patched out of band to enable the On-demand Sandboxes preview feature.
+// in the cloud: the orchestrator (main-app) runs on Azure Container Apps, and DTS starts
+// the sandbox worker image on demand. The Durable Task Scheduler is NOT created here — it
+// is passed in as an existing resource (schedulerName + schedulerResourceGroupName)
+// because it is patched out of band to enable the On-demand Sandboxes preview feature.
 
 @minLength(1)
 @maxLength(64)
@@ -18,11 +18,9 @@ param location string
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
-// AKS parameters
-param aksClusterName string = ''
-param kubernetesVersion string = ''
-param aksVmSize string = 'standard_d4s_v5'
-param aksNodeCount int = 2
+// Container Apps parameters
+param containerAppsEnvironmentName string = ''
+param mainAppContainerAppName string = ''
 
 // Container registry parameters
 param containerRegistryName string = ''
@@ -71,7 +69,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 // ============================
 
 // A single user-assigned managed identity is used for everything in this sample:
-//  - AKS workload identity (the app authenticates to DTS and Azure OpenAI)
+//  - the Container App authenticates to DTS and Azure OpenAI
 //  - DTS image pull for the sandbox (AcrPull on the registry)
 //  - the sandbox worker connecting back to DTS
 module identity './app/user-assigned-identity.bicep' = {
@@ -101,49 +99,10 @@ module containerRegistry './core/host/container-registry.bicep' = {
   }
 }
 
-// Grant the managed identity AcrPull so DTS can pull the sandbox worker image.
-module identityAcrPull './core/security/registry-access.bicep' = {
-  name: 'identity-acr-pull'
-  scope: rg
-  params: {
-    containerRegistryName: containerRegistry.outputs.name
-    principalId: identity.outputs.principalId
-  }
-}
-
-// ============================
-// AKS Cluster
-// ============================
-
-module aksCluster './core/host/aks-cluster.bicep' = {
-  name: 'aks-cluster'
-  scope: rg
-  params: {
-    name: !empty(aksClusterName) ? aksClusterName : '${abbrs.containerServiceManagedClusters}${resourceToken}'
-    location: location
-    tags: tags
-    kubernetesVersion: kubernetesVersion
-    agentVMSize: aksVmSize
-    agentCount: aksNodeCount
-    containerRegistryName: containerRegistry.outputs.name
-  }
-}
-
-// ============================
-// Workload Identity Federation
-// ============================
-
-module federatedIdentityMainApp './app/federated-identity.bicep' = {
-  name: 'federated-identity-mainapp'
-  scope: rg
-  params: {
-    identityName: identity.outputs.name
-    federatedCredentialName: 'fed-${mainAppServiceName}'
-    oidcIssuerUrl: aksCluster.outputs.oidcIssuerUrl
-    serviceAccountNamespace: 'default'
-    serviceAccountName: mainAppServiceName
-  }
-}
+// The sandbox worker image DTS starts on demand. The reference is deterministic so it can
+// be set on the Container App at provision time; scripts/acr-build.sh pushes the sandbox
+// image to this exact repository and tag.
+var sandboxImage = '${containerRegistry.outputs.loginServer}/dts-ondemand-sandboxes/sandbox-worker-${environmentName}:latest'
 
 // ============================
 // Azure OpenAI
@@ -182,6 +141,72 @@ module schedulerAccess './app/scheduler-access.bicep' = {
 }
 
 // ============================
+// Container Apps
+// ============================
+
+module containerAppsEnvironment './core/host/container-apps-environment.bicep' = {
+  name: 'container-apps-environment'
+  scope: rg
+  params: {
+    name: !empty(containerAppsEnvironmentName) ? containerAppsEnvironmentName : '${abbrs.appManagedEnvironments}${resourceToken}'
+    location: location
+    tags: tags
+  }
+}
+
+// The orchestrator (main-app). azd builds and pushes the image, then updates this app.
+// The container is a one-shot demo client; it is restarted by Container Apps after each
+// run, matching the previous AKS Deployment behavior.
+module mainApp './core/host/container-app.bicep' = {
+  name: 'mainapp'
+  scope: rg
+  params: {
+    name: !empty(mainAppContainerAppName) ? mainAppContainerAppName : '${abbrs.appContainerApps}${resourceToken}-mainapp'
+    location: location
+    tags: union(tags, { 'azd-service-name': mainAppServiceName })
+    containerAppsEnvironmentName: containerAppsEnvironment.outputs.name
+    containerRegistryName: containerRegistry.outputs.name
+    identityName: identity.outputs.name
+    ingressEnabled: false
+    env: [
+      {
+        name: 'DTS_ENDPOINT'
+        value: schedulerAccess.outputs.endpoint
+      }
+      {
+        name: 'DTS_TASK_HUB'
+        value: schedulerAccess.outputs.taskHubName
+      }
+      {
+        name: 'AOAI_ENDPOINT'
+        value: openAi.outputs.endpoint
+      }
+      {
+        name: 'AOAI_DEPLOYMENT'
+        value: openAi.outputs.chatDeploymentName
+      }
+      {
+        name: 'AZURE_CLIENT_ID'
+        value: identity.outputs.clientId
+      }
+      // The sandbox worker profile (main_app.py) reads these.
+      {
+        name: 'DTS_SANDBOX_CONTAINER_IMAGE'
+        value: sandboxImage
+      }
+      {
+        name: 'DTS_SANDBOX_IMAGE_PULL_UMI_CLIENT_ID'
+        value: identity.outputs.clientId
+      }
+      {
+        name: 'DTS_SANDBOX_SCHEDULER_UMI_CLIENT_ID'
+        value: identity.outputs.clientId
+      }
+    ]
+  }
+}
+
+// ============================
 // Outputs
 // ============================
 
@@ -191,7 +216,7 @@ output AZURE_TENANT_ID string = tenant().tenantId
 output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
 output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
 
-output AZURE_AKS_CLUSTER_NAME string = aksCluster.outputs.clusterName
+output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = containerAppsEnvironment.outputs.name
 
 output AZURE_USER_ASSIGNED_IDENTITY_NAME string = identity.outputs.name
 output AZURE_USER_ASSIGNED_IDENTITY_CLIENT_ID string = identity.outputs.clientId
@@ -203,6 +228,10 @@ output DTS_ENDPOINT string = schedulerAccess.outputs.endpoint
 output DTS_TASK_HUB string = schedulerAccess.outputs.taskHubName
 output DTS_SCHEDULER_NAME string = schedulerName
 output DTS_SCHEDULER_RESOURCE_GROUP string = schedulerResourceGroupName
+
+// Full sandbox worker image reference (DTS starts this on demand). scripts/acr-build.sh
+// must push the sandbox image to this exact reference.
+output DTS_SANDBOX_CONTAINER_IMAGE string = sandboxImage
 
 output AOAI_ENDPOINT string = openAi.outputs.endpoint
 output AOAI_DEPLOYMENT string = openAi.outputs.chatDeploymentName

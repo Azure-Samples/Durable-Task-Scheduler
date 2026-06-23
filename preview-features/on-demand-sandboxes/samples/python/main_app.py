@@ -12,6 +12,7 @@ untrusted, so it never executes inside this process.
 
 import os
 import sys
+import threading
 
 from azure.identity import DefaultAzureCredential, get_bearer_token_provider
 from openai import AzureOpenAI
@@ -251,6 +252,17 @@ def main() -> int:
             print(state.serialized_output)
         elif state and state.failure_details:
             print(f"[failure] {state.failure_details}")
+
+        # Schedule exactly once. Don't exit the process: this runs as an always-on Container
+        # App, so returning would let Container Apps restart the replica and re-run main()
+        # (scheduling a new orchestration every time). Instead, keep the worker running so it
+        # stays connected to DTS and ready to serve sandbox work items, and block until the
+        # container receives a shutdown signal.
+        print("\nOrchestration complete. Worker host staying alive; press Ctrl+C to exit.")
+        try:
+            threading.Event().wait()
+        except KeyboardInterrupt:
+            pass
     return 0
 
 
