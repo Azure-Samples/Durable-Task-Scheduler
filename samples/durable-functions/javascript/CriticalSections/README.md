@@ -27,10 +27,10 @@ try {
 
 ### Release patterns demonstrated
 
-| Pattern | Boilerplate | Exception-safe? | Hold time | Min Node | File |
-|---------|-------------|-----------------|-----------|----------|------|
+| Pattern | Boilerplate | Lock released on error? | Hold time | Min Node | File |
+|---------|-------------|-------------------------|-----------|----------|------|
 | `using` | None | ✅ Automatic | Block scope | 24+ | [usingPattern.js](src/functions/usingPattern.js) |
-| `try / finally` | 3 lines | ✅ If written correctly | Block scope | 18+ | [criticalSections.js](src/functions/criticalSections.js) |
+| `try / finally` | 3 lines | ✅ If `release()` is in `finally` | Block scope | 18+ | [criticalSections.js](src/functions/criticalSections.js) |
 | Implicit (no release) | None | ✅ Always | **Entire orchestration** | 18+ | [criticalSections.js](src/functions/criticalSections.js) |
 | `try / finally` + early `release()` | 4 lines | ✅ + minimal hold time | Until first release | 18+ | [criticalSections.js](src/functions/criticalSections.js) |
 

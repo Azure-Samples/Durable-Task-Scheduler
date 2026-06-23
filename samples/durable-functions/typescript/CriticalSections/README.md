@@ -26,10 +26,10 @@ yield context.df.callEntity(dst, "add", amount);
 
 All four patterns live in [criticalSections.ts](src/functions/criticalSections.ts):
 
-| Pattern | Boilerplate | Exception-safe? | Hold time | Min TypeScript | Min Node |
-|---------|-------------|-----------------|-----------|----------------|----------|
+| Pattern | Boilerplate | Lock released on error? | Hold time | Min TypeScript | Min Node |
+|---------|-------------|-------------------------|-----------|----------------|----------|
 | `using` | None | ✅ Automatic | Block scope | 5.2+ | 18+ |
-| `try / finally` | 3 lines | ✅ If written correctly | Block scope | Any | 18+ |
+| `try / finally` | 3 lines | ✅ If `release()` is in `finally` | Block scope | Any | 18+ |
 | Implicit (no release) | None | ✅ Always | **Entire orchestration** | Any | 18+ |
 | `try / finally` + early `release()` | 4 lines | ✅ + minimal hold time | Until first release | Any | 18+ |
 
