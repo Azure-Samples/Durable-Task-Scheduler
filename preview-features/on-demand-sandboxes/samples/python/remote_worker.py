@@ -101,7 +101,7 @@ execute_code.__name__ = EXECUTE_CODE.name
 
 def main() -> None:
     with SandboxWorker() as worker:
-        worker.add_activity(execute_code, version=EXECUTE_CODE.version)
+        worker.add_activity(execute_code)
         worker.start()
         print("Python on-demand sandbox worker is running. Press Ctrl+C to stop.")
         try:
