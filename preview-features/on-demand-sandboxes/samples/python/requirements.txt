@@ -1,5 +1,4 @@
 # Declarer-app (main_app.py) dependencies.
-durabletask==1.6.0
 durabletask-azuremanaged==1.6.0
 azure-identity>=1.16
 openai>=1.40

@@ -7,6 +7,7 @@
 # the Grpc.Tools linux_arm64 protoc segfault seen under arm64 emulation on Apple Silicon.
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG TARGETARCH
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo
 COPY . .

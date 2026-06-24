@@ -11,6 +11,7 @@
 # runtime stage.
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+ARG TARGETARCH
 
 WORKDIR /src/dts-ondemand-sandbox-codegen-demo
 COPY . .

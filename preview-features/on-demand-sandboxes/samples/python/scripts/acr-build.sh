@@ -10,7 +10,7 @@
 # deployed as an azd service; its image reference is set on the Container App by
 # infra/main.bicep (DTS_SANDBOX_CONTAINER_IMAGE), so it is pushed to that exact tag here.
 
-set -euo pipefail
+set -eu
 
 REGISTRY="${AZURE_CONTAINER_REGISTRY_NAME:?AZURE_CONTAINER_REGISTRY_NAME must be set}"
 REGISTRY_ENDPOINT="${AZURE_CONTAINER_REGISTRY_ENDPOINT:?AZURE_CONTAINER_REGISTRY_ENDPOINT must be set}"

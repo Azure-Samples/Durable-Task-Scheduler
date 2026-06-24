@@ -9,7 +9,7 @@
 # service; its image reference is set on the Container App by infra/main.bicep
 # (DTS_SANDBOX_CONTAINER_IMAGE), so it is pushed to that exact tag here.
 
-set -euo pipefail
+set -eu
 
 REGISTRY="${AZURE_CONTAINER_REGISTRY_NAME:?AZURE_CONTAINER_REGISTRY_NAME must be set}"
 REGISTRY_ENDPOINT="${AZURE_CONTAINER_REGISTRY_ENDPOINT:?AZURE_CONTAINER_REGISTRY_ENDPOINT must be set}"
@@ -23,10 +23,13 @@ build() {
     local full_image="${REGISTRY_ENDPOINT}/${image_repo}:${image_tag}"
 
     echo "==> Building ${image_repo}:${image_tag} via ACR Tasks (--platform linux/amd64)..." >&2
+    # The classic ACR builder does not auto-populate the BuildKit TARGETARCH arg, so we
+    # pass it explicitly. We always build linux/amd64 here, so amd64 is correct.
     az acr build \
         --registry "${REGISTRY}" \
         --image "${image_repo}:${image_tag}" \
         --platform linux/amd64 \
+        --build-arg TARGETARCH=amd64 \
         --file "${containerfile}" \
         . \
         --no-logs \

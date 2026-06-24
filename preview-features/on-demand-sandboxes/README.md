@@ -6,6 +6,17 @@
 
 To gain access to the private preview, email [dts-team@microsoft.com](mailto:dts-team@microsoft.com).
 
+You'll need a Durable Task Scheduler in one of the supported preview regions. You can use
+an existing scheduler or create a new one in any of these regions:
+
+- East US 2 (`eastus2`)
+- West US 3 (`westus3`)
+- North Europe (`northeurope`)
+- Australia East (`australiaeast`)
+
+Reply to us with your scheduler name and the region it's in, and we'll enable On-demand
+Sandboxes on it.
+
 ## Overview
 
 A *sandbox* is an isolated, microVM-backed container that runs a single piece of your
@@ -86,7 +97,8 @@ flowchart LR
 ## Get started
 
 On-demand Sandboxes is in private preview. To get access, email
-[dts-team@microsoft.com](mailto:dts-team@microsoft.com).
+[dts-team@microsoft.com](mailto:dts-team@microsoft.com). You'll need a scheduler in one of
+the [supported preview regions](#get-private-preview-access).
 
 Once you're in, follow the step-by-step guide for your SDK:
 
