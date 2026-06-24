@@ -1,0 +1,13 @@
+{
+  "name": "durable-functions-critical-sections-js",
+  "version": "1.0.0",
+  "description": "Durable Functions JavaScript sample: entity critical sections (locks) with the Durable Task Scheduler backend",
+  "main": "src/functions/*.js",
+  "scripts": {
+    "start": "func start"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "durable-functions": "^3.4.0"
+  }
+}

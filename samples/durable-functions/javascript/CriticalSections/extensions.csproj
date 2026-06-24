@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <!-- Keep the function app payload (node_modules, src) when building into bin/. -->
+    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Generates bin/extensions.json so the host loads the manually installed extensions (no extension bundle). -->
+    <PackageReference Include="Microsoft.Azure.WebJobs.Script.ExtensionsMetadataGenerator" Version="4.0.1" />
+    <!-- Released Durable extension that supports the OOProc schema V4 required by critical sections / lock. -->
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask" Version="3.13.0" />
+    <!-- Durable Task Scheduler (azureManaged) backend provider. -->
+    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.DurableTask.AzureManaged" Version="1.9.0" />
+  </ItemGroup>
+</Project>
