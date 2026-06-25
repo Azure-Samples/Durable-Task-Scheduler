@@ -6,6 +6,8 @@
 
 To gain access to the private preview, email [dts-team@microsoft.com](mailto:dts-team@microsoft.com).
 
+[![Watch the Demo](https://img.youtube.com/vi/vyBFFdQdwHs/maxresdefault.jpg)](https://www.youtube.com/watch?v=vyBFFdQdwHs)
+
 ## Overview
 
 A *sandbox* is an isolated, microVM-backed container that runs a single piece of your
