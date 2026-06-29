@@ -44,7 +44,12 @@ def fan_out_fan_in_orchestrator(ctx, work_items: list) -> dict:
     This orchestrator processes multiple items in parallel (fan out) and then
     aggregates the results once all parallel executions complete (fan in).
     """
-    logger.info(f"Starting fan out/fan in orchestration with {len(work_items)} items")
+    # Orchestrators replay their code many times as the workflow progresses.
+    # Logging with the raw module logger would re-emit every line on each
+    # replay, producing confusing duplicate logs. A replay-safe logger wraps
+    # the logger and only emits when the orchestrator is NOT replaying.
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Starting fan out/fan in orchestration with {len(work_items)} items")
     
     # Fan out: Create a task for each work item
     parallel_tasks = []
@@ -52,11 +57,11 @@ def fan_out_fan_in_orchestrator(ctx, work_items: list) -> dict:
         parallel_tasks.append(ctx.call_activity("process_work_item", input=item))
     
     # Wait for all tasks to complete
-    logger.info(f"Waiting for {len(parallel_tasks)} parallel tasks to complete")
+    olog.info(f"Waiting for {len(parallel_tasks)} parallel tasks to complete")
     results = yield task.when_all(parallel_tasks)
     
     # Fan in: Aggregate all the results
-    logger.info("All parallel tasks completed, aggregating results")
+    olog.info("All parallel tasks completed, aggregating results")
     final_result = yield ctx.call_activity("aggregate_results", input=results)
     
     return final_result

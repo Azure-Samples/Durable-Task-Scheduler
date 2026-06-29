@@ -37,12 +37,14 @@ def async_http_api_orchestrator(ctx, input_data: dict) -> dict:
     This orchestrator starts a long-running operation and returns its result.
     """
     operation_id = input_data.get("operation_id", "unknown")
-    logger.info(f"Starting async HTTP API orchestration for operation {operation_id}")
+    # Use a replay-safe logger so these lines are not re-emitted on every replay.
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Starting async HTTP API orchestration for operation {operation_id}")
     
     # Execute the long-running operation
     result = yield ctx.call_activity("process_long_running_operation", input=input_data)
     
-    logger.info(f"Completed orchestration for operation {operation_id}")
+    olog.info(f"Completed orchestration for operation {operation_id}")
     return result
 
 async def main():

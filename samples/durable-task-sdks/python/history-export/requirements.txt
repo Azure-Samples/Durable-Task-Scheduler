@@ -1,0 +1,3 @@
+durabletask-azuremanaged
+durabletask[history-export-azure]
+azure-identity

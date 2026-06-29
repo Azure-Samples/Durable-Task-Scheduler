@@ -17,6 +17,23 @@ This pattern is useful for:
 - Running operations in parallel that don't depend on each other
 - Aggregating results from multiple parallel operations
 
+### Replay-safe logging
+
+Orchestrators replay their code repeatedly as the workflow makes progress. Logging
+with the raw module logger inside an orchestrator re-emits every line on each
+replay, producing confusing duplicate logs. This sample wraps the logger with a
+**replay-safe logger** that only emits when the orchestrator is *not* replaying:
+
+```python
+def fan_out_fan_in_orchestrator(ctx, work_items: list) -> dict:
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Starting fan out/fan in orchestration with {len(work_items)} items")
+    ...
+```
+
+Use `ctx.create_replay_safe_logger(...)` for any logging done directly inside an
+orchestrator. Activities run only once, so they can use a normal logger.
+
 ## Prerequisites
 
 1. [Python 3.9+](https://www.python.org/downloads/)

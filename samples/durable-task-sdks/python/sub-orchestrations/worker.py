@@ -1,9 +1,13 @@
 import os
+import logging
 import random
 import time
 from azure.identity import DefaultAzureCredential
 from durabletask import task
 from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_orders(ctx, _) -> list[str]:
     """Activity function that returns a list of work items"""
@@ -54,7 +58,10 @@ def notify_customer(ctx, order: str) -> bool:
 
 def process_order(ctx, order: str) -> dict:
     """Sub-orchestration function that processes a given order by performing all steps"""
-    print(f'processing order: {order}')
+    # Use a replay-safe logger so this line is not re-emitted on every replay.
+    # (Activities below run once, so their plain print() calls are fine.)
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f'processing order: {order}')
 
      # Check inventory
     inventory_checked = yield ctx.call_activity('check_and_update_inventory', input=order)

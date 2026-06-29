@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from dataclasses import dataclass
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 from azure.core.exceptions import ClientAuthenticationError
 from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
@@ -9,37 +10,54 @@ from durabletask.azuremanaged.worker import DurableTaskSchedulerWorker
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
+# A typed payload passed between activities. The SDK's built-in converter
+# understands dataclasses, so this object is serialized on the way out and
+# reconstructed as a typed `Greeting` (not a raw dict) at each boundary where
+# the target type is known - either from an activity's parameter annotation or
+# from a `return_type=` hint on `call_activity`.
+@dataclass
+class Greeting:
+    recipient: str
+    message: str
+
+
 # Activity functions
-def say_hello(ctx, name: str) -> str:
-    """First activity that greets the user."""
+def say_hello(ctx, name: str) -> Greeting:
+    """First activity that builds a typed greeting."""
     logger.info(f"Activity say_hello called with name: {name}")
-    return f"Hello {name}!"
+    return Greeting(recipient=name, message=f"Hello {name}!")
 
-def process_greeting(ctx, greeting: str) -> str:
-    """Second activity that processes the greeting."""
-    logger.info(f"Activity process_greeting called with greeting: {greeting}")
-    return f"{greeting} How are you today?"
+def process_greeting(ctx, greeting: Greeting) -> Greeting:
+    """Second activity that processes the greeting.
 
-def finalize_response(ctx, response: str) -> str:
+    `greeting` arrives as a fully-typed `Greeting` instance - reconstructed
+    from the `greeting: Greeting` parameter annotation - so attribute access
+    works directly without manual dict handling.
+    """
+    logger.info(f"Activity process_greeting called for: {greeting.recipient}")
+    return Greeting(greeting.recipient, f"{greeting.message} How are you today?")
+
+def finalize_response(ctx, greeting: Greeting) -> Greeting:
     """Third activity that finalizes the response."""
-    logger.info(f"Activity finalize_response called with response: {response}")
-    return f"{response} I hope you're doing well!"
+    logger.info(f"Activity finalize_response called for: {greeting.recipient}")
+    return Greeting(greeting.recipient, f"{greeting.message} I hope you're doing well!")
 
 # Orchestrator function
 def function_chaining_orchestrator(ctx, name: str) -> str:
-    """Orchestrator that demonstrates function chaining pattern."""
-    logger.info(f"Starting function chaining orchestration for {name}")
-    
-    # Call first activity - passing input directly without named parameter
-    greeting = yield ctx.call_activity('say_hello', input=name)
-    
-    # Call second activity with the result from first activity
-    processed_greeting = yield ctx.call_activity('process_greeting', input=greeting)
-    
-    # Call third activity with the result from second activity
-    final_response = yield ctx.call_activity('finalize_response', input=processed_greeting)
-    
-    return final_response
+    """Orchestrator that demonstrates function chaining with typed payloads."""
+    # Use a replay-safe logger so this line is not re-emitted on every replay.
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Starting function chaining orchestration for {name}")
+
+    # Each call passes a typed `Greeting` between activities. `return_type=Greeting`
+    # asks the SDK to reconstruct the activity result as a `Greeting` here in the
+    # orchestrator too, so the value stays strongly typed end to end.
+    greeting = yield ctx.call_activity(say_hello, input=name, return_type=Greeting)
+    greeting = yield ctx.call_activity(process_greeting, input=greeting, return_type=Greeting)
+    greeting = yield ctx.call_activity(finalize_response, input=greeting, return_type=Greeting)
+
+    return greeting.message
 
 async def main():
     """Main entry point for the worker process."""

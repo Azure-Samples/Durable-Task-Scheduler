@@ -38,11 +38,13 @@ A quick-reference matrix showing which patterns are available in each language a
 | Durable Entities | [✅](./durable-task-sdks/dotnet/EntitiesSample) | [✅](./durable-task-sdks/python/entities) | | |
 | Orchestration Versioning | [✅](./durable-task-sdks/dotnet/OrchestrationVersioning) | [✅](./durable-task-sdks/python/versioning) | | |
 | ASP.NET Web API | [✅](./durable-task-sdks/dotnet/AspNetWebApp) | | | |
-| Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | | | |
+| Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | [✅](./durable-task-sdks/python/scheduled-tasks) | | |
 | .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | |
 | AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | |
 | AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | |
 | Large Payload | [✅](./durable-task-sdks/dotnet/LargePayload) | | | |
+| Export History | [✅](./durable-task-sdks/dotnet/ExportHistoryWebApp) | [✅](./durable-task-sdks/python/history-export) | | |
+| Bounded Coordinator | [✅](./durable-task-sdks/dotnet/BoundedCoordinator) | [✅](./durable-task-sdks/python/bounded-coordinator) | | |
 
 ### Durable Functions
 

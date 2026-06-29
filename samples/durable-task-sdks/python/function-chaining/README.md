@@ -10,10 +10,48 @@ In this sample:
 3. That result is passed to the `finalize_response` activity
 4. The final result is returned to the client
 
+Activities exchange a typed `Greeting` dataclass rather than a plain string. This
+showcases the SDK's **type-aware serialization**: the built-in converter
+serializes the dataclass and reconstructs it as a typed `Greeting` at each
+boundary where the target type is known - from an activity parameter annotation
+(`greeting: Greeting`) or a `return_type=Greeting` hint on `call_activity`.
+
 This pattern is useful for:
 - Creating sequential workflows where steps must execute in order
 - Passing data between steps with data transformations at each step
 - Building pipelines where each activity adds value to the result
+- Passing rich, strongly-typed objects between activities and orchestrators
+
+### Type-aware serialization
+
+The payload exchanged between steps is a dataclass:
+
+```python
+from dataclasses import dataclass
+
+@dataclass
+class Greeting:
+    recipient: str
+    message: str
+```
+
+Because the activity parameters are annotated with `Greeting` and the
+orchestrator passes `return_type=Greeting`, the value stays strongly typed end to
+end - no manual dict handling required:
+
+```python
+def process_greeting(ctx, greeting: Greeting) -> Greeting:
+    # `greeting` is a fully-typed Greeting, not a raw dict
+    return Greeting(greeting.recipient, f"{greeting.message} How are you today?")
+
+# In the orchestrator:
+greeting = yield ctx.call_activity(process_greeting, input=greeting, return_type=Greeting)
+```
+
+> **Note:** The built-in converter reconstructs a dataclass when it is the
+> top-level target type. A model nested inside a generic (for example
+> `return_type=list[Greeting]`) falls back to raw dicts unless you supply a
+> custom `DataConverter`.
 
 ## Prerequisites
 

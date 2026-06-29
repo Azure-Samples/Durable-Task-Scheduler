@@ -8,7 +8,8 @@ In this sample:
 1. A counter entity is defined that supports `add`, `subtract`, `get`, and `reset` operations
 2. The client signals the entity directly to modify its state
 3. Orchestrations interact with entities using `signal_entity` and `call_entity`
-4. Entity state is automatically persisted and survives restarts
+4. A **delayed entity signal** schedules a `reset` operation to be delivered at a future time
+5. Entity state is automatically persisted and survives restarts
 
 This pattern is useful for:
 - Building aggregators and accumulators
@@ -167,6 +168,28 @@ Entities support two types of operations:
    value = yield ctx.call_entity(entity=entity_id, operation="get")
    ```
 
+### Delayed (Scheduled) Signals
+
+A signal can be scheduled to be delivered at a future time by passing
+`signal_time`. This is useful for reminders, timeouts, or having an entity wake
+itself up later. Compute the time from the orchestrator's deterministic clock:
+
+```python
+from datetime import timedelta
+
+reset_time = ctx.current_utc_datetime + timedelta(seconds=5)
+ctx.signal_entity(
+    entity_id=entity_id,
+    operation_name="reset",
+    signal_time=reset_time,
+)
+```
+
+The orchestrator continues immediately; the `reset` operation is delivered to the
+entity only after `signal_time` is reached. The same `signal_time` parameter is
+available on `EntityContext.signal_entity`, so an entity can schedule a delayed
+signal to itself or another entity.
+
 ### Client Operations
 
 Entities can also be signaled directly from clients:
@@ -247,7 +270,7 @@ Signaling entity 'my-counter' to add 100
 Signaling entity 'my-counter' to subtract 25
 === Orchestration-based Entity Operations ===
 Scheduling orchestration #1 for entity 'my-counter-orch-1'
-Orchestration completed successfully with result: "Counter 'my-counter-orch-1' final value: 12"
+Orchestration completed successfully with result: "Counter 'my-counter-orch-1': value before delayed reset=12, value after delayed reset=0"
 ```
 
 ## Reviewing the Orchestration in the Durable Task Scheduler Dashboard

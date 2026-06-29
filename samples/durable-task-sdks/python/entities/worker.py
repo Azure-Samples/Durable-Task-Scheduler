@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+from datetime import timedelta
 from azure.identity import DefaultAzureCredential, ManagedIdentityCredential
 from azure.core.exceptions import ClientAuthenticationError
 from durabletask import task, entities
@@ -37,26 +38,43 @@ def counter(ctx: entities.EntityContext, input: int):
 
 # Orchestrator that interacts with the counter entity
 def counter_workflow(ctx: task.OrchestrationContext, entity_key: str):
-    """Orchestration that demonstrates entity interactions.
-    
+    """Orchestration that demonstrates entity interactions, including a
+    delayed (scheduled) entity signal.
+
     This orchestration:
     1. Creates/accesses a counter entity
     2. Adds values to the counter
-    3. Gets the current value
-    4. Subtracts a value
-    5. Returns the final count
+    3. Schedules a delayed `reset` signal to fire a few seconds in the future
+    4. Reads the value before the delayed reset fires
+    5. Waits past the scheduled time, then reads the value again
+    6. Returns both values to show the delayed signal took effect
     """
     entity_id = entities.EntityInstanceId("counter", entity_key)
-    
+
     # Signal entity operations (fire-and-forget)
     ctx.signal_entity(entity_id=entity_id, operation_name="add", input=10)
     ctx.signal_entity(entity_id=entity_id, operation_name="add", input=5)
     ctx.signal_entity(entity_id=entity_id, operation_name="subtract", input=3)
-    
-    # Call entity and wait for result (note: call_entity uses 'entity' and 'operation' params)
-    value = yield ctx.call_entity(entity=entity_id, operation="get")
-    
-    return f"Counter '{entity_key}' final value: {value}"
+
+    # Schedule a DELAYED signal: the `reset` operation is delivered at a future
+    # time via `signal_time`, rather than as soon as possible. Use the
+    # orchestrator's deterministic clock (`current_utc_datetime`) to compute it.
+    reset_time = ctx.current_utc_datetime + timedelta(seconds=5)
+    ctx.signal_entity(
+        entity_id=entity_id,
+        operation_name="reset",
+        signal_time=reset_time,
+    )
+
+    # Read the value before the delayed reset is delivered (expect 10 + 5 - 3 = 12)
+    value_before = yield ctx.call_entity(entity=entity_id, operation="get")
+
+    # Wait until after the scheduled reset time, then read again (expect 0)
+    yield ctx.create_timer(ctx.current_utc_datetime + timedelta(seconds=7))
+    value_after = yield ctx.call_entity(entity=entity_id, operation="get")
+
+    return (f"Counter '{entity_key}': value before delayed reset={value_before}, "
+            f"value after delayed reset={value_after}")
 
 
 # Activity to log entity state

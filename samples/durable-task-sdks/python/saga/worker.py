@@ -120,7 +120,8 @@ def travel_booking_saga(ctx, input: dict):
 
     except Exception as e:
         # Compensation: undo completed bookings in reverse order
-        logger.info(f"Booking failed: {e}. Starting compensation...")
+        olog = ctx.create_replay_safe_logger(logger)
+        olog.info(f"Booking failed: {e}. Starting compensation...")
         compensations = []
 
         for booking, cancel_activity in reversed(completed_bookings):

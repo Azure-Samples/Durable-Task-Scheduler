@@ -73,7 +73,9 @@ def versioned_orchestration(ctx: task.OrchestrationContext, name: str):
     results = []
     orch_version = ctx.version
     
-    logger.info(f"Running orchestration with version: {orch_version}")
+    # Use a replay-safe logger so this line is not re-emitted on every replay.
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Running orchestration with version: {orch_version}")
     
     # v1.0.0+: Basic hello greeting (all versions)
     hello_result = yield ctx.call_activity(say_hello, input=name)

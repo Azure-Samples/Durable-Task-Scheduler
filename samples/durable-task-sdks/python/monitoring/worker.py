@@ -48,9 +48,12 @@ def monitoring_job_orchestrator(ctx, job_data: dict) -> dict:
     polling_interval = job_data.get("polling_interval_seconds", 5)
     timeout = job_data.get("timeout_seconds", 30)
     
-    logger.info(f"Starting monitoring orchestration for job {job_id}")
-    logger.info(f"Polling interval: {polling_interval} seconds")
-    logger.info(f"Timeout: {timeout} seconds")
+    # Use a replay-safe logger so these lines are not re-emitted on every replay
+    # (this orchestrator loops and replays many times).
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Starting monitoring orchestration for job {job_id}")
+    olog.info(f"Polling interval: {polling_interval} seconds")
+    olog.info(f"Timeout: {timeout} seconds")
     
     # Record the start time
     start_time = ctx.current_utc_datetime
@@ -73,13 +76,13 @@ def monitoring_job_orchestrator(ctx, job_data: dict) -> dict:
         ctx.set_custom_status(job_status)
         
         if job_status["status"] == "Completed":
-            logger.info(f"Job {job_id} completed after {job_status['check_count']} checks")
+            olog.info(f"Job {job_id} completed after {job_status['check_count']} checks")
             break
         
         # Check if we've hit the timeout
         current_time = ctx.current_utc_datetime
         if current_time >= expiration_time:
-            logger.info(f"Monitoring for job {job_id} timed out after {timeout} seconds")
+            olog.info(f"Monitoring for job {job_id} timed out after {timeout} seconds")
             job_status["status"] = "Timeout"
             break
         
@@ -91,7 +94,7 @@ def monitoring_job_orchestrator(ctx, job_data: dict) -> dict:
             next_check_time = expiration_time
         
         # Schedule the next check
-        logger.info(f"Waiting {polling_interval} seconds before next check of job {job_id}")
+        olog.info(f"Waiting {polling_interval} seconds before next check of job {job_id}")
         yield ctx.create_timer(next_check_time)
     
     # Return the final status

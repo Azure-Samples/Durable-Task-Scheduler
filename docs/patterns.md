@@ -147,6 +147,24 @@ Process batch → Continue as new → Process batch → Continue as new → ...
 
 ---
 
+## Bounded Coordinator
+A coordinator that fans out child work in bounded batches, waits for all children, then resets history via `continue_as_new` after each batch.
+
+```
+Coordinator (batch N) → fan out children → wait all → continue_as_new → batch N+1
+```
+
+**Use cases:** Continuous queue draining, long-running ingestion/ETL pipelines, message-pump coordinators that must avoid history bloat
+
+| Language | Durable Task SDK | Durable Functions |
+|----------|-----------------|-------------------|
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/BoundedCoordinator) | — |
+| Python | [Sample](../samples/durable-task-sdks/python/bounded-coordinator) | — |
+
+📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-eternal-orchestrations)
+
+---
+
 ## Durable Entities
 Stateful objects that persist their state and support operations via messages.
 
@@ -196,6 +214,22 @@ Safely evolve orchestration logic without breaking in-flight instances.
 | Python | [Sample](../samples/durable-task-sdks/python/versioning) | — |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-versioning)
+
+---
+
+## Scheduled Tasks
+Run a target orchestration on a recurring interval, with pause/resume and runtime management.
+
+```
+Schedule (every 5s) → Start orchestration → ... → Start orchestration
+```
+
+**Use cases:** Periodic background jobs, cache clearing, report generation, cron-like recurring workflows
+
+| Language | Durable Task SDK | Durable Functions |
+|----------|-----------------|-------------------|
+| .NET | [Schedule Web App](../samples/durable-task-sdks/dotnet/ScheduleWebApp) | — |
+| Python | [Sample](../samples/durable-task-sdks/python/scheduled-tasks) | — |
 
 ---
 

@@ -63,7 +63,9 @@ def human_interaction_orchestrator(ctx, input_data: dict) -> dict:
     item = input_data.get("item")
     timeout_hours = input_data.get("timeout_hours", 24)
     
-    logger.info(f"Starting human interaction orchestration for request {request_id}")
+    # Use a replay-safe logger so these lines are not re-emitted on every replay.
+    olog = ctx.create_replay_safe_logger(logger)
+    olog.info(f"Starting human interaction orchestration for request {request_id}")
     
     # Submit the approval request
     request_data = {
@@ -96,7 +98,7 @@ def human_interaction_orchestrator(ctx, input_data: dict) -> dict:
         # Human responded in time
         # Get the event result - in the new SDK, we need to access the output of the task properly
         approval_data = yield approval_task
-        logger.info(f"Received approval response for request {request_id}")
+        olog.info(f"Received approval response for request {request_id}")
         
         # Process the approval
         result = yield ctx.call_activity("process_approval", input={
@@ -106,7 +108,7 @@ def human_interaction_orchestrator(ctx, input_data: dict) -> dict:
         })
     else:
         # Timeout occurred
-        logger.info(f"Request {request_id} timed out waiting for approval")
+        olog.info(f"Request {request_id} timed out waiting for approval")
         result = {
             "request_id": request_id,
             "status": "Timeout",
