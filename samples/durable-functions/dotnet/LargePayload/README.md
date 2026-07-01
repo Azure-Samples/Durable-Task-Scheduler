@@ -41,7 +41,7 @@ The sample enables these settings in `host.json`:
     "type": "azureManaged",
     "connectionStringName": "DTS_CONNECTION_STRING",
     "payloadStorageEnabled": true,
-    "payloadStorageThresholdBytes": 900000
+    "payloadStorageThresholdBytes": 262144
   },
   "hubName": "%TASKHUB_NAME%"
 }
@@ -54,7 +54,7 @@ When a payload exceeds `payloadStorageThresholdBytes`, the Durable Functions ext
 3. replaces the in-band DTS message with a small blob reference
 4. resolves that blob reference automatically before your function code reads the payload
 
-The sample uses a deterministic, low-compressibility **1.5 MiB** payload by default and a **900,000-byte** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
+The sample uses a deterministic, low-compressibility **1.5 MiB** payload by default and a **262,144-byte (256 KiB)** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
 
 ## Prerequisites
 

@@ -40,21 +40,21 @@ The sample enables these settings in `host.json`:
   "storageProvider": {
     "type": "azureManaged",
     "connectionStringName": "DTS_CONNECTION_STRING",
-    "largePayloadStorageEnabled": true,
-    "largePayloadStorageThresholdBytes": 900000
+    "payloadStorageEnabled": true,
+    "payloadStorageThresholdBytes": 262144
   },
   "hubName": "%TASKHUB_NAME%"
 }
 ```
 
-When a payload exceeds `largePayloadStorageThresholdBytes`, the Durable Functions extension:
+When a payload exceeds `payloadStorageThresholdBytes`, the Durable Functions extension:
 
 1. compresses the payload with gzip
 2. stores it in blob storage using `AzureWebJobsStorage`
 3. replaces the in-band DTS message with a small blob reference
 4. resolves that blob reference automatically before your function code reads the payload
 
-The sample uses **three deterministic, low-compressibility 1.5 MiB activity payloads** by default and a **900,000-byte** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
+The sample uses **three deterministic, low-compressibility 1.5 MiB activity payloads** by default and a **262,144-byte (256 KiB)** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
 
 ## Prerequisites
 

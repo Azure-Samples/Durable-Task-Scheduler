@@ -21,7 +21,7 @@
           "type": "azureManaged",
           "connectionStringName": "DTS_CONNECTION_STRING",
           "payloadStorageEnabled": true,
-          "payloadStorageThresholdBytes": 900000
+          "payloadStorageThresholdBytes": 262144
         },
         "hubName": "%TASKHUB_NAME%"
       }
