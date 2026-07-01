@@ -485,8 +485,8 @@ If your orchestrations pass large inputs/outputs (>10 KB), enable large payload 
       "storageProvider": {
         "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING",
-        "largePayloadStorageEnabled": true,
-        "largePayloadStorageThresholdBytes": 10240
+        "payloadStorageEnabled": true,
+        "payloadStorageThresholdBytes": 10240
       },
       "hubName": "%TASKHUB_NAME%"
     }
@@ -502,8 +502,8 @@ If your orchestrations pass large inputs/outputs (>10 KB), enable large payload 
       "storageProvider": {
         "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING",
-        "largePayloadStorageEnabled": true,
-        "largePayloadStorageThresholdBytes": 10240
+        "payloadStorageEnabled": true,
+        "payloadStorageThresholdBytes": 10240
       },
       "hubName": "default"
     }

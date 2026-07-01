@@ -211,8 +211,8 @@ DTS has a message size limit. For orchestrations that pass large inputs/outputs,
       "storageProvider": {
         "type": "azureManaged",
         "connectionStringName": "DURABLE_TASK_SCHEDULER_CONNECTION_STRING",
-        "largePayloadStorageEnabled": true,
-        "largePayloadStorageThresholdBytes": 10240
+        "payloadStorageEnabled": true,
+        "payloadStorageThresholdBytes": 10240
       },
       "hubName": "%TASKHUB_NAME%"
     }
@@ -220,8 +220,8 @@ DTS has a message size limit. For orchestrations that pass large inputs/outputs,
 }
 ```
 
-- **`largePayloadStorageEnabled`** — set to `true` to enable blob offload
-- **`largePayloadStorageThresholdBytes`** — payloads larger than this (default 10240 = 10 KB) are stored in blob
+- **`payloadStorageEnabled`** — set to `true` to enable blob offload
+- **`payloadStorageThresholdBytes`** — payloads larger than this (default 10240 = 10 KB) are stored in blob
 
 Large payloads are stored in the Azure Storage account referenced by `AzureWebJobsStorage`.
 
