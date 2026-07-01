@@ -20,7 +20,7 @@ jobs:
     name: .NET Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup .NET 8
         uses: actions/setup-dotnet@v5
@@ -123,7 +123,7 @@ jobs:
     name: Java Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Java 21
         uses: actions/setup-java@v5
@@ -174,7 +174,7 @@ jobs:
     name: Python Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Python
         uses: actions/setup-python@v6
@@ -239,7 +239,7 @@ jobs:
     name: JavaScript Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -258,7 +258,7 @@ jobs:
     name: TypeScript Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
