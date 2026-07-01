@@ -14,7 +14,7 @@ fastapi>=0.136.1
 uvicorn>=0.48.0
 
 # HTTP client
-httpx>=0.26.0
+httpx>=0.28.1
 
 # Environment variables
 python-dotenv>=1.2.2
