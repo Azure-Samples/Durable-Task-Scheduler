@@ -31,7 +31,7 @@ async def main():
     # Configure the blob payload store — must match the worker configuration
     store = BlobPayloadStore(BlobPayloadStoreOptions(
         connection_string=storage_conn_str,
-        threshold_bytes=1_024,
+        threshold_bytes=262_144,
     ))
 
     # Set credential to None for emulator, or DefaultAzureCredential for Azure
@@ -61,7 +61,7 @@ async def main():
     # --- Large payload (externalized to blob storage) ---
     print("\n--- Large payload (externalized to blob storage) ---")
     instance_id = client.schedule_new_orchestration(
-        "large_payload_orchestrator", input=10_000
+        "large_payload_orchestrator", input=50_000
     )
     logger.info(f"Scheduled orchestration with ID: {instance_id}")
 

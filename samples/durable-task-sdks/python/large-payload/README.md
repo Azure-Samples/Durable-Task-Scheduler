@@ -168,7 +168,7 @@ Result: "Processed 10000 records (70000 bytes)"
 Done!
 ```
 
-Both orchestrations produce the same type of result. The difference is invisible to the application code — the SDK transparently externalizes the 70 KB payload to blob storage and retrieves it when needed.
+Both orchestrations produce the same type of result. The difference is invisible to the application code — the SDK transparently externalizes the ~342 KB payload to blob storage and retrieves it when needed.
 
 ## Code Walkthrough
 
@@ -179,13 +179,13 @@ The `BlobPayloadStore` is configured with a `BlobPayloadStoreOptions` object:
 ```python
 store = BlobPayloadStore(BlobPayloadStoreOptions(
     connection_string=storage_conn_str,
-    threshold_bytes=1_024,  # Externalize payloads larger than 1 KB
+    threshold_bytes=262_144,  # Externalize payloads larger than 256 KiB
 ))
 ```
 
 Key options:
 - **`connection_string`**: Azure Storage connection string (or `UseDevelopmentStorage=true` for Azurite)
-- **`threshold_bytes`**: Payloads larger than this are externalized (default: 900 KB)
+- **`threshold_bytes`**: Payloads larger than this are externalized (default: 256 KiB)
 - **`max_stored_payload_bytes`**: Maximum payload size that can be stored (default: 10 MB)
 - **`enable_compression`**: Whether to compress payloads with GZip before storing (default: `True`)
 - **`container_name`**: Blob container name (default: `durabletask-payloads`)

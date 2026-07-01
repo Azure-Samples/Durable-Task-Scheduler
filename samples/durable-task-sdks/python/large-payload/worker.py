@@ -61,11 +61,11 @@ async def main():
     print(f"Using taskhub: {taskhub_name}")
     print(f"Using endpoint: {endpoint}")
 
-    # Configure the blob payload store with a low threshold for demo purposes
+    # Configure the blob payload store (256 KiB threshold, matching the SDK default)
     store = BlobPayloadStore(BlobPayloadStoreOptions(
         connection_string=storage_conn_str,
-        # Use a low threshold so that externalization is visible in the demo
-        threshold_bytes=1_024,
+        # 256 KiB, matching the SDK default; larger payloads are externalized
+        threshold_bytes=262_144,
     ))
 
     # Set credential to None for emulator, or DefaultAzureCredential for Azure
