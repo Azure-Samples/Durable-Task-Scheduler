@@ -16,7 +16,7 @@ using Microsoft.Extensions.Logging;
 
 const int OneMiB = 1024 * 1024;
 const int DefaultPayloadSizeBytes = 1536 * 1024;
-const int DefaultExternalizeThresholdBytes = 900_000;
+const int DefaultExternalizeThresholdBytes = 262_144;
 const int DefaultWaitTimeoutSeconds = 120;
 const string OrchestrationName = "LargePayloadRoundTrip";
 const string ActivityName = "EchoLargePayload";
@@ -27,11 +27,11 @@ string schedulerConnectionString = builder.Configuration.GetValue<string>("DURAB
     ?? "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None";
 
 int defaultPayloadSizeBytes = GetPositiveInt(builder.Configuration, "PAYLOAD_SIZE_BYTES", DefaultPayloadSizeBytes);
-int externalizeThresholdBytes = GetPositiveInt(builder.Configuration, "EXTERNALIZE_THRESHOLD_BYTES", DefaultExternalizeThresholdBytes);
+int externalizeThresholdBytes = GetPositiveInt(builder.Configuration, "THRESHOLD_BYTES", DefaultExternalizeThresholdBytes);
 
 if (externalizeThresholdBytes > OneMiB)
 {
-    throw new InvalidOperationException($"EXTERNALIZE_THRESHOLD_BYTES must be 1 MiB or smaller. Value: {externalizeThresholdBytes}");
+    throw new InvalidOperationException($"THRESHOLD_BYTES must be 1 MiB or smaller. Value: {externalizeThresholdBytes}");
 }
 
 PayloadStorageSettings payloadStorageSettings = GetPayloadStorageSettings(builder.Configuration);

@@ -20,9 +20,9 @@ Durable Task Scheduler messages have a size limit. The SDK-side blob payload ext
 - replacing the in-band message with a small blob reference
 - resolving that reference automatically before your orchestrator or activity code reads it
 
-The sample uses a deterministic, low-compressibility **1.5 MiB** payload by default and an offload threshold of **900,000 bytes** so payloads are externalized before they approach the 1 MiB scheduler ceiling.
+The sample uses a deterministic, low-compressibility **1.5 MiB** payload by default and an offload threshold of **262,144 bytes (256 KiB)** so payloads are externalized before they approach the 1 MiB scheduler ceiling.
 
-> The SDK extension requires `EXTERNALIZE_THRESHOLD_BYTES` to stay at or below `1,048,576` bytes.
+> `THRESHOLD_BYTES` is a sample-only environment variable. The sample reads it and assigns it to the SDK's `LargePayloadStorageOptions.ThresholdBytes`, which must stay at or below `1,048,576` bytes (1 MiB).
 
 ## Prerequisites
 
@@ -94,7 +94,7 @@ The sample works out of the box locally, but you can override the defaults with 
 | `PAYLOAD_STORAGE_ACCOUNT_URI` | Blob account URI for identity-based storage access | unset |
 | `PAYLOAD_CONTAINER_NAME` | Blob container used for externalized payloads | `durabletask-payloads` |
 | `PAYLOAD_SIZE_BYTES` | Default payload size used by the run endpoint | `1572864` |
-| `EXTERNALIZE_THRESHOLD_BYTES` | Blob offload threshold | `900000` |
+| `THRESHOLD_BYTES` | Blob offload threshold | `262144` |
 | `PAYLOAD_STORAGE_MANAGED_IDENTITY_CLIENT_ID` | Optional user-assigned managed identity client ID for storage | unset |
 | `ASPNETCORE_URLS` | Listen URLs for the web host | framework default |
 
