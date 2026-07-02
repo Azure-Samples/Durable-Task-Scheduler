@@ -2,6 +2,6 @@ durabletask>=1.4.0
 durabletask-azuremanaged>=1.4.0
 fastapi>=0.136.1
 uvicorn>=0.49.0
-redis>=8.0.0
+redis>=8.0.1
 openai>=2.44.0
 azure-identity>=1.25.3
