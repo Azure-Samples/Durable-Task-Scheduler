@@ -41,7 +41,8 @@ The sample enables these settings in `host.json`:
     "type": "azureManaged",
     "connectionStringName": "DTS_CONNECTION_STRING",
     "payloadStorageEnabled": true,
-    "payloadStorageThresholdBytes": 262144
+    "payloadStorageThresholdBytes": 262144,
+    "payloadStorageMaxPayloadBytes": 15728640
   },
   "hubName": "%TASKHUB_NAME%"
 }
@@ -55,6 +56,30 @@ When a payload exceeds `payloadStorageThresholdBytes`, the Durable Functions ext
 4. resolves that blob reference automatically before your function code reads the payload
 
 The sample uses a deterministic, low-compressibility **1.5 MiB** payload by default and a **262,144-byte (256 KiB)** threshold so externalization happens before the payload approaches the DTS 1 MiB message boundary.
+
+### Maximum payload size
+
+`payloadStorageThresholdBytes` controls *when* a payload is externalized. A separate setting, `payloadStorageMaxPayloadBytes`, controls the **largest single payload** the runtime will externalize:
+
+- If you don't set `payloadStorageMaxPayloadBytes`, the default maximum is **10 MB (10,485,760 bytes, shown as 10,240 KB in the error message)**.
+- A request whose payload exceeds the maximum **fails fast** — before the orchestration is scheduled — with an error like:
+
+  ```text
+  Payload size 10742 KB exceeds the configured maximum of 10240 KB. Reduce the payload size or increase the max payload size limit.
+  ```
+
+- This is a **configurable limit, not a hard product limit**. To allow larger payloads, raise `payloadStorageMaxPayloadBytes` in `host.json`. This sample sets it to `15728640` (15 MiB), so payloads up to 15 MiB are accepted.
+
+#### `PAYLOAD_SIZE_BYTES` is not `payloadStorageMaxPayloadBytes`
+
+These two settings are easy to confuse but do completely different things:
+
+| Setting | Where it lives | What it controls |
+|---|---|---|
+| `PAYLOAD_SIZE_BYTES` | app setting / `local.settings.json` | How many bytes of test data **this sample generates** for its demo payload. |
+| `payloadStorageMaxPayloadBytes` | `host.json` | The **maximum** size the runtime will externalize. Payloads larger than this fail fast. |
+
+If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxPayloadBytes` (for example `PAYLOAD_SIZE_BYTES=11000000` against the default 10 MB cap), the run fails **by design** with the error above. Raise `payloadStorageMaxPayloadBytes` to at least the payload size you want to support.
 
 ## Prerequisites
 
@@ -132,7 +157,7 @@ The extension stores payload blobs with gzip content encoding, so Azure shows th
 | `DTS_CONNECTION_STRING` | DTS emulator or Azure connection string | `Endpoint=http://localhost:8080;Authentication=None` |
 | `TASKHUB_NAME` | Task hub name | `default` |
 | `AzureWebJobsStorage` | Storage for Functions host state and payload blobs | `UseDevelopmentStorage=true` locally |
-| `PAYLOAD_SIZE_BYTES` | Payload size used by the HTTP starter | `1572864` |
+| `PAYLOAD_SIZE_BYTES` | Size of the test payload this sample generates. Keep it at or below the configured `payloadStorageMaxPayloadBytes` (default 10 MB); larger values fail by design. | `1572864` |
 
 ## Deploy to Azure with AZD
 
