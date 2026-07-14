@@ -7,7 +7,7 @@ using Microsoft.DurableTask;
 using Microsoft.DurableTask.Client;
 using Microsoft.DurableTask.Worker;
 
-namespace CustomExceptionProperties;
+namespace CustomExceptionPropertyProvider;
 
 // =============================================================================
 // Orchestration + activity

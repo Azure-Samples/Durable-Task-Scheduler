@@ -1,4 +1,4 @@
-# Custom Exception Properties with Durable Functions (.NET)
+# Custom Exception Property Provider with Durable Functions (.NET)
 
 .NET | Durable Functions
 
@@ -14,7 +14,10 @@ When an activity throws a `BusinessValidationException`, the registered `IExcept
 2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator)
 3. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 
-> **Note:** The `IExceptionPropertiesProvider` API requires `Microsoft.DurableTask.Worker` >= 1.24.2 and the Durable Functions host extension >= 3.14.0 (via `Microsoft.Azure.Functions.Worker.Extensions.DurableTask` >= 1.18.0). The DTS backend requires `Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged` >= 1.9.0. These versions are pinned in the `.csproj`.
+> **Note:** The custom exception property provider requires these minimum versions (the sample references the latest available):
+> - `Microsoft.Azure.Functions.Worker.Extensions.DurableTask` >= 1.9.0
+> - `Microsoft.DurableTask.Worker` >= 1.16.1 (provides `IExceptionPropertiesProvider`)
+> - `Microsoft.Azure.Functions.Worker.Extensions.DurableTask.AzureManaged` >= 1.2.0 (for the Durable Task Scheduler backend)
 
 ## Quick Run
 
@@ -25,7 +28,7 @@ When an activity throws a `BusinessValidationException`, the registered `IExcept
 
 2. Start the Function app:
    ```bash
-   cd samples/durable-functions/dotnet/CustomExceptionProperties
+   cd samples/durable-functions/dotnet/CustomExceptionPropertyProvider
    func start
    ```
 
@@ -44,7 +47,7 @@ The orchestration returns the caught `FailureDetails`, whose `Properties` carry 
 
 ```json
 {
-  "errorType": "CustomExceptionProperties.BusinessValidationException",
+  "errorType": "CustomExceptionPropertyProvider.BusinessValidationException",
   "errorMessage": "Business logic validation failed",
   "properties": {
     "StringProperty": "validation-error-123",

@@ -1,4 +1,4 @@
-# Custom Exception Properties — Durable Functions JavaScript
+# Custom Exception Property Provider — Durable Functions JavaScript
 
 JavaScript | Durable Functions
 
@@ -14,9 +14,10 @@ An activity throws a `BusinessValidationException` carrying structured fields (s
 2. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 3. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
 
-> **Note:** This sample relies on functionality that is still rolling out in preview:
-> - The `durable-functions` npm package must include `df.app.setExceptionPropertiesProvider` (the custom exception properties feature). This is not yet on the public npm registry — install a build from the feature branch until it ships.
-> - The Durable Functions host extension must be >= 3.14.0 (with AzureManaged >= 1.9.0). At the time of writing, the latest **public** preview bundle (`Microsoft.Azure.Functions.ExtensionBundle.Preview` 4.30.0) still ships extension 3.1.0 / AzureManaged 0.4.2-alpha, which will **not** surface `Properties`. Use a preview bundle that ships extension >= 3.14.0 once it is published; `host.json` already targets the preview bundle so it will pick up the feature automatically.
+> **Note:** The custom exception property provider requires:
+> - The `durable-functions` npm package must include `df.app.setExceptionPropertiesProvider`.
+> - An extension bundle that ships the feature. Use the **main** bundle `Microsoft.Azure.Functions.ExtensionBundle` >= **4.37.1** (configured in `host.json`), or the **preview** bundle `Microsoft.Azure.Functions.ExtensionBundle.Preview` >= **4.44.0**. Older bundles will **not** surface `Properties`.
+> - The Durable Task Scheduler (azure-managed) SDK >= **1.2.0**.
 
 ## Quick Run
 
@@ -27,7 +28,7 @@ An activity throws a `BusinessValidationException` carrying structured fields (s
 
 2. Install dependencies and run:
    ```bash
-   cd samples/durable-functions/javascript/CustomExceptionProperties
+   cd samples/durable-functions/javascript/CustomExceptionPropertyProvider
    npm install
    func start
    ```
