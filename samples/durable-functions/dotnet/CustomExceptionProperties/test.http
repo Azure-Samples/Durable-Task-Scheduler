@@ -1,0 +1,22 @@
+# =============================================================================
+# Custom Exception Properties — Durable Functions (.NET isolated) Demo
+# =============================================================================
+#
+# Prerequisites:
+#   1. DTS emulator: docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest
+#   2. App running:  func start --port 7071
+#
+# The orchestration calls an activity that throws BusinessValidationException.
+# A registered IExceptionPropertiesProvider attaches structured properties to
+# FailureDetails.Properties, which the orchestration returns as its output.
+# =============================================================================
+
+@baseUrl = http://localhost:7071/api
+
+
+### Start the orchestration
+# @name customException
+POST {{baseUrl}}/orchestrators/customException
+
+### Check status — the output holds FailureDetails, including custom Properties
+GET {{customException.response.body.statusQueryGetUri}}
