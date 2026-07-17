@@ -15,7 +15,7 @@ An activity throws a `BusinessValidationException` carrying structured fields (s
 3. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
 
 > **Note:** The custom exception property provider requires:
-> - The `durable-functions` npm package must include `df.app.setExceptionPropertiesProvider`.
+> - The `durable-functions` npm package >= **3.5.0**, which adds `df.app.setExceptionPropertiesProvider`.
 > - An extension bundle that ships the feature. Use the **main** bundle `Microsoft.Azure.Functions.ExtensionBundle` >= **4.37.1** (configured in `host.json`), or the **preview** bundle `Microsoft.Azure.Functions.ExtensionBundle.Preview` >= **4.44.0**. Older bundles will **not** surface `Properties`.
 > - The Durable Task Scheduler (azure-managed) SDK >= **1.2.0**.
 
