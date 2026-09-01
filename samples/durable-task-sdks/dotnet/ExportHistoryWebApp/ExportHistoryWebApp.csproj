@@ -10,13 +10,13 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.80.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.9" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.83.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.11" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.24.2" />
-    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.24.2" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.25.0" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.25.0" />
     <PackageReference Include="Microsoft.DurableTask.ExportHistory" Version="1.22.0-preview.1" />
     <PackageReference Include="Microsoft.DurableTask.Generators" Version="1.0.0-preview.1" OutputItemType="Analyzer" />
   </ItemGroup>
