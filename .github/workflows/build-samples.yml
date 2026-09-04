@@ -231,6 +231,10 @@ jobs:
       - name: Install DF - work-item-filtering-app-b
         run: pip install -r samples/durable-functions/python/work-item-filtering-app-b/requirements.txt
 
+      # Scenario samples
+      - name: Install Scenario - WorkItemFilteringSplitActivitiesPython
+        run: pip install -r samples/scenarios/WorkItemFilteringSplitActivitiesPython/src/client/requirements.txt
+
       # Syntax check all Python files
       - name: Syntax check Python files
         run: find samples -name "*.py" -not -path "*/__pycache__/*" -exec python -m py_compile {} +

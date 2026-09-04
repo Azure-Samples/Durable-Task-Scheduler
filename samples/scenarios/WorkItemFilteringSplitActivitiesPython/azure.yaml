@@ -1,0 +1,34 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+metadata:
+  template: work-item-filtering-split-activities-python
+name: work-item-filtering-split-activities-python
+services:
+  client:
+    project: ./src/client
+    language: python
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
+  orchestrator-worker:
+    project: ./src/orchestrator-worker
+    language: python
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
+  validator-worker:
+    project: ./src/validator-worker
+    language: python
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
+  shipper-worker:
+    project: ./src/shipper-worker
+    language: python
+    host: containerapp
+    apiVersion: 2025-01-01
+    docker:
+      path: ./Dockerfile
