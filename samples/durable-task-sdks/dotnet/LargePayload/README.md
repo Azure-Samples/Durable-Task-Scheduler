@@ -24,6 +24,10 @@ The sample uses a deterministic, low-compressibility **1.5 MiB** payload by defa
 
 > `THRESHOLD_BYTES` is a sample-only environment variable. The sample reads it and assigns it to the SDK's `LargePayloadStorageOptions.ThresholdBytes`, which must stay at or below `1,048,576` bytes (1 MiB).
 
+> The same options object also caps the largest **single** externalized payload with `LargePayloadStorageOptions.MaxPayloadBytes`, which defaults to **10 MB (10,485,760 bytes)**. A larger payload fails fast with `Payload size <N> KB exceeds the configured maximum of <M> KB. Reduce the payload size or increase the max payload size limit.`. `PAYLOAD_SIZE_BYTES` only sets how much test data this sample generates — it is *not* the cap. To externalize payloads larger than 10 MB, set `options.MaxPayloadBytes` higher in `Program.cs` where `AddExternalizedPayloadStore` is configured.
+
+> The cap applies to the serialized UTF-8 payload. Leave room above `PAYLOAD_SIZE_BYTES` for JSON string quotes; a generated string exactly equal to the cap can exceed it after serialization.
+
 ## Prerequisites
 
 1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
@@ -93,7 +97,7 @@ The sample works out of the box locally, but you can override the defaults with 
 | `PAYLOAD_STORAGE_CONNECTION_STRING` | Storage connection string for payload blobs | `UseDevelopmentStorage=true` |
 | `PAYLOAD_STORAGE_ACCOUNT_URI` | Blob account URI for identity-based storage access | unset |
 | `PAYLOAD_CONTAINER_NAME` | Blob container used for externalized payloads | `durabletask-payloads` |
-| `PAYLOAD_SIZE_BYTES` | Default payload size used by the run endpoint | `1572864` |
+| `PAYLOAD_SIZE_BYTES` | Default size of the test payload the run endpoint generates. Keep it below `LargePayloadStorageOptions.MaxPayloadBytes` (default 10 MB), leaving room for JSON serialization overhead. | `1572864` |
 | `THRESHOLD_BYTES` | Blob offload threshold | `262144` |
 | `PAYLOAD_STORAGE_MANAGED_IDENTITY_CLIENT_ID` | Optional user-assigned managed identity client ID for storage | unset |
 | `ASPNETCORE_URLS` | Listen URLs for the web host | framework default |
