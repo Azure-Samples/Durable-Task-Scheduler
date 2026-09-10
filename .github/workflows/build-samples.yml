@@ -20,15 +20,15 @@ jobs:
     name: .NET Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup .NET 8
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: "8.x"
 
       - name: Setup .NET 10
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: "10.x"
           dotnet-quality: "preview"
@@ -123,10 +123,10 @@ jobs:
     name: Java Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Java 21
-        uses: actions/setup-java@v5.6.0
+        uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
         with:
           distribution: "temurin"
           java-version: "21"
@@ -174,10 +174,10 @@ jobs:
     name: Python Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Python
-        uses: actions/setup-python@v7
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:
           python-version: "3.12"
 
@@ -231,6 +231,10 @@ jobs:
       - name: Install DF - work-item-filtering-app-b
         run: pip install -r samples/durable-functions/python/work-item-filtering-app-b/requirements.txt
 
+      # Scenario samples
+      - name: Install Scenario - WorkItemFilteringSplitActivitiesPython
+        run: pip install -r samples/scenarios/WorkItemFilteringSplitActivitiesPython/src/client/requirements.txt
+
       # Syntax check all Python files
       - name: Syntax check Python files
         run: find samples -name "*.py" -not -path "*/__pycache__/*" -exec python -m py_compile {} +
@@ -239,10 +243,10 @@ jobs:
     name: JavaScript Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "20"
 
@@ -258,10 +262,10 @@ jobs:
     name: TypeScript Samples
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "20"
 
