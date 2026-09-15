@@ -4,8 +4,7 @@ Run a periodic cleanup activity, await a durable timer, and **continue as new**
 with a compact counter and accumulated removal count. The instance ID remains
 the same while its execution history is replaced.
 
-Like Python, the demo stops after **five cycles**. It uses 250 ms intervals
-instead of 15-second timers plus five-second activity sleeps. Cleanup is an
+The bounded demo stops after **five cycles**, using 250 ms durable timers. Cleanup is an
 explicit **in-memory simulation**: each cycle identifies two expired records and
 retains one current record. No user files, database rows, or scheduler instances
 are deleted.

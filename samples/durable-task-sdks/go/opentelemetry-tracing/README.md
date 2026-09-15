@@ -4,12 +4,11 @@ Go | Durable Task SDK
 
 ## Description
 
-This counterpart to the [Python order-processing sample](../../python/opentelemetry-tracing/)
-runs the same chain: **validate → pay → ship → notify**.
+This sample traces an order-processing chain: **validate → pay → ship → notify**.
 One command starts a filtered DTS worker and client and validates trace propagation
 without requiring an external telemetry service.
 
-The Go SDK's tracing model differs from Python's:
+How tracing works:
 
 - The caller starts a **valid, sampled** OpenTelemetry span and passes its context
   to `ScheduleNewOrchestration`.

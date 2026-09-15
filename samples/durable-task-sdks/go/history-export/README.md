@@ -4,9 +4,9 @@ Go | Durable Task SDK (preview export extension)
 
 ## Description
 
-This counterpart to the [Python sample](../../python/history-export/) runs five
-square-number orchestrations (`1, 4, 9, 16, 25`), exports their **terminal histories**
-with the real `exporthistory` SDK extension, downloads the resulting gzip JSONL
+This sample runs five square-number orchestrations (`1, 4, 9, 16, 25`),
+exports their **terminal histories** with the `exporthistory` SDK extension,
+downloads the resulting gzip JSONL
 blobs, and validates their contents. The command starts its worker and client
 together and deletes its own completed export job before stopping.
 
@@ -28,8 +28,8 @@ together and deletes its own completed export job before stopping.
 terminal status. They have **no instance-ID, name, or tag filter**. A unique job or
 blob prefix does not scope the histories being scanned. The SDK's built-in task
 names (`ExportJob`, `ExportJobOrchestrator`, and its activities) are also shared,
-unversioned system registrations. Do not mix .NET, Python, older Go, or another
-copy of these export workers in the hub.
+unversioned system registrations. Run only this sample's export worker in the
+isolated hub; do not mix SDK versions or other export implementations.
 
 The sample additionally wraps the public `HistorySource` and `Store` interfaces
 with an immutable allow-list of its five source IDs. It refuses an entire listing

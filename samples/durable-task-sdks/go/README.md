@@ -1,6 +1,6 @@
 # Durable Task SDK samples for Go
 
-Runnable Go counterparts to all [Python samples](../python/), using
+Runnable samples for building durable workflows in Go using
 [`microsoft/durabletask-go`](https://github.com/microsoft/durabletask-go)
 **v1.0.0-beta.1**. This beta targets Durable Task Scheduler directly; it is not
 the older Go SDK's embedded SQLite/PostgreSQL backend. Go is supported here as a
@@ -109,9 +109,9 @@ go vet ./...
 go test ./...
 ```
 
-Normal tests require neither Azure nor an emulator. The catalog test compares
-the Go suite to the Python directories so a new Python sample cannot silently
-lose Go coverage.
+Normal tests require neither Azure nor an emulator. The catalog test checks
+sample coverage and verifies that each sample has a runnable entrypoint and
+documentation.
 
 The repository's [sample-build workflow](../../../.github/workflows/build-samples.yml)
 also runs the executable suite against job-owned DTS and Azurite containers,

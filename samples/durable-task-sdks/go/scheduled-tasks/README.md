@@ -2,8 +2,7 @@
 
 ## Description
 
-The Go counterpart of [Python scheduled tasks](../../python/scheduled-tasks/)
-uses the **published Go SDK schedule helpers** to create, read, list, pause,
+This sample uses the **published Go SDK schedule helpers** to create, read, list, pause,
 update, resume, run, and delete a recurring report schedule.
 
 - The initial schedule runs every **five seconds**, generating
@@ -26,7 +25,7 @@ No external cron service or additional Azure resource is required.
 - An existing DTS emulator or Azure task hub. Follow the
   [shared emulator/live authentication setup](../README.md).
 - Use this Go schedule implementation only with **Go-owned schedule state**.
-  Do not run Python/.NET schedule workers against the same schedule entities or
+  Do not mix schedule-worker implementations against the same entities or
   assume cross-SDK schedule interoperability. The system handlers have fixed SDK
   names; application report names and schedule/target IDs are Go/sample-specific.
 
@@ -83,17 +82,14 @@ finite single-activity workflows. Completed report and SDK operation history
 remain for inspection. No broad purge, unrelated schedule deletion, or global
 query is performed.
 
-## Differences from Python
+## Scheduling APIs and limitations
 
-- Go uses `Client.ScheduledTasks()`, `ScheduleClient`, `ScheduleCreationOptions`,
-  and `ScheduleUpdateOptions`, not Python's `durabletask.scheduled` package.
-- **Schedules are Go-only hub state in this example.** Similar system names or
-  JSON fields do not establish interoperable scheduling across SDKs.
+- The sample uses `Client.ScheduledTasks()`, `ScheduleClient`,
+  `ScheduleCreationOptions`, and `ScheduleUpdateOptions`.
 - The beta has no public `ScheduleClient.Run`/run-now API. “Run” here means
   observing real automatic recurring ticks after create/resume; it does not
   invoke private entity operations or manually schedule substitute reports.
-- The Python source only describes updates in its README. This Go command
-  actually updates interval and input and asserts the changed execution output.
-- Payloads include an ownership ID and phase in addition to Python's region.
+- The command updates the interval and input and verifies the changed execution output.
+- Payloads include the region, an ownership ID, and a phase.
   The default direct-target path is used (no retry, tags, or context wrapper),
   allowing queries to stay within the SDK-generated schedule-ID target prefix.

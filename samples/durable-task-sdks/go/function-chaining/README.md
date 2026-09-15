@@ -1,7 +1,7 @@
 # Function chaining — Go
 
 Three sequential activities build a greeting: **say hello → process greeting →
-finalize response**. Like the Python counterpart, each activity exchanges a typed
+finalize response**. Each activity exchanges a typed
 `Greeting` containing `recipient` and `message`; the orchestration returns the
 final message. `GetInput` and `Await(&greeting)` decode the JSON boundaries into Go
 structs. Every activity failure is propagated, and orchestrator logging is
@@ -24,8 +24,8 @@ go run .
 ```
 
 Or, from the Go samples directory: `go run ./function-chaining`.
-One process starts both the worker and client, runs one bounded greeting instead
-of Python's repeated scheduling loop, verifies the exact message, and shuts down.
+One process starts both the worker and client, runs one bounded greeting,
+verifies the exact message, and shuts down.
 The default endpoint is `http://localhost:8080`; `-timeout` defaults to two minutes.
 Normal execution takes a few seconds.
 

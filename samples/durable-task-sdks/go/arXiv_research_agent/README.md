@@ -1,7 +1,7 @@
 # arXiv research agent (Go)
 
-A Go counterpart to the Python research agent: durable research iterations,
-paper search and metadata fetching, model analysis, continuation decisions,
+A durable research agent in Go with iterative workflows, paper search and
+metadata fetching, model analysis, continuation decisions,
 follow-up queries, synthesis, and a REST status/report API.
 
 The default is an **explicit synthetic fixture**, so both emulator and live DTS
@@ -36,10 +36,9 @@ propagating failure; a failed root does not leave its sibling research calls
 running. Explicit termination can still interrupt orchestration progress and
 cannot undo already-started external calls.
 
-Compared with Python's single selected follow-up query, Go retains up to two
-queries and runs their sub-orchestrations concurrently. Fetching retrieves paper
-**metadata and abstracts via `id_list`**, not PDF contents, matching the Python
-sample's abstract-level analysis scope.
+The agent retains up to two follow-up queries and runs their sub-orchestrations
+concurrently. Fetching retrieves paper **metadata and abstracts via `id_list`**,
+not PDF contents.
 
 ## Prerequisites
 
@@ -121,7 +120,7 @@ API is not suitable for public exposure.
 | DELETE | `/agents/{id}` | `202` recursive termination requested; `409` already terminal |
 | GET | `/agents?continuation_token=...` | Paged `{agents,continuation_token}` from DTS, filtered to Go research roots |
 
-Listing uses the Go SDK's real query API instead of Python's always-empty list.
+Listing uses the Go SDK's query API.
 If the scheduler does not support that capability, the endpoint reports `501`
 and directs users to instance lookup/the dashboard; it does not fabricate an
 empty result. A page may be empty after filtering child orchestrations; follow
@@ -130,8 +129,8 @@ its continuation token.
 Request bodies are limited to 4096 bytes, topics to 200 bytes, iterations to 1–10
 (default 3), and each iteration to two queries / three papers per query.
 `start_delay_seconds` optionally schedules a start 0–30 seconds ahead (used for
-deterministic cancellation verification). Invalid ranges return `400` rather
-than Python's silent clamping. Unknown JSON fields, invalid content type,
+deterministic cancellation verification). Invalid ranges return `400`.
+Unknown JSON fields, invalid content type,
 oversized inputs, absent/foreign instances, and backend errors return
 `400`/`415`/`413`/`404`/`502` or `504`, respectively.
 

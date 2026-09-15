@@ -1,8 +1,8 @@
 # Sub-orchestrations — Go
 
 A parent loads orders in an activity, fans out **child orchestrations**, waits
-for every child, and aggregates the results. Each child follows the Python
-domain pipeline:
+for every child, and aggregates the results. Each child follows this
+order-processing pipeline:
 
 **inventory → payment → shipping → customer notification**
 
@@ -48,8 +48,8 @@ JSON output includes **`total_completed: 1`** and **`total_failed: 4`**, followe
 SAMPLE_OK sub-orchestrations
 ```
 
-The `results` array contains the detail once, rather than duplicating Python's
-identical `details` array. No compensation is implied by a failed order; see the
+The `results` array contains each order's outcome and completed steps.
+No compensation is implied by a failed order; see the
 [saga sample](../saga/) for reversing completed external operations.
 
 Child IDs are derived deterministically from the unique parent ID and order ID.

@@ -7,8 +7,8 @@ orchestration time comes from `CurrentTimeUtc`; delays use `CreateTimer`, not
 output against it.
 
 The external job API is an explicitly **simulated**, stateless fixture. The
-completion case finishes on check **four**, matching the Python worker's actual
-`check_count >= 3` behavior. Random timing is not used.
+completion case reports `Running` for the first three checks and `Completed` on
+check **four**. Random timing is not used.
 
 ## Prerequisites
 

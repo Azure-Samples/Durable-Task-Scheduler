@@ -2,8 +2,8 @@
 
 ## Description
 
-The Go counterpart of [Python orchestration management](../../python/orchestration-management/)
-demonstrates a bounded lifecycle using **only this invocation's instances**:
+This sample demonstrates a bounded lifecycle using
+**only this invocation's instances**:
 
 1. Schedule and complete three batches, producing 10, 20, and 30 processed items.
 2. Restart the first using the same instance ID. Observe a **different execution
@@ -68,15 +68,15 @@ the command fails and explains the failed verification; it does not log an
 emulator limitation and print success. Unit tests specifically reject a
 successful purge response whose metadata remains readable.
 
-## Differences from Python
+## Management APIs and safety
 
 - Uses published Go `RestartInstance`, `QueryInstances`, and `PurgeInstances`
   APIs. It does **not** use `ListInstanceIDs`, which some emulator versions omit
   instances from.
-- Python's time/status-wide batch purge is intentionally replaced by exact-ID,
-  nonrecursive purging. No hub-wide query, query-and-delete sweep, or broad purge
+- Cleanup uses exact-ID, nonrecursive purging.
+  No hub-wide query, query-and-delete sweep, or broad purge
   can touch unrelated work.
-- Suspension, event buffering, resumption, termination, and strict result
-  assertions extend the Python demo.
+- The demo verifies suspension, event buffering, resumption, termination,
+  and exact results.
 - One bounded process runs client and worker. A same-ID restart replaces an
   execution; it is not counted as an additional unique instance.

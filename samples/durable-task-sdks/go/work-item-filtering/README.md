@@ -2,8 +2,7 @@
 
 ## Description
 
-The Go counterpart of [Python work-item filtering](../../python/work-item-filtering/)
-runs two specialized workers against the same task hub:
+This sample runs two specialized workers against the same task hub:
 
 - **Worker A** registers only the greeting orchestration and hello activity.
 - **Worker B** registers only the math orchestration and addition activity.
@@ -52,10 +51,9 @@ Missing or misrouted work, incorrect outputs, or shutdown failures cause a
 nonzero exit. Instances have unique `go-filtering-*` IDs and completed history
 is left for inspection.
 
-## Differences from Python
+## Worker configuration
 
-Python uses `use_work_item_filters()` and three terminal processes. Go uses two
-independent SDK hosts with registration-derived filters in one bounded process.
-The greeting and math results are unchanged; the Go activity output additionally
-records its worker label so routing is asserted rather than inferred from logs.
-All registered names are Go/sample-specific to avoid matching Python work.
+Two independent SDK hosts use registration-derived filters in one bounded
+process. Activity outputs record their worker labels so routing is asserted
+rather than inferred from logs. Sample-specific registered names avoid matching
+unrelated work.

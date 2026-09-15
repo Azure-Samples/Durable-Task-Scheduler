@@ -1,8 +1,8 @@
 # Testing Go workflows
 
-This counterpart to the [Python testing sample](../../python/testing/) separates
-order-processing logic from the durable activity adapter. It validates an order,
-calculates its total, charges a simulated payment, and produces a simulated
+This sample separates order-processing logic from the durable activity adapter.
+It validates an order, calculates its total, charges a simulated payment, and
+produces a simulated
 shipment tracking ID. Money uses integer cents to avoid floating-point rounding.
 
 ## Prerequisites
@@ -23,7 +23,7 @@ Offline tests run the **same business workflow** with a local activity adapter.
 They assert activity order, exact results, validation failures, overflow
 protection, and propagation of payment/shipping failures.
 
-**Unlike the Python SDK, the Go beta does not expose an in-memory testing
+**The Go beta does not expose an in-memory testing
 backend.** The local adapter is not an orchestration engine and does not verify
 durable replay, persistence, or transport. Do not use internal SDK protobuf APIs
 as a substitute for a public test backend.

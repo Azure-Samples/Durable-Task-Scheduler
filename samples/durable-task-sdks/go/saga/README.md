@@ -1,9 +1,9 @@
 # Saga / compensating transactions — Go
 
 A travel-booking saga reserves a **flight → hotel → rental car**. A failed
-booking compensates successful earlier bookings in reverse order. This preserves
-the Python sample's Paris success and Tokyo car-failure scenarios, and adds
-verification of earlier failures and exhausted compensation retries.
+booking compensates successful earlier bookings in reverse order. The demo
+covers a successful Paris booking, a Tokyo car-booking failure, failures at
+earlier booking stages, and exhausted compensation retries.
 
 All booking and cancellation operations are explicitly **simulations**. No
 provider is contacted and no money is charged. Confirmation IDs are stable

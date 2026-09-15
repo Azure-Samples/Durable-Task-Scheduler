@@ -2,9 +2,9 @@
 
 ## Description
 
-The Go counterpart of [Python versioning](../../python/versioning/) runs old and
-new workflow behavior on one worker. Every invocation creates unique
-`go-versioning-*` instance IDs and uses sample-specific registered task names.
+This sample runs old and new workflow behavior on one worker. Every invocation
+creates unique `go-versioning-*` instance IDs and uses sample-specific registered
+task names.
 
 | Execution version | Activities and exact results |
 | --- | --- |
@@ -58,14 +58,12 @@ SAMPLE_OK versioning
 
 Incorrect dispatch or results fail the command; no Azure live run is implied.
 
-## Differences from Python
+## Version handling
 
-- Go reads `ctx.Version`; Python reads `ctx.version`. The sample deliberately
-  supports the four registered numeric versions, rather than implementing Python
-  `packaging.version` parsing or claiming prerelease/SemVer equivalence.
-- The first three versions retain Python's behavior. `10.0.0` and SDK worker
-  version matching are additional checks.
+- The orchestration reads `ctx.Version` to select behavior for the four
+  registered numeric versions. Prerelease versions are not supported by this sample.
+- `10.0.0` exercises numeric version ordering and SDK worker-version matching.
 - Explicit versioned registrations and inherited activity-version assertions
   demonstrate Go SDK dispatch, not just application-level branching.
-- The single bounded process replaces separate long-running Python worker/client
-  processes. It leaves completed instance history for inspection.
+- A single bounded process hosts the worker and client. It leaves completed
+  instance history for inspection.

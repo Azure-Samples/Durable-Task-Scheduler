@@ -4,9 +4,8 @@ Go | Durable Task SDK
 
 ## Description
 
-The counterpart to the [Python sample](../../python/large-payload/) generates
-`RECORD|` data, passes it between activities, and processes it transparently using
-the released Go SDK's `payload.AzureBlobStore`.
+This sample generates `RECORD|` data, passes it between activities, and processes
+it transparently using the Go SDK's `payload.AzureBlobStore`.
 
 One command runs a filtered worker and a client, first with 10 records (70 bytes),
 then with 300,000 records (2,100,000 bytes). It additionally sends the full expected

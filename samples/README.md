@@ -52,7 +52,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | Testing | | [✅](./durable-task-sdks/python/testing) | | | [✅](./durable-task-sdks/go/testing) |
 | Work Item Filtering | | [✅](./durable-task-sdks/python/work-item-filtering) | | | [✅](./durable-task-sdks/go/work-item-filtering) |
 
-Go has a counterpart for each of the 20 Python SDK sample directories. These demonstrate the same pattern or feature, not necessarily identical application behavior, hosting, or external integrations. Go does not have Durable Functions, Microsoft Agent Framework, ASP.NET, or .NET Aspire samples.
+The [Go samples](./durable-task-sdks/go/) cover self-hosted workflows, durable entities, scheduling, and integrations using Durable Task Scheduler.
 
 ### Durable Functions
 

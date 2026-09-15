@@ -2,9 +2,9 @@
 
 ## Description
 
-The Go counterpart of [Python entities](../../python/entities/) demonstrates
-persisted counter state, client signals, orchestration signals and calls, and a
-scheduled reset. Each invocation owns fresh `go-entities-*` instance/entity keys.
+This sample demonstrates persisted counter state, client signals, orchestration
+signals and calls, and a scheduled reset. Each invocation owns fresh
+`go-entities-*` instance/entity keys.
 The worker uses registration-derived work-item filters.
 
 Client signals produce `100 - 25 = 75`. A separate orchestration signals
@@ -59,15 +59,13 @@ Timeouts, early delivery, missing resets, or wrong results fail the command.
 Completed orchestration history and the two owned entity states remain available
 for inspection; the demo does not query or delete other users' entities.
 
-## Differences from Python
+## How it works
 
-- One process hosts the worker and bounded client, instead of separate processes
-  and five repetitions of the same entity workflow.
-- `task.WithSignalEntityScheduledTime` is the Go equivalent of Python's
-  `signal_time`; `CurrentTimeUtc` and durable timers keep orchestration code
-  replay-safe.
-- The entity stores `{value, reset_at}` instead of an integer so the demo can
-  verify delivery time. `get` still returns an integer; `snapshot` and `delete`
-  are additional operations. The Go name is distinct from Python's `counter`.
+- One process hosts the worker and bounded client.
+- `task.WithSignalEntityScheduledTime` schedules future signals;
+  `CurrentTimeUtc` and durable timers keep orchestration code replay-safe.
+- The entity stores `{value, reset_at}` so the demo can verify delivery time.
+  `get` returns an integer; `snapshot` and `delete` support state inspection
+  and removal.
 - The demo polls durable/server state with bounded waits; it never treats a
   fixed sleep or an accepted signal as proof of success.

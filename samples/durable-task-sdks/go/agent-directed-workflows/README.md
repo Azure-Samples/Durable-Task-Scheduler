@@ -5,9 +5,9 @@ conversation history, two protected receipt slots, and a bounded recovery cache.
 DTS serializes its operations, including concurrent HTTP requests and resets. There is no process-memory
 conversation store and no orchestration bridge.
 
-This Go counterpart preserves the Python sample's message, SSE, JSON, history,
-reset, and optional Azure OpenAI tool-calling interfaces. Like Python, the
-default **mock mode is an explicitly labeled echo**, not an intelligent agent.
+The API supports messages, SSE, JSON, history, reset, and optional Azure OpenAI
+tool calling. The default **mock mode is an explicitly labeled echo**, not an
+intelligent agent.
 
 ## Prerequisites and run
 
@@ -80,7 +80,7 @@ entity commits history + protected receipt -> HTTP observes receipt -> SSE done
 HTTP flushes the reply -> signals receipt acknowledgement -> slot can be reused
 ```
 
-Events retain Python's wire format:
+SSE events use the following format:
 
 ```text
 data: {"type":"chunk","content":"Echo: "}
@@ -163,8 +163,8 @@ Use a deployment supporting Chat Completions, streaming, and function tools.
 The code uses the Azure Chat Completions REST API, with separate system/user/tool
 messages. It accumulates streamed tool calls, executes the allowlisted
 `get_weather` function, and calls the model again with tool results. The weather
-tool, including in real mode, returns **synthetic 72°F/sunny example weather**,
-as in Python; it is not a live weather service.
+tool, including in real mode, returns **synthetic 72°F/sunny example weather**;
+it is not a live weather service.
 
 All model I/O runs inside the **entity operation**, never an orchestrator.
 The Go SDK's synchronous `EntityContext.Context()` supports context-bounded I/O.

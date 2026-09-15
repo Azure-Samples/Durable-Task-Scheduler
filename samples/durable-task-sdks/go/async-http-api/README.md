@@ -1,12 +1,11 @@
 # Async HTTP API (Go)
 
-A `net/http` counterpart to the Python sample: a typed HTTP request schedules
+A `net/http` API accepts a typed request and schedules
 `GoAsyncHTTPAPI`, which runs a simulated long-running activity on Durable Task
 Scheduler (DTS). The API process and worker run together. No state is kept in an
 HTTP-server map.
 
-Unlike the Python example's default `200` start response, this sample explicitly
-implements the asynchronous HTTP protocol: **202 Accepted**, **Location**, and
+The API implements the asynchronous HTTP protocol: **202 Accepted**, **Location**, and
 **Retry-After: 1**. Poll the relative Location URL until it returns `200`.
 
 ## Prerequisites
@@ -72,9 +71,9 @@ oversized bodies `413`, unsupported media types `415`, missing or foreign sample
 instances `404`, and backend failures `502`/`504`. A failed orchestration is a
 successful status lookup with `status: "Failed"`, not a completed result.
 
-DELETE is an additional Go convenience (the Python async sample has no DELETE
-route). Termination stops orchestration progress; **it cannot undo an activity's
-external side effects or guarantee interruption of an already running activity**.
+DELETE requests termination. Termination stops orchestration progress;
+**it cannot undo an activity's external side effects or guarantee interruption
+of an already running activity**.
 Client disconnection cancels the HTTP wait, not durable work.
 
 ## Configuration
@@ -86,7 +85,7 @@ Client disconnection cancels the HTTP wait, not durable work.
 | `TASKHUB` | `default` | Task hub |
 | `DTS_AUTHENTICATION` | inferred | `None` for HTTP loopback; `DefaultAzure` for live DTS |
 
-There is no model or real external-operation mode: the activity deliberately
-simulates work with a context-aware timer, exactly as the Python sample simulates
-work with sleep. Live DTS changes persistence/authentication, not that simulation.
+The activity simulates work with a context-aware timer; it does not call a model
+or an external operation. Live DTS changes persistence/authentication, not that
+simulation.
 Workers use automatic task filters and Go-specific stable task names.

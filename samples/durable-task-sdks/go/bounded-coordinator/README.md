@@ -5,7 +5,7 @@ orchestration per item, **waits for every child**, and uses `ContinueAsNew` befo
 reading the next batch. Only a cursor, batch number, and processed count cross
 the reset boundary.
 
-This preserves Python's **three batches of five tenant-scoped changes**. Source
+The demo processes **three batches of five tenant-scoped changes**. Source
 reads and applying changes are explicitly **simulated**, stateless activities;
 no tenant resources are modified. Child IDs include the parent ID and item ID,
 so different batches never reuse child instances.

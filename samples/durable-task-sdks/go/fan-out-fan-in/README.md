@@ -2,7 +2,7 @@
 
 The orchestration schedules all work-item activities **before** waiting, uses
 `WhenAll` to drain the complete batch (including failed siblings), decodes each
-typed result, and calls a separate aggregation activity. As in Python, each item
+typed result, and calls a separate aggregation activity. Each item
 is squared and the final result contains its count, sum, and average.
 
 The fixture processes **1–10**, then an **empty batch**. There are no random

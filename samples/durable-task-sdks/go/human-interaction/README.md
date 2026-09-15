@@ -6,10 +6,10 @@ The winner is determined by durable history, not a Go channel or wall clock.
 An approval/rejection calls the processing activity; a timeout returns `Timeout`
 without manufacturing a human decision.
 
-As in the Python sample, notification and database updates are **simulations**.
-There is no email sender, approval website, or real database. Unlike Python's
-interactive console, this bounded client automatically exercises **approve,
-reject, and no-response timeout** and checks every exact outcome.
+Notification and database updates are **simulations**.
+There is no email sender, approval website, or real database. The bounded client
+automatically exercises **approve, reject, and no-response timeout** and checks
+every exact outcome.
 
 ## Prerequisites
 
