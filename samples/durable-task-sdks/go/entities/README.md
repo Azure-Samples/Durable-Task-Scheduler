@@ -1,28 +1,16 @@
 # Durable entities (Go)
 
-## Description
+A durable counter keeps its state between operations. This demo signals three
+changes (`+10`, `+5`, `-3`), calls the counter to read its value, then schedules a
+reset five seconds later. The workflow uses durable time and timers rather than
+sleeping inside an orchestrator.
 
-This sample demonstrates persisted counter state, client signals, orchestration
-signals and calls, and a scheduled reset. Each invocation owns fresh
-`go-entities-*` instance/entity keys.
-The worker uses registration-derived work-item filters.
+## Run the demo
 
-Client signals produce `100 - 25 = 75`. A separate orchestration signals
-`10 + 5 - 3`, reads `12`, and schedules a reset five seconds into the future using
-the orchestration's deterministic clock. It verifies that the later value is `0`,
-the earlier read preceded the due time, and the reset's **actual entity operation
-timestamp** was not earlier than that due time. A final client read verifies the
-persisted state rather than assuming that sending a signal means it was handled.
-
-## Prerequisites
-
-- Go 1.25.0 or later, using the shared module's pinned
-  `github.com/microsoft/durabletask-go v1.0.0-beta.1`.
-- An existing DTS emulator task hub or an existing Azure task hub with data-plane
-  access. Follow the [shared emulator/live authentication setup](../README.md).
-  No additional Azure resources are needed.
-
-## Run
+Use Go 1.25.0 or later and the shared module's pinned
+`github.com/microsoft/durabletask-go v1.0.0-beta.1`. Configure an existing emulator
+or Azure task hub using the [shared configuration guide](../README.md).
+No additional Azure resources are required.
 
 From this directory:
 
@@ -30,42 +18,50 @@ From this directory:
 go run .
 ```
 
-The default deadline is two minutes; `go run . -timeout 3m` changes that bound.
-Tests need no scheduler:
+From the Go module root, use `go run ./entities`. Both forms accept
+`-timeout 3m`; the default deadline is two minutes.
+
+Expected output:
+
+```text
+Counter before scheduled reset: 12
+Counter after scheduled reset: 0
+```
+
+The client waits for its workflow and prints its result. Every run uses fresh
+instance and entity IDs. Completed history and counter state remain available
+for inspection; unrelated entities are not queried or deleted.
+
+## Read the code
+
+| Read order | File | Purpose |
+| --- | --- | --- |
+| 1 | [counter.go](counter.go) | Counter operations, persisted value, and last-reset timestamp. |
+| 2 | [workflow.go](workflow.go) | Signals, request/reply calls, and a scheduled reset. |
+| 3 | [worker.go](worker.go) | Registers the counter and workflow for automatic work-item filtering. |
+| 4 | [client.go](client.go) | Starts one workflow and displays its result. |
+| 5 | [main.go](main.go) | Entrypoint and shared timeout handling. |
+
+`get` returns the current integer. `snapshot` returns the value and actual reset
+execution time; `delete` removes state. A scheduled signal has no reply, so the
+workflow uses a bounded durable wait for delivery. Exact values and delivery-time
+assertions belong to tests, not the command-line demonstration.
+
+## Tests
+
+Offline counter, registration, and verification-regression tests:
 
 ```bash
 go test -mod=readonly .
 ```
 
-## Expected result
+Opt-in integration test against the configured task hub:
 
-The command asserts completion, arithmetic, timing, and persisted state before
-printing:
-
-```text
-Direct signals: 100 - 25 = 75
-Orchestration signals and calls: 10 + 5 - 3 = 12; scheduled reset = 0
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-The JSON result contains `before: 12`, `after: 0`, and UTC `read_at`, `due_at`,
-and `reset_at` timestamps satisfying `read_at < due_at <= reset_at`. The final
-line is exactly:
-
-```text
-SAMPLE_OK entities
-```
-
-Timeouts, early delivery, missing resets, or wrong results fail the command.
-Completed orchestration history and the two owned entity states remain available
-for inspection; the demo does not query or delete other users' entities.
-
-## How it works
-
-- One process hosts the worker and bounded client.
-- `task.WithSignalEntityScheduledTime` schedules future signals;
-  `CurrentTimeUtc` and durable timers keep orchestration code replay-safe.
-- The entity stores `{value, reset_at}` so the demo can verify delivery time.
-  `get` returns an integer; `snapshot` and `delete` support state inspection
-  and removal.
-- The demo polls durable/server state with bounded waits; it never treats a
-  fixed sleep or an accepted signal as proof of success.
+[integration_test.go](integration_test.go) additionally exercises direct client
+signals (`100 - 25 = 75`), checks workflow completion and `12 -> 0`, proves
+`read_at < due_at <= reset_at`, and reads the persisted entity state. The test
+skips unless opted in and has its own bounded backend context.

@@ -309,7 +309,7 @@ jobs:
           echo "::error::Go integration services did not become ready within 120 seconds"
           exit 1
 
-      - name: Verify Go executable samples on the emulator
+      - name: Run Go demos and integration tests on the emulator
         timeout-minutes: 17
         env:
           DTS_SAMPLES_E2E: "1"
@@ -319,7 +319,6 @@ jobs:
           AZURE_STORAGE_BLOB_ENDPOINT: ""
           OTEL_EXPORTER_OTLP_ENDPOINT: ""
           OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ""
-          CHAT_MODE: mock
           RESEARCH_MODE: fixture
         run: go test -v -count=1 -timeout 15m ./e2e
 

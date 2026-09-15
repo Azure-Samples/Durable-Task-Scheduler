@@ -10,26 +10,26 @@ import (
 	"sync"
 	"time"
 
+	"github.com/microsoft/durabletask-go/task"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type tracingSession struct {
 	provider *sdktrace.TracerProvider
-	memory   *tracetest.InMemoryExporter
 	remote   *checkedExporter
 }
 
-func configureTracing(ctx context.Context) (*tracingSession, error) {
-	memory := tracetest.NewInMemoryExporter()
+func configureTracing(ctx context.Context, additional ...sdktrace.TracerProviderOption) (*tracingSession, error) {
 	options := []sdktrace.TracerProviderOption{
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
-		sdktrace.WithSyncer(memory),
 		sdktrace.WithResource(resource.NewSchemaless(attribute.String("service.name", "GoOrderProcessingSample"))),
 	}
+	options = append(options, additional...)
 	var remote *checkedExporter
 	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"))
 	if endpoint == "" {
@@ -50,7 +50,7 @@ func configureTracing(ctx context.Context) (*tracingSession, error) {
 	}
 	return &tracingSession{
 		provider: sdktrace.NewTracerProvider(options...),
-		memory:   memory, remote: remote,
+		remote:   remote,
 	}, nil
 }
 
@@ -116,4 +116,27 @@ func (e *checkedExporter) Err() error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.err
+}
+
+type tracedActivityContext struct {
+	task.ActivityContext
+	traced context.Context
+}
+
+func (c tracedActivityContext) Context() context.Context { return c.traced }
+
+func traceActivity(tracer trace.Tracer, name, spanName string, activity task.Activity) task.Activity {
+	return func(ctx task.ActivityContext) (result any, err error) {
+		// DTS owns durable spans; create an application span under its context.
+		traced, span := tracer.Start(ctx.Context(), spanName, trace.WithSpanKind(trace.SpanKindInternal))
+		span.SetAttributes(attribute.String("sample.activity", name))
+		defer func() {
+			if err != nil {
+				span.RecordError(err)
+				span.SetStatus(codes.Error, "activity failed")
+			}
+			span.End()
+		}()
+		return activity(tracedActivityContext{ActivityContext: ctx, traced: traced})
+	}
 }

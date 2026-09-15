@@ -1,59 +1,72 @@
 # Testing Go workflows
 
-This sample separates order-processing logic from the durable activity adapter.
-It validates an order, calculates its total, charges a simulated payment, and
-produces a simulated
-shipment tracking ID. Money uses integer cents to avoid floating-point rounding.
+Process an order through validation, payment, and shipping. The same business
+workflow runs with durable activities in the application and local steps in
+unit tests. Money uses integer cents to avoid floating-point rounding.
+
+## Code map
+
+Start with `processOrder` in [workflow.go](workflow.go).
+
+| File | Responsibility |
+| --- | --- |
+| [workflow.go](workflow.go) | Order types, business workflow, and durable activity adapter |
+| [activities.go](activities.go) | Validation and simulated payment/shipping operations |
+| [worker.go](worker.go) | Register the orchestration and activities |
+| [client.go](client.go) | Start the worker, submit one order, and print its result |
+| [main.go](main.go) | CLI entrypoint |
+| [workflow_test.go](workflow_test.go) | Offline business-logic and failure-path tests |
+| [integration_test.go](integration_test.go) | Real DTS success/failure verification |
 
 ## Prerequisites
 
 - Go 1.25 or later.
 - No services for unit tests.
-- The DTS emulator or an authorized live task hub for integration tests; see the
-  [shared setup](../README.md).
+- The DTS emulator or an authorized live task hub for the demo and integration
+  tests; see the [shared setup](../README.md).
 
-## Run
+## Run the demo
 
-```bash
-cd samples/durable-task-sdks/go/testing
-go test -v .
-```
-
-Offline tests run the **same business workflow** with a local activity adapter.
-They assert activity order, exact results, validation failures, overflow
-protection, and propagation of payment/shipping failures.
-
-**The Go beta does not expose an in-memory testing
-backend.** The local adapter is not an orchestration engine and does not verify
-durable replay, persistence, or transport. Do not use internal SDK protobuf APIs
-as a substitute for a public test backend.
-
-Run the real registered orchestrator and activities on DTS:
+From this sample directory:
 
 ```bash
 go run .
-# Or run the opt-in integration test:
-DTS_SAMPLES_E2E=1 go test -v -run TestOrdersOnDTS .
 ```
 
-The command starts a worker, submits two valid and three invalid orders, checks
-the actual terminal status and output/failure chain of every instance, and stops
-the worker. `DTS_CONNECTION_STRING` selects emulator or live DTS without code
-changes.
+The demo submits one order and prints its completed result:
 
-## Expected output
-
-```text
-Verified single: go-testing-single-...
-Verified multiple: go-testing-multiple-...
-Verified missing-customer: go-testing-missing-customer-...
-Verified empty: go-testing-empty-...
-Verified invalid-quantity: go-testing-invalid-quantity-...
-SAMPLE_OK testing
+```json
+{
+  "paymentId": "PAY-2000",
+  "trackingId": "TRACK-ALICE-1",
+  "totalCents": 2000,
+  "status": "completed"
+}
 ```
 
-The valid orders return `PAY-2000` / `TRACK-ALICE-1` and `PAY-17499` /
-`TRACK-BOB-2`. Invalid orders must be **Failed**, with the expected validation
-cause. Failed instances are intentional and remain visible in the dashboard.
-The activity bodies are illustrative business operations, not real payment or
-shipping integrations.
+The worker and client shut down afterward. `DTS_CONNECTION_STRING` selects the
+backend without code changes. Payment and shipping are simulations, not external
+service calls.
+
+## Run tests
+
+Offline tests verify activity order, exact results, input validation, overflow
+protection, and propagation of payment/shipping failures:
+
+```bash
+go test -v .
+```
+
+The Go beta has no public in-memory orchestration backend. The local adapter
+tests business logic, not durable replay, persistence, or transport.
+
+With a configured DTS backend, run the integration test:
+
+```bash
+DTS_SAMPLES_E2E=1 go test -v -run '^TestIntegration$' .
+```
+
+It uses the registered production workflow to process two valid and three invalid
+orders, checking exact outputs and persisted failure details. Failed instances
+are intentional and remain visible in the dashboard. Verification logic lives
+in test files, not in the demo.

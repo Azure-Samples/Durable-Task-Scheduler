@@ -88,13 +88,13 @@ cd Durable-Task-Scheduler
 cd samples/durable-task-sdks/go
 go mod download
 
-# Start the worker and client, verify the result, and exit
+# Start the worker and client, print the result, and exit
 go run ./function-chaining
 ```
 
 No second terminal or Azure account is needed. The default connection is `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. If `DTS_CONNECTION_STRING` is already set, unset it or set it to that emulator connection string before running.
 
-Run any of the [20 Go samples](../samples/durable-task-sdks/go) from the same module with `go run ./<sample-name>`, or from its directory with `go run .`. Check each README for additional feature-specific prerequisites. Go support is for the standalone SDK, not Durable Functions or Microsoft Agent Framework.
+Run any of the [Go samples](../samples/durable-task-sdks/go) from the same module with `go run ./<sample-name>`, or from its directory with `go run .`. Check each README for additional feature-specific prerequisites. Go support is for the standalone SDK, not Durable Functions or Microsoft Agent Framework.
 
 ## Step 3: View in the Dashboard
 
@@ -137,7 +137,7 @@ The sample's [implemented ownership guards](../samples/durable-task-sdks/go/hist
 
 These steps connect a locally running Go process to Azure. They do **not** deploy the worker. The Go samples do not include Azure Developer CLI (`azd`) templates or automated Container Apps/AKS deployment; choose and configure your hosting environment separately.
 
-Connecting to Azure DTS also does not enable real AI providers. The Go agent demonstrations use explicit echo/synthetic fixtures by default; follow their READMEs for optional real-provider configuration and verification boundaries.
+Connecting to Azure DTS also does not enable real AI providers. The Go research agent uses synthetic fixtures by default; follow its README for optional real-provider configuration and verification boundaries.
 
 ## Next Steps
 

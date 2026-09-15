@@ -266,28 +266,3 @@ func fixtureReport(state researchState) string {
 	}
 	return report.String()
 }
-
-const expectedDemoReport = `# Fixture research report
-
-> Synthetic fixture only: no arXiv search or model inference was performed.
-
-## Summary
-Topic: durable workflow reliability
-Completed 2 iterations with 3 query analyses and 3 synthetic papers.
-
-## Key Findings
-- durable workflow reliability: Synthetic analysis of fixture-001, fixture-002.
-- durable workflow reliability methods: Synthetic analysis of fixture-002, fixture-003.
-- durable workflow reliability evaluation: Synthetic analysis of fixture-001, fixture-003.
-
-## Methods & Approaches
-Deterministic replay; idempotent activities; failure-injection tests (synthetic examples).
-
-## Open Questions
-Validate all synthetic claims against real papers before academic use.
-
-## References
-- fixture-001: Checkpointed workflows (synthetic; not an arXiv paper).
-- fixture-002: Idempotent work execution (synthetic; not an arXiv paper).
-- fixture-003: Recovery experiments (synthetic; not an arXiv paper).
-`

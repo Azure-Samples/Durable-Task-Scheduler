@@ -1,35 +1,21 @@
 # Scheduled tasks (Go)
 
-## Description
+Use the Go SDK's recurring schedule helpers to start report workflows
+periodically. The demo creates a five-second schedule, lets reports print, pauses
+it, updates the interval and region, resumes it, and deletes its schedule.
+No external cron service is involved.
 
-This sample uses the **published Go SDK schedule helpers** to create, read, list, pause,
-update, resume, run, and delete a recurring report schedule.
+## Run the demo
 
-- The initial schedule runs every **five seconds**, generating
-  `Report for 'westus' generated`. At least two distinct target instances must
-  actually complete with that output.
-- While paused, a sparse update changes the interval to **two seconds** and the
-  input region to `eastus`. The command observes two updated intervals, verifying
-  the schedule does not advance and no updated target starts.
-- After resuming, at least one target must complete with
-  `Report for 'eastus' generated`.
-- Deletion must be followed by `Describe` returning `ErrScheduleNotFound` and
-  `Get` returning `nil`.
+Use Go 1.25.0 or later with the shared module's pinned
+`github.com/microsoft/durabletask-go v1.0.0-beta.1`. Configure an existing emulator
+or Azure task hub using the [shared configuration guide](../README.md).
+No additional Azure resources are required.
 
-No external cron service or additional Azure resource is required.
-
-## Prerequisites
-
-- Go 1.25.0 or later and the shared module's pinned
-  `github.com/microsoft/durabletask-go v1.0.0-beta.1`.
-- An existing DTS emulator or Azure task hub. Follow the
-  [shared emulator/live authentication setup](../README.md).
-- Use this Go schedule implementation only with **Go-owned schedule state**.
-  Do not mix schedule-worker implementations against the same entities or
-  assume cross-SDK schedule interoperability. The system handlers have fixed SDK
-  names; application report names and schedule/target IDs are Go/sample-specific.
-
-## Run
+Use **Go-owned schedule state**. Do not mix schedule-worker implementations
+against the same entities or assume cross-SDK schedule interoperability.
+SDK system handlers have fixed names; application handlers and schedule IDs
+are sample-specific.
 
 From this directory:
 
@@ -37,59 +23,73 @@ From this directory:
 go run .
 ```
 
-The client and worker run together with a two-minute scenario deadline.
-`go run . -timeout 3m` changes that deadline. Offline tests:
+From the Go module root, use `go run ./scheduled-tasks`. Both forms accept
+`-timeout 3m`; the default deadline is two minutes.
+
+Representative output (IDs, report counts, and interleaving vary):
+
+```text
+Schedule go-scheduled-tasks-<unique>: westus reports every 5s
+Report for 'westus' generated
+Report for 'westus' generated
+Paused schedule
+Resumed schedule: eastus reports every 2s
+Report for 'eastus' generated
+Report for 'eastus' generated
+Deleted schedule go-scheduled-tasks-<unique>
+```
+
+The activity prints each report it actually generates. The command observes
+reports for eleven seconds initially and five seconds after resuming; it does
+not interpret elapsed time as proof of how many workflows completed. Exact
+execution checks are in the opt-in integration test.
+
+## Read the code
+
+| Read order | File | Purpose |
+| --- | --- | --- |
+| 1 | [client.go](client.go) | Creates and manages one short-interval schedule. |
+| 2 | [workflow.go](workflow.go) | Report workflow and its input/output types. |
+| 3 | [activities.go](activities.go) | Generates and prints a report. |
+| 4 | [worker.go](worker.go) | Registers application and SDK system handlers. |
+| 5 | [cleanup.go](cleanup.go) | Safely deletes the owned schedule, including after creation timeouts. |
+| 6 | [main.go](main.go) | Entrypoint and shared timeout handling. |
+
+`RegisterScheduledTasks` installs the `Schedule` entity and the two system
+orchestrators. `WithScheduledTasks` advertises the capability and keeps system
+orchestrators unversioned; automatic work-item filters include all registrations.
+There is no public run-now method in this beta: targets start through recurring
+ticks, not substitute manual scheduling.
+
+Cleanup retains the schedule handle before creation, waits for an uncertain
+creation outcome before deleting, and uses a fresh 30-second context while the
+worker remains alive. Connection setup still honors the original cancellation
+context. A finite 90-second `EndAt` is a secondary safeguard whose processing
+also requires a worker. Cleanup errors are returned.
+
+Deletion stops future ticks, not already-started finite report workflows.
+Completed report and SDK operation history remain for inspection. Neither the
+demo nor its tests perform broad purges or delete unrelated schedules.
+
+## Tests
+
+Offline registration, payload, cleanup-ordering, and verification-regression tests:
 
 ```bash
 go test -mod=readonly .
 ```
 
-## Expected result
+Opt-in integration test against the configured task hub:
 
-The unique schedule ID and run counts vary. Successful verification prints:
-
-```text
-Created/read/listed schedule go-scheduled-tasks-<unique>
-Verified initial recurring reports: <count> (at least 2), Report for 'westus' generated
-Verified pause and sparse update: no updated runs during two intervals
-Verified resumed reports: <count> (at least 1), Report for 'eastus' generated
-Deleted owned schedule; Describe reports not found and Get returns nil
-SAMPLE_OK scheduled-tasks
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-Counts are observed completed orchestration instances, not an estimate from
-sleep duration or schedule metadata. Target inputs, outputs, and terminal statuses
-are fetched and checked. Query results must match this schedule's ID prefix and
-registered target name; missing/broken APIs do not produce a success marker.
-
-## Registration and cleanup
-
-`durabletaskscheduler.RegisterScheduledTasks(registry)` registers the SDK's
-`Schedule` entity, `ExecuteScheduleOperationOrchestrator`, and
-`ExecuteScheduledTaskOrchestrator`. `durabletaskscheduler.WithScheduledTasks()`
-advertises the capability and keeps system orchestrators unversioned. The shared
-host's registration-derived filters include these required handlers.
-
-Every run owns a fresh schedule ID. A deferred cleanup retains the handle even
-if creation is accepted but its wait fails. It first establishes creation, then
-deletes the schedule and verifies absence, using a fresh 30-second cleanup
-deadline while the worker is still running. Cleanup errors fail the command.
-A finite **90-second `EndAt`** is a secondary safeguard, not a replacement for
-verified deletion; its processing also requires a schedule worker.
-
-Deletion stops future ticks, not already-started targets. Reports themselves are
-finite single-activity workflows. Completed report and SDK operation history
-remain for inspection. No broad purge, unrelated schedule deletion, or global
-query is performed.
-
-## Scheduling APIs and limitations
-
-- The sample uses `Client.ScheduledTasks()`, `ScheduleClient`,
-  `ScheduleCreationOptions`, and `ScheduleUpdateOptions`.
-- The beta has no public `ScheduleClient.Run`/run-now API. “Run” here means
-  observing real automatic recurring ticks after create/resume; it does not
-  invoke private entity operations or manually schedule substitute reports.
-- The command updates the interval and input and verifies the changed execution output.
-- Payloads include the region, an ownership ID, and a phase.
-  The default direct-target path is used (no retry, tags, or context wrapper),
-  allowing queries to stay within the SDK-generated schedule-ID target prefix.
+[integration_test.go](integration_test.go) verifies create/read/list; two distinct
+completed initial reports; paused status with no schedule advancement or updated
+targets during two intervals; persisted interval/input updates; active status
+and updated output after resume; and actual absence after delete.
+Queries are restricted to this run's schedule/target prefixes. Duplicate or
+unfinished instances never count as completed runs, and a successful delete
+response alone cannot satisfy deletion verification. The test skips unless
+opted in and uses a bounded real-backend context.

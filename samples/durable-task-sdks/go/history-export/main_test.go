@@ -198,7 +198,7 @@ func TestMetadataAndIsolation(t *testing.T) {
 func TestAzuriteStorage(t *testing.T) {
 	t.Setenv("AZURE_STORAGE_CONNECTION_STRING", "")
 	t.Setenv("AZURE_STORAGE_BLOB_ENDPOINT", "")
-	options, _, err := storageOptions("go-export-test")
+	options, err := storageOptions("go-export-test")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -212,7 +212,7 @@ func TestAzuriteStorage(t *testing.T) {
 
 func TestCompletionWindowCoversSourceLifetimes(t *testing.T) {
 	start := time.Date(2026, 9, 15, 17, 59, 34, 0, time.UTC)
-	sources := []sourceExecution{
+	sources := []sourceInstance{
 		{CreatedAt: start.Add(989595 * time.Microsecond), CompletedAt: start.Add(time.Second + 419721500*time.Nanosecond)},
 		{CreatedAt: start.Add(4*time.Second + 27390400*time.Nanosecond), CompletedAt: start.Add(4*time.Second + 455984700*time.Nanosecond)},
 	}
@@ -225,7 +225,7 @@ func TestCompletionWindowCoversSourceLifetimes(t *testing.T) {
 	if indexedCompletion.Before(from) || !indexedCompletion.Before(to) {
 		t.Fatal("window excludes a completion within the source's lifetime")
 	}
-	reversedFrom, reversedTo := completionWindow([]sourceExecution{sources[1], sources[0]})
+	reversedFrom, reversedTo := completionWindow([]sourceInstance{sources[1], sources[0]})
 	if !reversedFrom.Equal(from) || !reversedTo.Equal(to) {
 		t.Fatal("window depends on source order")
 	}

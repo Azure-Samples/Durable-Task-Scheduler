@@ -5,7 +5,7 @@ The orchestration schedules all work-item activities **before** waiting, uses
 typed result, and calls a separate aggregation activity. Each item
 is squared and the final result contains its count, sum, and average.
 
-The fixture processes **1–10**, then an **empty batch**. There are no random
+The demo processes one batch containing **1–10**. There are no random
 sleeps: these are bounded arithmetic operations, not a concurrency benchmark.
 Concurrency is visible in the scheduled tasks; actual execution concurrency
 depends on worker capacity. The sample caps batches at 100 items and magnitudes
@@ -27,35 +27,43 @@ go run .
 ```
 
 Or, from the Go samples directory: `go run ./fan-out-fan-in`.
-The process runs the worker and client together, asserts both exact summaries,
+The process runs the worker and client together, prints the summary,
 and exits after all activity work completes. Normal execution takes a few
 seconds; the shared `-timeout` flag defaults to two minutes.
 
 ## Expected output
 
-Two JSON results include unique instance IDs and these summaries:
+The JSON output contains a unique instance ID and this summary:
 
 ```json
 {"total_items": 10, "sum": 385, "average": 38.5}
-{"total_items": 0, "sum": 0, "average": 0}
-```
-
-The final line is:
-
-```text
-SAMPLE_OK fan-out-fan-in
 ```
 
 Open <http://localhost:8082> to inspect the parallel activity scheduling and final
 aggregation. Completed history is retained. All registered names start with
 `GoFanOutFanIn`; automatic worker filters isolate this sample.
 
-## Unit tests
+## Code map
+
+Start with [workflow.go](workflow.go): schedule all tasks, wait for the batch,
+then aggregate. [activities.go](activities.go) contains the arithmetic and result
+types. [client.go](client.go) runs one batch, [worker.go](worker.go) registers
+tasks, and [main.go](main.go) delegates to the shared CLI helper.
+
+## Tests
+
+Offline unit tests:
 
 ```bash
-go test -mod=readonly .
+go test .
 ```
 
 Tests cover exact aggregation, typed JSON activity boundaries, empty and
 duplicate batches, negative values, invalid results, and overflow prevention.
-Scheduler execution is verified separately by running the sample.
+The demo does not run an edge-case matrix. Opt-in backend verification is in
+[integration_test.go](integration_test.go), covering both the exact ten-item
+summary and the empty batch:
+
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```

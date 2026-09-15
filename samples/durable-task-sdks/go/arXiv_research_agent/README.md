@@ -49,56 +49,75 @@ not PDF contents.
 - Only for optional real mode: arXiv outbound access and an Azure OpenAI
   deployment supporting the v1 Responses API and JSON-object output.
 
-## Bounded fixture demonstration
+## Run one research request
 
-From `samples/durable-task-sdks/go`:
+From this sample directory:
 
 ```sh
-go run ./arXiv_research_agent
-go test -mod=readonly ./arXiv_research_agent
+go run .
+# Explicitly select the same default:
+RESEARCH_MODE=fixture go run . -timeout 2m
 ```
 
-The demo starts a worker and an actual loopback HTTP test server. It starts
-research via HTTP and validates:
+From the Go module root, use `go run ./arXiv_research_agent`.
+The demo starts the worker and an ordinary loopback HTTP server on an ephemeral
+port, submits **one** fixture research job with two iterations, waits for its
+report through the HTTP API, prints it, and shuts down. It does not run an
+assertion suite. Fixture data is embedded in Go code and is CWD-independent.
+The shared default runtime is two minutes; HTTP and worker shutdown have
+separate bounds.
 
-- `202`, Location, Retry-After, fixture mode headers, and health/status/wait APIs.
-- Exactly **2 iterations**, **3 query analyses**, and deduplicated paper IDs
-  `fixture-001`, `fixture-002`, `fixture-003`.
-- The **entire exact fixture report**, fetched metadata, query order, and analyses.
-- Equality between HTTP results and completed DTS output.
-- The current execution's `ExecutionStarted` history input contains iteration
-  1's exact findings, fetched papers, and two follow-up queries. The history
-  read is pinned to `metadata.ExecutionID` and requires exactly one matching
-  execution start; this is not a process-memory iteration loop.
-- A scheduled job's termination and terminal HTTP status, plus missing-job `404`.
-
-DTS metadata can retain the **original start input** across continue-as-new.
-`metadata.ReadInput` is therefore not a current-checkpoint API. The demo uses
-execution-pinned history for checkpoint evidence, while the HTTP status API
-uses custom status/completed output for current progress and results.
-
-The demo has a 65-second verification deadline plus bounded worker shutdown.
-
-Expected output includes:
+Example output includes:
 
 ```text
 Research mode: fixture (fixture papers and reports are synthetic, not academic evidence)
+Research go-arxiv-... started; waiting for its report
 ... "iterations": 2, "findings_count": 3 ...
 ... "paper_ids": ["fixture-001", "fixture-002", "fixture-003"] ...
 ... "# Fixture research report\n\n> Synthetic fixture only: ..." ...
-SAMPLE_OK arXiv_research_agent
 ```
 
-Only successful assertions and shutdown produce `SAMPLE_OK`. Unit tests are
-offline and cover fixture stages, original metadata versus current-execution
-checkpoint regression cases, checkpoint/result serialization, Atom parsing,
-search/fetch query encoding, rate-limit retries and cancellation, model response
-parsing, error propagation, prompt/data separation, and HTTP contracts.
+## Testing
+
+```sh
+go test .
+# Requires a configured, running emulator or live DTS task hub:
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```
+
+Offline tests cover fixture stages, Atom/model parsing, prompt/data separation,
+HTTP contracts, retries, cancellation, checkpoint serialization, and draining
+failed fan-outs. They are not a substitute for durable execution.
+
+The opt-in `TestIntegration` uses the shared two-minute context and the same
+production handlers/workflows against **real DTS**. It verifies the full exact
+fixture report, three paper IDs, two iterations, three analyses, HTTP
+status/header/termination behavior, and equality with durable output.
+It also reads execution-ID-pinned history and checks the current
+`ExecutionStarted` checkpoint contains the prior findings, fetched papers,
+and follow-up queries.
+
+DTS metadata can retain the **original start input** across continue-as-new.
+Checkpoint verification therefore lives in `verification_test.go`, using pinned
+history, while the HTTP status API uses custom status/completed output for
+current progress. Go test results report verification separately from demo output.
+
+## Code map / read order
+
+| File | Responsibility |
+|---|---|
+| `main.go`, `app.go`, `client.go` | CLI, worker/provider setup, one-job example client |
+| `models.go` | Typed requests, checkpoint/result data and domain validation |
+| `workflows.go` | Iterations, continue-as-new, fan-out/drain/aggregation |
+| `activities.go` | Activity registration, fixture work and provider calls |
+| `arxiv.go`, `model.go` | Validated arXiv and Azure OpenAI transports |
+| `http.go`, `server.go` | Status/report/termination API and loopback server |
+| `integration_test.go`, `verification_test.go`, other tests | Real-backend verification and offline cases |
 
 ## Interactive API
 
 ```sh
-go run ./arXiv_research_agent -serve -listen 127.0.0.1:8000 -timeout 10m
+go run . -serve -listen 127.0.0.1:8000 -timeout 10m
 curl -i -X POST http://127.0.0.1:8000/agents \
   -H 'Content-Type: application/json' \
   -d '{"topic":"durable workflow reliability","max_iterations":2}'
@@ -145,7 +164,7 @@ unfinished durable jobs resumable by a worker with the same configured mode.
 export AZURE_OPENAI_ENDPOINT='https://YOUR-RESOURCE.openai.azure.com'
 export AZURE_OPENAI_DEPLOYMENT='YOUR-RESPONSES-DEPLOYMENT'
 # Optional: set AZURE_OPENAI_API_KEY securely. Otherwise DefaultAzureCredential is used.
-go run ./arXiv_research_agent -serve -mode real -timeout 15m
+go run . -serve -mode real -timeout 15m
 ```
 
 Real mode uses:
@@ -168,8 +187,8 @@ No PDF downloading, browser UI, or real-paper accuracy verification is claimed.
 The real model chooses whether to stop early, so its iterations/results are not
 deterministic like fixture output. Human review is required before treating an
 LLM summary as academic evidence. Real arXiv/OpenAI calls are **not** claimed as
-tested. Real mode requires `-serve`; bounded verification always uses fixtures,
-even with a live Azure DTS backend.
+tested. Real mode requires `-serve`; the default demo and `TestIntegration`
+use fixtures even with a live Azure DTS backend.
 
 Budgets include 60 distinct papers, 20 findings, a 512 KiB checkpoint/model input,
 24 KiB model text, 30-second model calls, 45-second arXiv activity calls, and

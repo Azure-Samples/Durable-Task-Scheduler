@@ -30,51 +30,22 @@ go run .
 
 Or, from the Go samples directory: `go run ./bounded-coordinator`.
 Worker and client run together. Normal execution finishes in under a minute;
-`-timeout` defaults to two minutes.
-
-## Real continuation and event-carryover verification
-
-The bounded demo pauses at a verification checkpoint **after** each child batch
-has finished. Its client reads actual scheduler history and verifies:
-
-1. Three **different execution IDs** for the same coordinator instance.
-2. Each execution contains exactly one batch activity and five completed
-   children, with exact tenant payloads and `processed:item-N-M` receipts.
-3. Each new execution's persisted input has the previous batch's compact state.
-4. An event sent during execution one appears in history **before** the first
-   reset, survives both resets, and is consumed only in execution three.
-
-The client then acknowledges each checkpoint so processing continues. These are
-real continuations, not a counter inside one unbounded orchestration.
-`task.WithKeepUnprocessedEvents()` is essential: removing it fails the carryover
-checks. History API errors or missing execution IDs fail the sample; checks are
-not skipped.
-
-Checkpoints have a 15-second durable safety timeout. On an error, cleanup targets
-only this run's coordinator and its own children. All activity/child work is
-finished before continuation or normal shutdown.
+`-timeout` defaults to two minutes and accepts `-timeout 3m`.
+The client schedules one coordinator, waits for the three batches, and prints
+its result. There are no verification handshakes or history reads in the demo.
+All children finish before continuation or normal shutdown; error cleanup
+targets only this run's coordinator and its own children.
 
 ## Expected output
 
-Three evidence records have distinct `execution_id` values, each showing:
-
-```json
-{"batch_activities": 1, "completed_children": 5, "carryover_events": 1}
-```
-
-The final JSON result includes:
+JSON output contains a unique coordinator instance ID and:
 
 ```json
 {
   "total_batches": 3,
   "processed": 15,
-  "completed": true,
-  "carryover": "queued-before-first-history-reset"
+  "completed": true
 }
-```
-
-```text
-SAMPLE_OK bounded-coordinator
 ```
 
 History is not purged. Open <http://localhost:8082> to inspect the coordinator's
@@ -84,17 +55,41 @@ with `GoBoundedCoordinator`, with automatic worker filters.
 ## Production adaptation
 
 Replace the finite source fixture with a queue/database cursor and idempotent
-tenant-change activities. Remove the **demo-only client verification gates and
-three-batch stop condition**, not the `WhenAll` barrier or the history reset.
+tenant-change activities. Replace the three-batch source limit, not the `WhenAll`
+barrier or the history reset.
 Keep state compact and preserve unconsumed external events across every
 continuation. Never continue as new while child work is outstanding.
 
-## Unit tests
+## Code map
+
+Read [workflow.go](workflow.go): read a batch, start children, await all, and
+continue as new. [activities.go](activities.go) contains the bounded cursor
+source and simulated changes. [client.go](client.go) runs one coordinator;
+[worker.go](worker.go) registers tasks; [main.go](main.go) starts the CLI.
+
+## Tests
 
 ```bash
-go test -mod=readonly .
+go test .
 ```
 
 Tests check cursor determinism, bounds, exact tenant changes, exhausted input,
 invalid carry-forward state, and rejection of incorrect history/child/carryover
-evidence. They do not connect to a scheduler.
+evidence. They do not connect to a scheduler. Full backend verification is
+explicitly opt-in:
+
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```
+
+[integration_test.go](integration_test.go) wraps the same coordinator in a
+test-only observer. The SDK commits completion/continuation when the registered
+root returns, so the observer can pause after the real workflow finishes a
+batch without adding hooks to production code. Its checkpoints have a
+15-second safety timeout.
+
+The test verifies three distinct execution IDs, one batch activity and five
+exact child results per execution, compact carry-forward inputs, and an event
+observed before the first reset that survives both resets and is consumed at
+the end. Missing history APIs, missing events, or unchanged execution IDs fail
+the test; no checks are skipped after opt-in.

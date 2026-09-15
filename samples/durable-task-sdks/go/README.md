@@ -30,16 +30,35 @@ go mod download
 go run ./function-chaining
 ```
 
-Each sample starts its worker and client together, submits its demonstration,
-checks the results, and shuts down. Successful verification ends with
-`SAMPLE_OK <sample-name>`; failures return a nonzero exit status. Instances use
-unique IDs and can be inspected in the [dashboard](http://localhost:8082).
+Each sample starts its worker and client together, runs a short demonstration,
+prints the result, and shuts down. Failures return a nonzero exit status.
+Instances use unique IDs and can be inspected in the [dashboard](http://localhost:8082).
+Comprehensive outcome and failure-path checks live in test files, not in the demo.
 Business activities such as payment, shipment, and device updates are
 illustrative simulations, not production integrations.
 
 Commands are bounded by `-timeout` (default `2m`). Use, for example,
 `go run ./function-chaining -timeout 3m` on a high-latency connection.
 The HTTP/agent samples also document their interactive server modes.
+
+## Find the code
+
+Start with the workflow or entity implementation to understand the pattern.
+Each sample README includes a code map. The usual layout is:
+
+| File | Responsibility |
+|---|---|
+| `main.go` | Small CLI entrypoint |
+| `workflow.go` / `workflows.go` | Orchestrations and their domain types |
+| `activities.go` | Business operations called by workflows |
+| `worker.go` | Task registration and worker setup |
+| `client.go` | Submit a demonstration and display its result |
+| `*_test.go` | Unit tests, assertions, and verification helpers |
+| `integration_test.go` | Opt-in `TestIntegration` against real DTS |
+
+HTTP, entity, storage, and telemetry samples use additional files named for those
+responsibilities. Files stay in the same sample package; there is no extra
+package hierarchy to navigate.
 
 ## Samples
 
@@ -62,7 +81,6 @@ The HTTP/agent samples also document their interactive server modes.
 | [Large payload](large-payload/) | Blob-backed payload externalization and verified round trips |
 | [History export](history-export/) | Exporting terminal histories to Blob Storage |
 | [OpenTelemetry tracing](opentelemetry-tracing/) | Caller/activity trace-context propagation and custom spans |
-| [Agent-directed workflows](agent-directed-workflows/) | Entity-backed conversations and HTTP/SSE interaction |
 | [arXiv research agent](arXiv_research_agent/) | Durable research workflows with fixture and external-provider modes |
 | [Testing](testing/) | Offline business-logic tests and real DTS integration tests |
 
@@ -114,12 +132,18 @@ sample coverage and verifies that each sample has a runnable entrypoint and
 documentation.
 
 The repository's [sample-build workflow](../../../.github/workflows/build-samples.yml)
-also runs the executable suite against job-owned DTS and Azurite containers,
+also runs the demos and integration tests against job-owned DTS and Azurite containers,
 with fixture/mock AI modes and no live Azure credentials.
 
 The Go beta has **no public in-memory orchestration test backend**. The
 [testing sample](testing/) uses a local adapter to test the same business logic
 offline; only integration runs exercise the real durable engine and replay.
+
+To run one sample's backend checks:
+
+```bash
+DTS_SAMPLES_E2E=1 go test -v -run '^TestIntegration$' ./function-chaining
+```
 
 ### Verify every sample on either backend
 
@@ -141,13 +165,15 @@ workloads and export workers. It does not create or isolate a task hub. The
 export sample also guards the allowed instance IDs before reading histories.
 
 Set `DTS_CONNECTION_STRING` to the Azure connection above and repeat the same
-command for live DTS. The runner builds and executes **every sample program**,
-checks its exit status and verification marker, and includes its assertion
-output in the test log. It runs sequentially to avoid competing system workers.
+command for live DTS. For each sample, the runner builds and runs the
+**demonstration**, then builds a test binary and runs **`TestIntegration`**.
+It checks process exit status and requires the integration test to run and pass
+without skips. Verification output uses normal Go test results, not markers in
+application code. Both phases run sequentially to avoid competing system workers.
 To rerun one sample, use `-run 'TestSamples/function-chaining$'`.
 
-**Verification boundaries:** the AI samples explicitly use fixtures/echo mode
-by default, and the storage samples can use Azurite even when DTS is in Azure.
+**Verification boundaries:** the research agent uses synthetic fixtures by
+default, and the storage samples can use Azurite even when DTS is in Azure.
 Those runs verify real DTS orchestration and worker-side integrations, not
 live OpenAI/arXiv responses or Azure-hosted Blob Storage. See each sample's
 README to configure and test those external services separately.

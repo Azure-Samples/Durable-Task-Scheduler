@@ -79,7 +79,7 @@ func TestUnexpectedActivityFailurePropagates(t *testing.T) {
 }
 
 func TestFixtureAndValidation(t *testing.T) {
-	output, err := getOrders(nil)
+	output, err := integrationOrders(nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,9 +103,21 @@ func TestFixtureAndValidation(t *testing.T) {
 			t.Fatalf("invalid order reached an activity: %+v", order)
 		}
 	}
+
 	for _, activity := range []task.Activity{checkInventory, chargePayment, shipOrder, notifyCustomer} {
 		if _, err := activity(activityInput(`{`)); err == nil {
 			t.Fatal("malformed activity input accepted")
 		}
+	}
+}
+
+func TestDemoOrders(t *testing.T) {
+	output, err := getOrders(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []Order{{ID: "order-1"}, {ID: "order-2"}}
+	if !reflect.DeepEqual(output, want) {
+		t.Fatalf("demo orders = %+v, want %+v", output, want)
 	}
 }

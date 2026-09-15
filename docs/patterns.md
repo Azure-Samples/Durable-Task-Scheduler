@@ -249,11 +249,11 @@ Schedule (every 5s) → Start orchestration → ... → Start orchestration
 
 ## Additional Patterns and SDK Features
 
-These samples complete the Python/Go SDK sample coverage. See each README for prerequisites and differences in the demonstrations.
+Explore these SDK features and integrations. See each README for prerequisites and usage.
 
 | Pattern or Feature | Python | Go |
 |--------------------|--------|----|
-| Agent-directed workflows | [Sample](../samples/durable-task-sdks/python/agent-directed-workflows) | [Sample](../samples/durable-task-sdks/go/agent-directed-workflows) |
+| Agent-directed workflows | [Sample](../samples/durable-task-sdks/python/agent-directed-workflows) | |
 | AI research agent | [Sample](../samples/durable-task-sdks/python/arXiv_research_agent) | [Sample](../samples/durable-task-sdks/go/arXiv_research_agent) |
 | Large payload externalization | [Sample](../samples/durable-task-sdks/python/large-payload) | [Sample](../samples/durable-task-sdks/go/large-payload) |
 | History export | [Sample](../samples/durable-task-sdks/python/history-export) | [Sample](../samples/durable-task-sdks/go/history-export) |

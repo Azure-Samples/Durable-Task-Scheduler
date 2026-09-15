@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/Azure-Samples/Durable-Task-Scheduler/samples/durable-task-sdks/go/internal/sample"
@@ -38,11 +37,7 @@ func withJobCleanup(ctx, workerCtx context.Context, job cleanupJob, work func() 
 	defer func() {
 		cleanupCtx, cancel := context.WithTimeout(workerCtx, cleanupTimeout)
 		defer cancel()
-		fmt.Printf("EXPORT_JOB_CLEANUP job_id=%s\n", job.ID())
 		cleanupErr := deleteAndVerifyJob(cleanupCtx, job)
-		if cleanupErr == nil {
-			fmt.Printf("EXPORT_JOB_CLEANED job_id=%s\n", job.ID())
-		}
 		if err == nil {
 			err = ctx.Err()
 		}
@@ -69,17 +64,4 @@ func deleteAndVerifyJob(ctx context.Context, job cleanupJob) error {
 		verifyErr = fmt.Errorf("verify deletion of job %s: %w", job.ID(), verifyErr)
 	}
 	return errors.Join(deleteErr, verifyErr)
-}
-
-func pauseBeforeWrite(ctx context.Context, reportActive func()) func(context.Context) error {
-	var once sync.Once
-	return func(writeCtx context.Context) error {
-		once.Do(reportActive)
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		case <-writeCtx.Done():
-			return writeCtx.Err()
-		}
-	}
 }

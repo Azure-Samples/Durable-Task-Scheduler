@@ -8,8 +8,8 @@ without manufacturing a human decision.
 
 Notification and database updates are **simulations**.
 There is no email sender, approval website, or real database. The bounded client
-automatically exercises **approve, reject, and no-response timeout** and checks
-every exact outcome.
+automatically approves **one vacation request**, so the demo needs no interactive
+input. The rejection and timeout scenarios belong to the integration tests.
 
 ## Prerequisites
 
@@ -26,23 +26,19 @@ go run .
 ```
 
 Or, from the Go samples directory: `go run ./human-interaction`.
-Worker and client run in the same process. The client waits for each submission
-to become `Pending` before raising an event. Approval/rejection windows are ten
-seconds; the unattended case expires after one second. Normal execution takes a
-few seconds. The outer `-timeout` defaults to two minutes.
+Worker and client run in the same process. The client raises an approval event
+after scheduling the request; DTS buffers it if the workflow is not waiting
+yet. The workflow has a ten-second response window. Normal execution takes a few
+seconds. The outer `-timeout` defaults to two minutes and accepts `-timeout 3m`.
 
 ## Expected output
 
-Three JSON results contain unique request IDs and:
-
-| Scenario | Status | Approver |
-|---|---|---|
-| approve | `Approved` | `Console Approver` |
-| reject | `Rejected` | `Console Approver` |
-| timeout | `Timeout` | absent |
-
-```text
-SAMPLE_OK human-interaction
+```json
+{
+  "request_id": "go-human-interaction-<unique-suffix>",
+  "status": "Approved",
+  "approver": "Console Approver"
+}
 ```
 
 The losing timer/event wait is cancelled and awaited; unexpected task failures
@@ -51,16 +47,31 @@ from an authenticated approval endpoint and the response window can be hours
 (up to 24 hours with this sample's validation). Activities must make external
 effects idempotent because delivery can be retried.
 
-Inspect all three instances at <http://localhost:8082>; history is not purged.
+Inspect the instance at <http://localhost:8082>; history is not purged.
 Stable task/event names start with `GoHumanInteraction`, and automatic worker
 filters isolate this sample. Error cleanup targets only its own instance.
 
-## Unit tests
+## Code map
+
+Read [workflow.go](workflow.go) for the event/timer race and cancellation,
+then [activities.go](activities.go) for approval payloads and simulated effects.
+[client.go](client.go) schedules the request and supplies the approval;
+[worker.go](worker.go) registers the handlers;
+[main.go](main.go) is the thin entrypoint.
+
+## Tests
+
+Offline tests:
 
 ```bash
-go test -mod=readonly .
+go test .
 ```
 
 Tests check explicit approve/reject decisions, timeout output, typed activity
-payloads, missing fields, and timeout bounds. The runnable client verifies the
-actual durable race against the configured scheduler.
+payloads, missing fields, and timeout bounds. The opt-in
+[integration suite](integration_test.go) waits for `Pending` status and verifies
+exact approval, rejection, and one-second unattended timeout outcomes:
+
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```

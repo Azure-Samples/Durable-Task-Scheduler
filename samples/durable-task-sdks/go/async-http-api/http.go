@@ -7,10 +7,8 @@ import (
 	"fmt"
 	"io"
 	"mime"
-	"net"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -38,19 +36,6 @@ func (s schedulerStore) Get(ctx context.Context, id api.InstanceID) (*api.Orches
 
 func (s schedulerStore) Terminate(ctx context.Context, id api.InstanceID) error {
 	return s.client.TerminateOrchestration(ctx, id, api.WithOutput("Terminated by HTTP client"))
-}
-
-type startResponse struct {
-	OperationID string `json:"operation_id"`
-	StatusURL   string `json:"status_url"`
-}
-
-type statusResponse struct {
-	OperationID string           `json:"operation_id"`
-	Status      string           `json:"status"`
-	LastUpdated time.Time        `json:"last_updated"`
-	Result      *operationResult `json:"result,omitempty"`
-	Error       string           `json:"error,omitempty"`
 }
 
 var operationIDPattern = regexp.MustCompile(`^go-async-http-[a-z0-9-]{1,100}$`)
@@ -226,58 +211,5 @@ func backendError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusRequestTimeout, "request canceled")
 	default:
 		writeError(w, http.StatusBadGateway, "scheduler request failed")
-	}
-}
-
-func loopbackAddress(address string) (string, error) {
-	host, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return "", fmt.Errorf("listen address must be a loopback host:port: %w", err)
-	}
-	if strings.EqualFold(host, "localhost") {
-		host = "127.0.0.1"
-	}
-	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
-		return "", errors.New("listen address must use a loopback IP or localhost")
-	}
-	number, err := strconv.Atoi(port)
-	if err != nil || number < 0 || number > 65535 {
-		return "", errors.New("invalid listen port")
-	}
-	return net.JoinHostPort(host, port), nil
-}
-
-func serveHTTP(ctx context.Context, address string, handler http.Handler) error {
-	address, err := loopbackAddress(address)
-	if err != nil {
-		return err
-	}
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
-	server := &http.Server{
-		Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
-		WriteTimeout: 15 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16 * 1024,
-		BaseContext: func(net.Listener) context.Context { return ctx },
-	}
-	result := make(chan error, 1)
-	go func() { result <- server.Serve(listener) }()
-	fmt.Printf("Async HTTP API listening on http://%s (until -timeout or Ctrl+C)\n", listener.Addr())
-	select {
-	case err := <-result:
-		return err
-	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		err := server.Shutdown(shutdown)
-		if err != nil {
-			err = errors.Join(err, server.Close())
-		}
-		serveErr := <-result
-		if errors.Is(serveErr, http.ErrServerClosed) {
-			serveErr = nil
-		}
-		return errors.Join(err, serveErr)
 	}
 }

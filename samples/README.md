@@ -43,7 +43,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | | |
 | AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | | |
 | AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | | [✅](./durable-task-sdks/go/arXiv_research_agent) |
-| Agent-Directed Workflows | [✅](./durable-task-sdks/dotnet/Agents/AgentDirectedWorkflows) | [✅](./durable-task-sdks/python/agent-directed-workflows) | | | [✅](./durable-task-sdks/go/agent-directed-workflows) |
+| Agent-Directed Workflows | [✅](./durable-task-sdks/dotnet/Agents/AgentDirectedWorkflows) | [✅](./durable-task-sdks/python/agent-directed-workflows) | | | |
 | Large Payload | [✅](./durable-task-sdks/dotnet/LargePayload) | [✅](./durable-task-sdks/python/large-payload) | | | [✅](./durable-task-sdks/go/large-payload) |
 | Export History | [✅](./durable-task-sdks/dotnet/ExportHistoryWebApp) | [✅](./durable-task-sdks/python/history-export) | | | [✅](./durable-task-sdks/go/history-export) |
 | Bounded Coordinator | [✅](./durable-task-sdks/dotnet/BoundedCoordinator) | [✅](./durable-task-sdks/python/bounded-coordinator) | | | [✅](./durable-task-sdks/go/bounded-coordinator) |
@@ -168,7 +168,6 @@ The AI demonstrations use explicit echo/synthetic fixtures by default on both ba
 | [AI Research Agent](./durable-task-sdks/go/arXiv_research_agent) | AI Agents | Durable research pipeline with synthetic fixtures and optional arXiv/Azure OpenAI mode |
 | [Saga Pattern](./durable-task-sdks/go/saga) | Saga | Compensating activities after a failed step |
 | [OpenTelemetry Tracing](./durable-task-sdks/go/opentelemetry-tracing) | Observability | Application spans and W3C trace-context propagation; durable spans are DTS-owned |
-| [Agent-Directed Workflows](./durable-task-sdks/go/agent-directed-workflows) | AI Agents | Durable entity conversations with HTTP/SSE; echo mode by default |
 | [Bounded Coordinator](./durable-task-sdks/go/bounded-coordinator) | Bounded Coordinator | Bounded child batches with continue-as-new |
 | [Large Payload](./durable-task-sdks/go/large-payload) | Large Payload | Externalize inputs and outputs with the payload extension |
 | [Export History](./durable-task-sdks/go/history-export) | History Export (preview) | Export terminal orchestration histories with the history extension |

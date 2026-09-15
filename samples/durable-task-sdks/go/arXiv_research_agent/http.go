@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"mime"
-	"net"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -53,30 +51,6 @@ func (s schedulerStore) List(ctx context.Context, token string) (*api.Orchestrat
 	return s.client.QueryInstances(ctx, api.OrchestrationQuery{
 		InstanceIDPrefix: "go-arxiv-", PageSize: 20, ContinuationToken: token, FetchInputsAndOutputs: true,
 	})
-}
-
-type startRequest struct {
-	Topic             string `json:"topic"`
-	MaxIterations     int    `json:"max_iterations"`
-	StartDelaySeconds int    `json:"start_delay_seconds,omitempty"`
-}
-
-type startResponse struct {
-	OK         bool   `json:"ok"`
-	InstanceID string `json:"instance_id"`
-	StatusURL  string `json:"status_url"`
-	Mode       string `json:"mode"`
-}
-
-type statusResponse struct {
-	AgentID   string    `json:"agent_id"`
-	Topic     string    `json:"topic"`
-	Mode      string    `json:"mode"`
-	Status    string    `json:"status"`
-	CreatedAt time.Time `json:"created_at"`
-	progress
-	Report string `json:"report,omitempty"`
-	Error  string `json:"error,omitempty"`
 }
 
 type researchAPI struct {
@@ -391,58 +365,5 @@ func backendError(w http.ResponseWriter, err error) {
 		writeError(w, http.StatusRequestTimeout, "HTTP request canceled; durable work may still be running")
 	default:
 		writeError(w, http.StatusBadGateway, "DTS request failed")
-	}
-}
-
-func loopbackAddress(address string) (string, error) {
-	host, port, err := net.SplitHostPort(address)
-	if err != nil {
-		return "", fmt.Errorf("listen address must be a loopback host:port: %w", err)
-	}
-	if strings.EqualFold(host, "localhost") {
-		host = "127.0.0.1"
-	}
-	if ip := net.ParseIP(host); ip == nil || !ip.IsLoopback() {
-		return "", errors.New("listen address must use a loopback IP or localhost")
-	}
-	number, err := strconv.Atoi(port)
-	if err != nil || number < 0 || number > 65535 {
-		return "", errors.New("invalid listen port")
-	}
-	return net.JoinHostPort(host, port), nil
-}
-
-func serveHTTP(ctx context.Context, address string, handler http.Handler) error {
-	address, err := loopbackAddress(address)
-	if err != nil {
-		return err
-	}
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
-	server := &http.Server{
-		Handler: handler, ReadHeaderTimeout: 5 * time.Second, ReadTimeout: 10 * time.Second,
-		WriteTimeout: 70 * time.Second, IdleTimeout: 30 * time.Second, MaxHeaderBytes: 16 * 1024,
-		BaseContext: func(net.Listener) context.Context { return ctx },
-	}
-	result := make(chan error, 1)
-	go func() { result <- server.Serve(listener) }()
-	fmt.Printf("Research API listening on http://%s (until -timeout or Ctrl+C)\n", listener.Addr())
-	select {
-	case err := <-result:
-		return err
-	case <-ctx.Done():
-		shutdown, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		err := server.Shutdown(shutdown)
-		if err != nil {
-			err = errors.Join(err, server.Close())
-		}
-		serveErr := <-result
-		if errors.Is(serveErr, http.ErrServerClosed) {
-			serveErr = nil
-		}
-		return errors.Join(err, serveErr)
 	}
 }

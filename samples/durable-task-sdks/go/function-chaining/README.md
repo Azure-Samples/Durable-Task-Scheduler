@@ -25,7 +25,8 @@ go run .
 
 Or, from the Go samples directory: `go run ./function-chaining`.
 One process starts both the worker and client, runs one bounded greeting,
-verifies the exact message, and shuts down.
+prints the result, and shuts down. Exhaustive verification belongs to the tests,
+not the runnable demo.
 The default endpoint is `http://localhost:8080`; `-timeout` defaults to two minutes.
 Normal execution takes a few seconds.
 
@@ -36,18 +37,34 @@ Normal execution takes a few seconds.
   "instance_id": "go-function-chaining-<unique-suffix>",
   "output": "Hello User! How are you today? I hope you're doing well!"
 }
-SAMPLE_OK function-chaining
 ```
 
 Inspect the three activity inputs and outputs at <http://localhost:8082>. History
 is retained; nothing is purged. Task names are scoped with `GoFunctionChaining`,
 and worker filters prevent this worker from taking other samples' tasks.
 
-## Unit tests
+## Code map
+
+Read [workflow.go](workflow.go) for the three awaited steps, then
+[activities.go](activities.go) for the typed greeting transformations.
+[client.go](client.go) starts one instance and prints its result;
+[worker.go](worker.go) registers the stable task names;
+[main.go](main.go) is only the CLI entrypoint.
+
+## Tests
+
+Offline unit tests:
 
 ```bash
-go test -mod=readonly .
+go test .
 ```
 
 Tests cover typed payload round trips, exact transformations, malformed input,
-and registration names. They do not require or substitute for a scheduler run.
+and registration names. Integration tests are skipped unless explicitly enabled.
+Against the emulator or live backend configured through [shared setup](../README.md):
+
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```
+
+[integration_test.go](integration_test.go) checks the exact completed greeting.

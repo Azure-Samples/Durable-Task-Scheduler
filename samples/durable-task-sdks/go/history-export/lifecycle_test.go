@@ -3,12 +3,56 @@ package main
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/microsoft/durabletask-go/exporthistory"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+func TestCancellationAssertionDoesNotHideCleanupErrors(t *testing.T) {
+	canceled := fmt.Errorf("scenario stopped: %w", context.Canceled)
+	rpcCanceled := status.Error(codes.Canceled, "context canceled")
+	for _, err := range []error{
+		context.Canceled,
+		canceled,
+		errors.Join(canceled, context.Canceled),
+		rpcCanceled,
+		fmt.Errorf("failed to get entity metadata: %w", errors.Join(context.Canceled, rpcCanceled)),
+	} {
+		if !onlyCancellation(err) {
+			t.Fatalf("expected cancellation was rejected: %v", err)
+		}
+	}
+	for _, err := range []error{
+		nil,
+		context.DeadlineExceeded,
+		errors.Join(canceled, errors.New("delete failed")),
+		errors.Join(rpcCanceled, status.Error(codes.Unavailable, "delete unavailable")),
+		status.Error(codes.Unknown, "context canceled"),
+	} {
+		if onlyCancellation(err) {
+			t.Fatalf("unexpected success or cleanup failure was hidden: %v", err)
+		}
+	}
+}
+
+func pauseBeforeWrite(ctx context.Context, reportActive func()) func(context.Context) error {
+	var once sync.Once
+	return func(writeCtx context.Context) error {
+		once.Do(reportActive)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-writeCtx.Done():
+			return writeCtx.Err()
+		}
+	}
+}
 
 type fakeCleanupJob struct {
 	delete   func(context.Context) error

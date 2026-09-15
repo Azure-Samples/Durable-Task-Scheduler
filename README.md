@@ -105,7 +105,7 @@ Go support is through the standalone Durable Task SDK, not Durable Functions or 
 
 ## Samples
 
-Explore runnable examples across languages and frameworks, including [20 Go SDK samples](./samples/durable-task-sdks/go) corresponding to the Python SDK sample set.
+Explore runnable examples across languages and frameworks, including [Go SDK samples](./samples/durable-task-sdks/go).
 
 📂 [**Full Sample Catalog →**](./samples/README.md)
 

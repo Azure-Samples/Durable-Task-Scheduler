@@ -24,25 +24,19 @@ go run .
 ```
 
 Or, from the Go samples directory: `go run ./eternal-orchestrations`.
-The worker and client run together. The client waits through all continuations,
-asserts the exact result, and reads the latest execution's history to verify
-that it contains **only cycle five**, one cleanup activity, and one fired timer.
-An unavailable history API is an error, not a skipped check.
+The worker and client run together. The client waits through all continuations
+and prints the final cleanup result. It does not inspect history or coordinate
+verification checkpoints.
 
 Normal execution takes a few seconds; the outer `-timeout` defaults to two
 minutes. No recurring work remains when the process exits.
 
 ## Expected output
 
-The JSON output includes the instance ID, final execution ID,
-`latest_cleanup_activities: 1`, and:
+The JSON output includes the instance ID and this result:
 
 ```json
 {"iterations": 5, "total_removed": 10, "last_message": "Cleanup completed"}
-```
-
-```text
-SAMPLE_OK eternal-orchestrations
 ```
 
 Inspect the retained latest execution at <http://localhost:8082>. History is
@@ -59,11 +53,25 @@ control events are not discarded at continuation boundaries. Finish activities,
 timers, and any child work before resetting history. Real cleanup activities must
 be idempotent under at-least-once execution.
 
-## Unit tests
+## Code map
+
+Read [workflow.go](workflow.go) for the cleanup/timer/continuation sequence.
+[activities.go](activities.go) contains the in-memory cleanup fixture and receipt.
+[client.go](client.go) starts one recurring instance and prints its final result;
+[worker.go](worker.go) registers tasks; [main.go](main.go) starts the CLI.
+
+## Tests
 
 ```bash
-go test -mod=readonly .
+go test .
 ```
 
 Tests cover fixture partitioning, exact receipts, invalid state, and rejection of
 history that has not actually reset. These tests do not connect to a scheduler.
+The opt-in [integration suite](integration_test.go) asserts five rounds, ten
+removals, and latest history containing only cycle five, one cleanup activity,
+and one fired timer. A missing history API fails the test rather than skipping it.
+
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```

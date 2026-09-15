@@ -1,27 +1,19 @@
 # Work-item filtering (Go)
 
-## Description
+Run specialized workers in one task hub without giving every worker every
+handler. Worker A knows the greeting workflow and hello activity; worker B knows
+the math workflow and addition activity.
 
-This sample runs two specialized workers against the same task hub:
+The shared `sample.Start` helper enables `client.WithAutoWorkItemFilters()` for
+each independent registry. Both workflows are submitted through A's client:
+the client's connection does not select which worker executes the work.
 
-- **Worker A** registers only the greeting orchestration and hello activity.
-- **Worker B** registers only the math orchestration and addition activity.
+## Run the demo
 
-The shared `sample.Start` helper enables
-`client.WithAutoWorkItemFilters()` separately for each registry. There are no
-wildcard handlers, shared registrations, or unfiltered workers. Both workflows
-are submitted through A's **client** to demonstrate that the scheduling client
-does not choose the executing worker.
-
-## Prerequisites
-
-- Go 1.25.0 or later and the shared module's pinned
-  `github.com/microsoft/durabletask-go v1.0.0-beta.1`.
-- An existing DTS emulator or Azure task hub, configured with the
-  [shared emulator/live authentication instructions](../README.md).
-  No additional Azure resources are required.
-
-## Run
+Use Go 1.25.0 or later with the shared module's pinned
+`github.com/microsoft/durabletask-go v1.0.0-beta.1`. Configure an existing emulator
+or Azure task hub using the [shared configuration guide](../README.md).
+No additional Azure resources are needed.
 
 From this directory:
 
@@ -29,31 +21,47 @@ From this directory:
 go run .
 ```
 
-Both worker hosts and the bounded client run in this process. The default
-deadline is two minutes (`go run . -timeout 3m` overrides it). Offline tests:
+From the Go module root, use `go run ./work-item-filtering`. Both forms accept
+`-timeout 3m`; the default deadline is two minutes.
+
+Expected output:
+
+```text
+Worker A: Hello, World!
+Worker B: 42
+```
+
+The command waits for both workflows and prints their activity-produced results.
+Every invocation uses unique `go-filtering-*` IDs; completed history remains
+available for inspection.
+
+## Read the code
+
+| Read order | File | Purpose |
+| --- | --- | --- |
+| 1 | [worker.go](worker.go) | Builds two disjoint registries with no wildcard handlers. |
+| 2 | [workflow.go](workflow.go) | Greeting and math workflows, each calling its own activity. |
+| 3 | [activities.go](activities.go) | Returns the greeting or sum with a worker label. |
+| 4 | [client.go](client.go) | Hosts both workers, submits both workloads, and displays results. |
+| 5 | [main.go](main.go) | Entrypoint and shared timeout handling. |
+
+Sample-specific registered names keep these workers separate from unrelated
+samples. Each worker is shut down independently on success or failure.
+
+## Tests
+
+Offline registry-isolation and activity tests:
 
 ```bash
 go test -mod=readonly .
 ```
 
-## Expected result
+Opt-in integration test against the configured task hub:
 
-Both instances must actually reach `COMPLETED`. Their activity-produced worker
-labels and outputs are checked before printing:
-
-```text
-Worker A: Hello, World!
-Worker B: 42
-SAMPLE_OK work-item-filtering
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-Missing or misrouted work, incorrect outputs, or shutdown failures cause a
-nonzero exit. Instances have unique `go-filtering-*` IDs and completed history
-is left for inspection.
-
-## Worker configuration
-
-Two independent SDK hosts use registration-derived filters in one bounded
-process. Activity outputs record their worker labels so routing is asserted
-rather than inferred from logs. Sample-specific registered names avoid matching
-unrelated work.
+[integration_test.go](integration_test.go) starts both real workers, requires
+both workflows to complete, and checks exact worker labels, the greeting, and
+the sum. The test skips unless opted in and uses a bounded backend context.

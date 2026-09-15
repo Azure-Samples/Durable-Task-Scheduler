@@ -86,7 +86,11 @@ That's it! Thank you for your contribution!
 
 ### Go samples
 
-Use Go **1.25.0 or later** and the SDK version pinned in the shared module (currently `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**). Put each runnable sample in its own package under `samples/durable-task-sdks/go`. Follow the existing samples: start the worker and client, verify the outcome, shut down, and exit rather than leaving a background worker running.
+Use Go **1.25.0 or later** and the SDK version pinned in the shared module (currently `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**). Put each runnable sample in its own package under `samples/durable-task-sdks/go`. The default command should start the worker and client, demonstrate the pattern, print a result, shut down, and exit.
+
+Keep `main.go` limited to the entrypoint and CLI wiring. Put orchestrations, activities, worker setup, and client code in focused files within the same package. Keep domain types near the code that uses them; avoid catch-all utility files and unnecessary package layers. A reader should be able to understand the workflow without reading a verification harness.
+
+Put assertions, exhaustive scenarios, and verification-only helpers in `*_test.go`. Each sample must have an opt-in `TestIntegration` in `integration_test.go`, using `testutil.IntegrationContext(t)` to select real-backend tests. Keep operational error handling, input validation, and resource cleanup in production code. README descriptions should stand alone and include a short code map.
 
 Format changed Go files with `gofmt`, then run the same offline checks as CI:
 
@@ -100,7 +104,7 @@ go vet ./...
 
 Ordinary tests must not require an emulator, Azure credentials, or cloud resources. The Go beta SDK has no public in-memory testing backend: test shared business logic offline through a local step adapter, as the testing sample does. Do not claim that these unit tests validate SDK execution or replay.
 
-Keep replay/integration tests against real DTS opt-in with `DTS_SAMPLES_E2E=1`. To verify all 20 sample programs, first prepare an isolated task hub and Blob endpoint as described in the [Go validation guide](./samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). From the Go module, use the sequential runner rather than enabling resource-backed tests across all packages concurrently:
+Keep replay/integration tests against real DTS opt-in with `DTS_SAMPLES_E2E=1`. To run all demonstrations and their integration tests, first prepare an isolated task hub and Blob endpoint as described in the [Go validation guide](./samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). From the Go module, use the sequential runner rather than enabling resource-backed tests across all packages concurrently:
 
 ```bash
 HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \

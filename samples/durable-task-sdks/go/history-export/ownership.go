@@ -54,11 +54,10 @@ func (s *ownedHistorySource) StreamOrchestrationHistory(
 }
 
 type ownedHistoryStore struct {
-	inner       exporthistory.Store
-	allowed     map[api.InstanceID]struct{}
-	container   string
-	prefix      string
-	beforeWrite func(context.Context) error
+	inner     exporthistory.Store
+	allowed   map[api.InstanceID]struct{}
+	container string
+	prefix    string
 }
 
 func (s *ownedHistoryStore) Write(ctx context.Context, object exporthistory.ExportObject) error {
@@ -67,11 +66,6 @@ func (s *ownedHistoryStore) Write(ctx context.Context, object exporthistory.Expo
 	}
 	if object.Container != s.container || !strings.HasPrefix(object.Name, s.prefix) {
 		return errors.New("refusing a history write outside this run's container/prefix")
-	}
-	if s.beforeWrite != nil {
-		if err := s.beforeWrite(ctx); err != nil {
-			return err
-		}
 	}
 	return s.inner.Write(ctx, object)
 }

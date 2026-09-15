@@ -1,4 +1,4 @@
-// Package sample shares connection setup and verification helpers across samples.
+// Package sample shares connection setup and CLI helpers across samples.
 package sample
 
 import (
@@ -26,7 +26,7 @@ import (
 const DefaultConnectionString = "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
 
 func Main(name string, run func(context.Context) error) {
-	timeout := flag.Duration("timeout", 2*time.Minute, "Maximum runtime, including verification")
+	timeout := flag.Duration("timeout", 2*time.Minute, "Maximum sample runtime")
 	flag.Parse()
 	if *timeout <= 0 {
 		fmt.Fprintln(os.Stderr, "timeout must be positive")
@@ -40,7 +40,6 @@ func Main(name string, run func(context.Context) error) {
 		fmt.Fprintf(os.Stderr, "%s: %v\n", name, err)
 		os.Exit(1)
 	}
-	fmt.Printf("SAMPLE_OK %s\n", name)
 }
 
 func Options() (*dts.Options, error) {
@@ -196,13 +195,6 @@ func Until(ctx context.Context, interval time.Duration, condition func() (bool, 
 		case <-timer.C:
 		}
 	}
-}
-
-func Require(condition bool, format string, args ...any) error {
-	if !condition {
-		return fmt.Errorf(format, args...)
-	}
-	return nil
 }
 
 func PrintJSON(value any) error {

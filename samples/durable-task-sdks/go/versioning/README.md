@@ -1,34 +1,14 @@
 # Orchestration versioning (Go)
 
-## Description
+Evolve a workflow without changing the behavior selected by older executions.
+This demo runs versions `1.0.0` and `3.0.0` on the same worker: the first says hello;
+the newer version also says goodbye and sends a simulated notification.
 
-This sample runs old and new workflow behavior on one worker. Every invocation
-creates unique `go-versioning-*` instance IDs and uses sample-specific registered
-task names.
+## Run the demo
 
-| Execution version | Activities and exact results |
-| --- | --- |
-| `1.0.0` | `Hello, World!` |
-| `2.0.0` | Hello, then `Goodbye, World!` |
-| `3.0.0` | Hello, goodbye, then `Notification sent: Completed greeting workflow for World` |
-| `10.0.0` | Same three steps as `3.0.0` |
-
-The worker is version **10.0.0**, configured with the SDK's
-`task.VersionMatchCurrentOrOlder`. Accepting `3.0.0` on that worker exercises
-numeric version ordering (`3 < 10`), which would fail with lexicographic ordering
-(`"3.0.0" > "10.0.0"`). Registration-derived filters and worker dispatch both
-participate. Version acceptance does not invent missing handlers: each supported
-orchestration and activity version is explicitly registered.
-
-## Prerequisites
-
-- Go 1.25.0 or later and the shared module's pinned
-  `github.com/microsoft/durabletask-go v1.0.0-beta.1`.
-- An existing DTS emulator or Azure task hub. See the
-  [shared emulator/live authentication setup](../README.md).
-  Only task-hub data-plane access is needed.
-
-## Run
+Use Go 1.25.0 or later with the shared module's pinned
+`github.com/microsoft/durabletask-go v1.0.0-beta.1`. Configure an existing emulator
+or Azure task hub using the [shared configuration guide](../README.md).
 
 From this directory:
 
@@ -36,34 +16,54 @@ From this directory:
 go run .
 ```
 
-Worker and client run together, with a two-minute default deadline. Use
-`go run . -timeout 3m` to change it. Focused offline tests:
+From the Go module root, use `go run ./versioning`. Both forms accept
+`-timeout 3m`; the default deadline is two minutes.
+
+Expected output:
+
+```text
+Version 1.0.0: Hello, World!
+Version 3.0.0: Hello, World! | Goodbye, World! | Notification sent: Completed greeting workflow for World
+```
+
+The command waits for each execution and prints its messages. It uses unique
+`go-versioning-*` IDs and leaves completed history for inspection.
+
+## Read the code
+
+| Read order | File | Purpose |
+| --- | --- | --- |
+| 1 | [workflow.go](workflow.go) | Selects activities using `ctx.Version`. |
+| 2 | [activities.go](activities.go) | Produces messages and carries activity-version metadata. |
+| 3 | [worker.go](worker.go) | Registers supported versions and configures SDK version matching. |
+| 4 | [client.go](client.go) | Runs one older and one newer workflow. |
+| 5 | [main.go](main.go) | Entrypoint and shared timeout handling. |
+
+The worker's current version is `10.0.0`, with
+`task.VersionMatchCurrentOrOlder`. The SDK compares numeric versions, so `3.0.0`
+is older than `10.0.0` even though lexicographic string comparison says otherwise.
+Supported versions still need explicit registrations. Activities inherit the
+execution version, not the worker's default.
+
+The registered behaviors are hello for `1.0.0`, hello/goodbye for `2.0.0`, and all
+three activities for `3.0.0` and `10.0.0`. This sample does not support prerelease
+version strings.
+
+## Tests
+
+Offline branch, activity, registration, and assertion-regression tests:
 
 ```bash
 go test -mod=readonly .
 ```
 
-## Expected result
+Opt-in integration test against the configured task hub:
 
-Four JSON results have the versions and messages in the table above.
-`activity_versions` contains the execution's version once per activity, **not**
-the worker's default version for older executions. The command verifies the
-persisted orchestration version, `COMPLETED` status, all messages, and all activity
-versions. Its final lines are:
-
-```text
-SDK CurrentOrOlder worker 10.0.0 accepted 1.0.0, 2.0.0, 3.0.0, and 10.0.0
-SAMPLE_OK versioning
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-Incorrect dispatch or results fail the command; no Azure live run is implied.
-
-## Version handling
-
-- The orchestration reads `ctx.Version` to select behavior for the four
-  registered numeric versions. Prerelease versions are not supported by this sample.
-- `10.0.0` exercises numeric version ordering and SDK worker-version matching.
-- Explicit versioned registrations and inherited activity-version assertions
-  demonstrate Go SDK dispatch, not just application-level branching.
-- A single bounded process hosts the worker and client. It leaves completed
-  instance history for inspection.
+[integration_test.go](integration_test.go) runs all four versions and checks
+completion, persisted execution versions, exact messages, and every inherited
+activity version. It exercises SDK numeric version matching on real work rather
+than only testing application branches. The test skips unless opted in.

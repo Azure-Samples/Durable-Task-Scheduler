@@ -9,7 +9,7 @@ Use Go **1.25.0+** and `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**. 
 
 ## Start from the samples
 
-Read the [Go sample guide](../../../samples/durable-task-sdks/go) and the relevant sample before changing code. All 20 samples share one module; do not create a nested `go.mod`.
+Read the [Go sample guide](../../../samples/durable-task-sdks/go) and the relevant sample before changing code. The samples share one module; do not create a nested `go.mod`.
 
 With the emulator already running, from the repository root:
 
@@ -19,7 +19,17 @@ go mod download
 go run ./function-chaining
 ```
 
-Each package starts its worker and client together, verifies its result, and exits. Run other samples with `go run ./<sample-name>`.
+Each package starts its worker and client together, runs a short demonstration, prints the result, and exits. Run other samples with `go run ./<sample-name>`.
+
+## Keep samples readable
+
+- Limit `main.go` to the entrypoint and CLI wiring.
+- Keep orchestrations, activities, client code, and worker setup in focused files in the same sample package.
+- Put domain types near their behavior. Avoid catch-all utility files, unnecessary interfaces, and extra package hierarchies.
+- Make the default command demonstrate the pattern, not run an exhaustive test matrix.
+- Put assertions and verification helpers in `*_test.go`; provide `TestIntegration` in `integration_test.go` using `testutil.IntegrationContext(t)`.
+- Keep real input validation, operational errors, and safe cleanup in application code.
+- Include a short README code map and standalone Go explanations.
 
 ## Connection and lifecycle
 
@@ -54,18 +64,18 @@ An orchestrator has signature `func(*task.OrchestrationContext) (any, error)`; a
 |------|------------------|
 | Sequential or parallel work | [Function chaining](../../../samples/durable-task-sdks/go/function-chaining), [fan-out/fan-in](../../../samples/durable-task-sdks/go/fan-out-fan-in) |
 | Wait for input or time | [Human interaction](../../../samples/durable-task-sdks/go/human-interaction), [monitoring](../../../samples/durable-task-sdks/go/monitoring) |
-| Durable state and agent loops | [Entities](../../../samples/durable-task-sdks/go/entities), [agent-directed workflows](../../../samples/durable-task-sdks/go/agent-directed-workflows) |
+| Durable state | [Entities](../../../samples/durable-task-sdks/go/entities) |
 | Recurring work | [Scheduled tasks](../../../samples/durable-task-sdks/go/scheduled-tasks), [bounded coordinator](../../../samples/durable-task-sdks/go/bounded-coordinator) |
 | Reliability and evolution | [Saga](../../../samples/durable-task-sdks/go/saga), [versioning](../../../samples/durable-task-sdks/go/versioning), [testing](../../../samples/durable-task-sdks/go/testing) |
 | Payloads and diagnostics | [Large payload](../../../samples/durable-task-sdks/go/large-payload), [history export](../../../samples/durable-task-sdks/go/history-export), [tracing](../../../samples/durable-task-sdks/go/opentelemetry-tracing) |
 
-The [full catalog](../../../samples/README.md#go) and [pattern guide](../../../docs/patterns.md) cover all 20 Go/Python counterparts. Pattern parity does not imply identical UI, LLM integrations, or deployment infrastructure.
+The [full catalog](../../../samples/README.md#go) and [pattern guide](../../../docs/patterns.md) cover the Go workflow patterns and integrations.
 
 ## Tracing
 
-Configure an OpenTelemetry Go tracer provider/exporter and propagate the caller context when scheduling work. The Go SDK propagates W3C trace context; **DTS emits durable orchestration/activity/timer spans**. Do not claim the Go worker automatically exports those service spans locally like the Python sample's local activity spans. See the [observability guide](../../../docs/observability.md#go).
+Configure an OpenTelemetry Go tracer provider/exporter and propagate the caller context when scheduling work. The Go SDK propagates W3C trace context; **DTS emits durable orchestration/activity/timer spans**. Do not claim the Go worker automatically exports those service spans locally. See the [observability guide](../../../docs/observability.md#go).
 
-The tracing sample verifies application spans locally by default. Set optional `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` to export them over OTLP/HTTP to a running collector; this does not configure DTS service-side export.
+Set optional `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` to export application spans over OTLP/HTTP to a running collector; this does not configure DTS service-side export. The integration tests separately check trace propagation and parentage.
 
 ## Validation
 
@@ -82,11 +92,11 @@ The beta SDK has no public in-memory testing backend. `task.Executor` is exporte
 
 Ordinary tests must not contact a scheduler. Replay/integration tests require explicit `DTS_SAMPLES_E2E=1` and a real DTS emulator or Azure scheduler; never claim they passed when only offline checks ran. Read [contributor guidance](../../../CONTRIBUTING.md#go-samples) before running resource-backed tests.
 
-For full-suite validation, prepare an isolated task hub and Blob endpoint, then run samples sequentially through `./e2e` rather than enabling integration tests across all packages concurrently:
+For full-suite validation, prepare an isolated task hub and Blob endpoint, then run demos and their compiled `TestIntegration` binaries sequentially through `./e2e` rather than enabling integration tests across all packages concurrently:
 
 ```bash
 HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \
   go test -v -count=1 -timeout 30m ./e2e
 ```
 
-Follow the [Go validation setup](../../../samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). Go AI demonstrations use explicit echo/synthetic fixtures by default, even with live DTS; these runs do not validate real model or arXiv services.
+Follow the [Go validation setup](../../../samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). The research demonstration uses synthetic fixtures by default, even with live DTS; these runs do not validate real model or arXiv services.

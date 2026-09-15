@@ -147,7 +147,7 @@ trace.set_tracer_provider(provider)
 
 The Go SDK (`github.com/microsoft/durabletask-go` v1.0.0-beta.1, Go 1.25.0+) propagates **W3C trace context** from the caller through DTS to activities. Configure an OpenTelemetry tracer provider and exporter in your application, start a caller span, and pass that context when scheduling an orchestration. Activities can create application or dependency spans using the propagated context.
 
-**DTS owns the durable orchestration, activity, and timer spans.** Unlike the Python sample's automatic local activity spans, the Go worker does not duplicate these service spans in your local exporter. Seeing application spans or matching trace IDs in orchestration history verifies propagation, not export of the full service-side trace.
+**DTS owns the durable orchestration, activity, and timer spans.** The Go worker does not duplicate these service spans in your local exporter. Seeing application spans or matching trace IDs in orchestration history verifies propagation, not export of the full service-side trace.
 
 Start with the [Go OpenTelemetry sample](../samples/durable-task-sdks/go/opentelemetry-tracing):
 
@@ -157,7 +157,7 @@ go mod download
 go run ./opentelemetry-tracing
 ```
 
-Run the emulator first and follow that sample's README for its tracing configuration. By default, the sample verifies application spans using an in-memory exporter; it does not require a telemetry service.
+Run the emulator first and follow that sample's README for its tracing configuration. The demo shows a traced workflow; its opt-in integration tests verify application spans and trace parentage separately.
 
 To also export application spans to a running OTLP/HTTP collector or Jaeger, set the optional endpoint from the same Go module:
 

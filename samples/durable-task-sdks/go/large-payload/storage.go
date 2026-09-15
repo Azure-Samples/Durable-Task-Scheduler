@@ -19,19 +19,19 @@ const developmentStorage = "DefaultEndpointsProtocol=http;AccountName=devstoreac
 	"AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;" +
 	"BlobEndpoint=http://127.0.0.1:10000/devstoreaccount1;"
 
-func storageOptions(container string) (payload.AzureBlobStoreOptions, *azblob.Client, error) {
+func storageOptions(container string) (payload.AzureBlobStoreOptions, error) {
 	connectionString := strings.TrimSpace(os.Getenv("AZURE_STORAGE_CONNECTION_STRING"))
 	endpoint := strings.TrimSpace(os.Getenv("AZURE_STORAGE_BLOB_ENDPOINT"))
 	options := payload.AzureBlobStoreOptions{Container: container, MaxPayloadBytes: maxPayloadBytes}
 	if connectionString != "" && endpoint != "" {
-		return options, nil, errors.New("set only AZURE_STORAGE_CONNECTION_STRING or AZURE_STORAGE_BLOB_ENDPOINT")
+		return options, errors.New("set only AZURE_STORAGE_CONNECTION_STRING or AZURE_STORAGE_BLOB_ENDPOINT")
 	}
 	var client *azblob.Client
 	var err error
 	if endpoint != "" {
 		credential, credentialErr := azidentity.NewDefaultAzureCredential(nil)
 		if credentialErr != nil {
-			return options, nil, credentialErr
+			return options, credentialErr
 		}
 		options.AccountURL, options.Credential = endpoint, credential
 		client, err = azblob.NewClient(endpoint, credential, nil)
@@ -43,13 +43,13 @@ func storageOptions(container string) (payload.AzureBlobStoreOptions, *azblob.Cl
 		client, err = azblob.NewClientFromConnectionString(connectionString, nil)
 	}
 	if err != nil {
-		return options, nil, fmt.Errorf("configure Blob reader: %w", err)
+		return options, fmt.Errorf("configure Blob storage: %w", err)
 	}
 	address, err := url.Parse(client.URL())
 	if err != nil {
-		return options, nil, errors.New("invalid Blob service URL")
+		return options, errors.New("invalid Blob service URL")
 	}
 	options.AllowInsecureHTTP = address.Scheme == "http" &&
 		(strings.EqualFold(address.Hostname(), "localhost") || net.ParseIP(address.Hostname()).IsLoopback())
-	return options, client, nil
+	return options, nil
 }

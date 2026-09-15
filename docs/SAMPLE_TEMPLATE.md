@@ -35,7 +35,7 @@
    [command]
    ```
 
-For Go SDK samples, use the shared module at `samples/durable-task-sdks/go`: run `go mod download`, then `go run ./<sample-name>`. Do not create a nested module. The sample should run its worker and client together, verify its results, and exit. Go is not a Durable Functions language.
+For Go SDK samples, use the shared module at `samples/durable-task-sdks/go`: run `go mod download`, then `go run ./<sample-name>`. Do not create a nested module. Keep `main.go` small, put workflow/activity/client code in focused files, and include a code map. The default command should run a short demonstration and exit. Put comprehensive verification in an opt-in `TestIntegration`, separate from application code. Go is not a Durable Functions language.
 
 ## Expected Output
 

@@ -7,9 +7,8 @@ order-processing pipeline:
 **inventory → payment → shipping → customer notification**
 
 These business operations are explicit **simulations** with no external effects.
-Instead of random outcomes, five deterministic orders exercise success and each
-early-exit failure path. A failed business decision returns an order-level
-`failed` result; an actual activity/SDK error fails the workflow and is not
+The demo fulfills two deterministic orders. A failed business decision returns
+an order-level `failed` result; an actual activity/SDK error fails the workflow and is not
 converted to an expected business rejection.
 
 ## Prerequisites
@@ -27,8 +26,8 @@ go run .
 ```
 
 Or, from the Go samples directory: `go run ./sub-orchestrations`.
-The process starts worker and client, schedules all five children before waiting,
-asserts the full ordered result including attempted steps, then shuts down.
+The process starts worker and client, schedules both children before waiting,
+prints their ordered results, then shuts down.
 Normal execution takes a few seconds. The outer `-timeout` defaults to two
 minutes.
 
@@ -37,16 +36,10 @@ minutes.
 | Order | Result | Reason | Attempted steps |
 |---|---|---|---|
 | order-1 | completed | — | all four |
-| order-2 | failed | out of stock | inventory |
-| order-3 | failed | payment failed | inventory, payment |
-| order-4 | failed | shipping failed | inventory, payment, shipping |
-| order-5 | failed | customer notification failed | all four |
+| order-2 | completed | — | all four |
 
-JSON output includes **`total_completed: 1`** and **`total_failed: 4`**, followed by:
-
-```text
-SAMPLE_OK sub-orchestrations
-```
+JSON output includes **`total_completed: 2`** and **`total_failed: 0`**, plus the
+parent instance ID and detailed child results.
 
 The `results` array contains each order's outcome and completed steps.
 No compensation is implied by a failed order; see the
@@ -58,12 +51,27 @@ terminate only this run's own family. Completed instances remain inspectable at
 <http://localhost:8082>. All task names start with `GoSubOrchestrations`, and
 automatic worker filters isolate this sample.
 
-## Unit tests
+## Code map
+
+Read [workflow.go](workflow.go) for parent fan-out and each child's ordered steps,
+then [activities.go](activities.go) for the simulated order source and operations.
+[client.go](client.go) runs one parent and prints its summary;
+[worker.go](worker.go) registers handlers; [main.go](main.go) starts the CLI.
+
+## Tests
 
 ```bash
-go test -mod=readonly .
+go test .
 ```
 
 Tests run the child decision logic through typed activity payloads and verify
 exact call order, all early exits, error propagation, and fixture validity.
-They do not connect to a scheduler.
+They do not connect to a scheduler. The opt-in
+[integration suite](integration_test.go) supplies a five-order source fixture
+to the same parent/child workflows and business activities. It verifies success,
+each early failure, exact attempted steps, and the one-completed/four-failed
+aggregate. The exhaustive fixture is not part of the runnable demo.
+
+```bash
+DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
+```
