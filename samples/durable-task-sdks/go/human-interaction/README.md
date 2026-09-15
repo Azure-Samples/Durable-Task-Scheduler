@@ -1,13 +1,13 @@
-# Human interaction — Go
+# Human interaction (Go)
 
-A vacation approval workflow submits a request, publishes `Pending` custom
-status, and races an external approval event against a **durable timer**.
-The winner is determined by durable history, not a Go channel or wall clock.
-An approval/rejection calls the processing activity; a timeout returns `Timeout`
-without manufacturing a human decision.
+A vacation approval workflow submits a request and sets its custom status to
+`Pending`. It waits for either an approval event or a **durable timer**.
+Saved workflow history determines which arrives first.
+An approval or rejection starts the processing activity. If no response arrives
+in time, the workflow returns `Timeout` without assuming a decision.
 
 Notification and database updates are **simulations**.
-There is no email sender, approval website, or real database. The bounded client
+There is no email sender, approval website, or real database. The demo client
 automatically approves **one vacation request**, so the demo needs no interactive
 input. The rejection and timeout scenarios belong to the integration tests.
 
@@ -27,7 +27,7 @@ go run .
 
 Or, from the Go samples directory: `go run ./human-interaction`.
 Worker and client run in the same process. The client raises an approval event
-after scheduling the request; DTS buffers it if the workflow is not waiting
+after scheduling the request. DTS stores the event if the workflow is not waiting
 yet. The workflow has a ten-second response window. Normal execution takes a few
 seconds. The outer `-timeout` defaults to two minutes and accepts `-timeout 3m`.
 
@@ -41,15 +41,17 @@ seconds. The outer `-timeout` defaults to two minutes and accepts `-timeout 3m`.
 }
 ```
 
-The losing timer/event wait is cancelled and awaited; unexpected task failures
-are not treated as a timeout or rejection. In production, the event would come
-from an authenticated approval endpoint and the response window can be hours
-(up to 24 hours with this sample's validation). Activities must make external
-effects idempotent because delivery can be retried.
+The workflow cancels the other wait and waits for that cancellation to finish.
+Unexpected errors are not treated as a timeout or rejection. In a production
+app, the approval event should come from an API that checks the user's identity.
+This sample allows a response period of up to 24 hours.
+Activities may run more than once, so repeating a call must not repeat its
+external effects.
 
-Inspect the instance at <http://localhost:8082>; history is not purged.
+View the instance at <http://localhost:8082>. Its history is not deleted.
 Stable task/event names start with `GoHumanInteraction`, and automatic worker
-filters isolate this sample. Error cleanup targets only its own instance.
+filters keep this sample's work separate. If an error occurs, cleanup affects
+only the instance created by this run.
 
 ## Code map
 
@@ -57,7 +59,7 @@ Read [workflow.go](workflow.go) for the event/timer race and cancellation,
 then [activities.go](activities.go) for approval payloads and simulated effects.
 [client.go](client.go) schedules the request and supplies the approval;
 [worker.go](worker.go) registers the handlers;
-[main.go](main.go) is the thin entrypoint.
+[main.go](main.go) starts the command-line program.
 
 ## Tests
 
@@ -67,10 +69,10 @@ Offline tests:
 go test .
 ```
 
-Tests check explicit approve/reject decisions, timeout output, typed activity
-payloads, missing fields, and timeout bounds. The opt-in
+Tests check approval and rejection decisions, timeout output, activity data,
+missing fields, and timeout limits. When enabled, the
 [integration suite](integration_test.go) waits for `Pending` status and verifies
-exact approval, rejection, and one-second unattended timeout outcomes:
+approval, rejection, and one-second timeout results when no response is sent:
 
 ```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .

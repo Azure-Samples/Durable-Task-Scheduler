@@ -1,16 +1,16 @@
 # Work-item filtering (Go)
 
-Run specialized workers in one task hub without giving every worker every
-handler. Worker A knows the greeting workflow and hello activity; worker B knows
-the math workflow and addition activity.
+Run workers for different tasks in one task hub. Each worker registers only the
+handlers it needs. Worker A runs the greeting workflow and hello activity.
+Worker B runs the math workflow and addition activity.
 
 The shared `sample.Start` helper enables `client.WithAutoWorkItemFilters()` for
-each independent registry. Both workflows are submitted through A's client:
-the client's connection does not select which worker executes the work.
+each worker's registry. Both workflows are started through A's client.
+The client's connection does not choose which worker runs the tasks.
 
 ## Run the demo
 
-Use Go 1.25.0 or later with the shared module's pinned
+Use Go 1.25.0 or later and the SDK version set in the shared module:
 `github.com/microsoft/durabletask-go v1.0.0-beta.1`. Configure an existing emulator
 or Azure task hub using the [shared configuration guide](../README.md).
 No additional Azure resources are needed.
@@ -31,32 +31,32 @@ Worker A: Hello, World!
 Worker B: 42
 ```
 
-The command waits for both workflows and prints their activity-produced results.
-Every invocation uses unique `go-filtering-*` IDs; completed history remains
-available for inspection.
+The command waits for both workflows and prints the activity results.
+Each run uses unique `go-filtering-*` IDs. Completed history stays available
+for later viewing.
 
 ## Read the code
 
 | Read order | File | Purpose |
 | --- | --- | --- |
-| 1 | [worker.go](worker.go) | Builds two disjoint registries with no wildcard handlers. |
+| 1 | [worker.go](worker.go) | Builds separate task registries without catch-all handlers. |
 | 2 | [workflow.go](workflow.go) | Greeting and math workflows, each calling its own activity. |
 | 3 | [activities.go](activities.go) | Returns the greeting or sum with a worker label. |
-| 4 | [client.go](client.go) | Hosts both workers, submits both workloads, and displays results. |
-| 5 | [main.go](main.go) | Entrypoint and shared timeout handling. |
+| 4 | [client.go](client.go) | Starts both workers and workflows, then displays results. |
+| 5 | [main.go](main.go) | Starts the command-line program and sets its timeout. |
 
 Sample-specific registered names keep these workers separate from unrelated
 samples. Each worker is shut down independently on success or failure.
 
 ## Tests
 
-Offline registry-isolation and activity tests:
+Run tests for separate registries and activity behavior without a backend:
 
 ```bash
 go test -mod=readonly .
 ```
 
-Opt-in integration test against the configured task hub:
+Enable the integration test against your configured task hub:
 
 ```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
@@ -64,4 +64,4 @@ DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 
 [integration_test.go](integration_test.go) starts both real workers, requires
 both workflows to complete, and checks exact worker labels, the greeting, and
-the sum. The test skips unless opted in and uses a bounded backend context.
+the sum. The test runs only when enabled and has its own timeout.

@@ -1,12 +1,13 @@
 # Async HTTP API (Go)
 
-A `net/http` API accepts a typed request and schedules
-`GoAsyncHTTPAPI`, which runs a simulated long-running activity on Durable Task
-Scheduler (DTS). The API process and worker run together. No state is kept in an
-HTTP-server map.
+A `net/http` API accepts an operation request and starts `GoAsyncHTTPAPI`.
+This workflow runs a simulated long-running activity on Durable Task Scheduler
+(DTS). The API and worker run together. Workflow state is saved in DTS, not in
+the HTTP server's memory.
 
-The API implements the asynchronous HTTP protocol: **202 Accepted**, **Location**, and
-**Retry-After: 1**. Poll the relative Location URL until it returns `200`.
+The API returns **202 Accepted** while work continues in the background.
+The **Location** header gives the status URL, and **Retry-After: 1** asks the
+client to wait one second between checks. Keep checking that URL until it returns `200`.
 
 ## Prerequisites
 
@@ -26,11 +27,11 @@ go run . -timeout 1m
 ```
 
 From the Go module root, use `go run ./async-http-api`.
-The demo starts a worker and an ordinary loopback HTTP server on an ephemeral
-port, submits one two-second operation, polls its Location URL, prints the
-result, and shuts down. It is an example client, not a test suite. The shared
-default runtime is two minutes; HTTP and worker shutdown are bounded separately.
-No runtime files or working-directory-specific paths are needed.
+The demo starts a worker and a local HTTP server on an available port.
+It submits one two-second operation, checks its Location URL, prints the result,
+and shuts down. It is an example client, not a test suite.
+The default runtime is two minutes. HTTP and worker shutdown have separate time
+limits. The demo needs no extra runtime files and works from either directory.
 
 Example output (IDs and timestamps vary):
 
@@ -52,23 +53,25 @@ go test .
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-Ordinary tests are offline and check request parsing, HTTP errors, cancellation,
-and listener restrictions. `TestIntegration` starts the production worker and
-handlers against real DTS, verifies 202/Location/Retry-After and pending polling,
-compares HTTP output with durable output, and tests termination and `404`.
-The integration test uses the shared two-minute test context and skips unless
-explicitly enabled. Test doubles do not prove durable execution; Go test results
-report verification separately from the demo.
+Ordinary tests run offline. They check requests, HTTP errors, cancellation,
+and allowed server addresses. `TestIntegration` starts the same worker and
+handlers as the demo against real DTS. It checks `202`, `Location`,
+`Retry-After`, and status polling. It compares HTTP and workflow results and
+tests termination and `404` responses.
+
+The integration test has a two-minute timeout and runs only when enabled.
+Offline test replacements do not prove that durable execution works.
+Go test output reports these checks separately from demo output.
 
 ## Code map / read order
 
 | File | Responsibility |
 |---|---|
-| `main.go`, `app.go` | CLI flags, worker registration and lifetime |
+| `main.go`, `app.go` | Command-line flags, worker registration, startup, and shutdown |
 | `models.go`, `workflow.go` | Typed operation data, orchestration and activity |
-| `http.go`, `server.go` | Routes, backend adapter and bounded loopback server |
+| `http.go`, `server.go` | Routes, DTS access, and local HTTP server with time limits |
 | `client.go` | One-job example client and JSON transport |
-| `integration_test.go`, `main_test.go` | Real-backend verification and offline cases |
+| `integration_test.go`, `main_test.go` | DTS integration tests and offline tests |
 
 ## Interactive server
 
@@ -81,9 +84,9 @@ curl -i http://127.0.0.1:8000/api/operations/go-async-http-REPLACE
 curl -i -X DELETE http://127.0.0.1:8000/api/operations/go-async-http-REPLACE
 ```
 
-Only loopback addresses are accepted; `-timeout` and Ctrl+C shut down the HTTP
-server and worker. The shared default timeout is two minutes. This unauthenticated
-teaching API is not a public production endpoint.
+The server accepts only local addresses. `-timeout` and Ctrl+C stop the HTTP
+server and worker. The default timeout is two minutes.
+This teaching API has no authentication. Do not expose it to the public.
 
 | Method | Route | Response |
 |---|---|---|
@@ -92,26 +95,28 @@ teaching API is not a public production endpoint.
 | DELETE | `/api/operations/{id}` | `202` termination requested; `409` if already terminal |
 
 `processing_time` defaults to 5 and must be an integer from 1–30 seconds.
-Bodies are limited to 4096 bytes; malformed/unknown fields return `400`,
-oversized bodies `413`, unsupported media types `415`, missing or foreign sample
-instances `404`, and backend failures `502`/`504`. A failed orchestration is a
-successful status lookup with `status: "Failed"`, not a completed result.
+Request bodies have a 4096-byte limit. Invalid or unknown fields return `400`.
+A body that is too large returns `413`, and an unsupported content type returns
+`415`. Missing instances or instances from other samples return `404`.
+Backend errors return `502` or `504`.
+A successful status lookup can report `status: "Failed"`. This does not mean
+the workflow completed successfully.
 
 DELETE requests termination. Termination stops orchestration progress;
 **it cannot undo an activity's external side effects or guarantee interruption
 of an already running activity**.
-Client disconnection cancels the HTTP wait, not durable work.
+If the client disconnects, its HTTP wait ends, but the durable work continues.
 
 ## Configuration
 
 | Environment variable | Default | Purpose |
 |---|---|---|
-| `DTS_CONNECTION_STRING` | unset | Shared helper's full connection string; takes precedence |
+| `DTS_CONNECTION_STRING` | unset | Full connection string; used instead of the settings below |
 | `ENDPOINT` | `http://localhost:8080` | Emulator or live DTS endpoint |
 | `TASKHUB` | `default` | Task hub |
-| `DTS_AUTHENTICATION` | inferred | `None` for HTTP loopback; `DefaultAzure` for live DTS |
+| `DTS_AUTHENTICATION` | chosen automatically | `None` for local HTTP; `DefaultAzure` for live DTS |
 
 The activity simulates work with a context-aware timer; it does not call a model
-or an external operation. Live DTS changes persistence/authentication, not that
-simulation.
+or an external operation. Connecting to live DTS changes where state is saved
+and how the app signs in. The activity still uses simulated work.
 Workers use automatic task filters and Go-specific stable task names.

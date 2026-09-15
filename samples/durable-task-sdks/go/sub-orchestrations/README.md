@@ -1,15 +1,15 @@
-# Sub-orchestrations — Go
+# Sub-orchestrations (Go)
 
-A parent loads orders in an activity, fans out **child orchestrations**, waits
-for every child, and aggregates the results. Each child follows this
-order-processing pipeline:
+A parent workflow loads orders through an activity and starts **child
+orchestrations** in parallel. It waits for every child and combines the results.
+Each child follows these order-processing steps:
 
 **inventory → payment → shipping → customer notification**
 
-These business operations are explicit **simulations** with no external effects.
-The demo fulfills two deterministic orders. A failed business decision returns
-an order-level `failed` result; an actual activity/SDK error fails the workflow and is not
-converted to an expected business rejection.
+These operations are **simulations** and do not affect external services.
+The demo completes two orders using fixed sample data. A rejected business
+request returns `failed` for that order. An activity or SDK error fails the
+workflow and is not treated as a normal business rejection.
 
 ## Prerequisites
 
@@ -35,21 +35,21 @@ minutes.
 
 | Order | Result | Reason | Attempted steps |
 |---|---|---|---|
-| order-1 | completed | — | all four |
-| order-2 | completed | — | all four |
+| order-1 | completed | None | all four |
+| order-2 | completed | None | all four |
 
 JSON output includes **`total_completed: 2`** and **`total_failed: 0`**, plus the
 parent instance ID and detailed child results.
 
 The `results` array contains each order's outcome and completed steps.
-No compensation is implied by a failed order; see the
-[saga sample](../saga/) for reversing completed external operations.
+A failed order does not automatically undo completed steps. See the
+[saga sample](../saga/) for an example that reverses completed operations.
 
-Child IDs are derived deterministically from the unique parent ID and order ID.
-The parent drains all children even when one fails; error cleanup can recursively
-terminate only this run's own family. Completed instances remain inspectable at
+Child IDs are built from the unique parent ID and order ID. They stay the same
+when work is replayed. The parent waits for all children, even if one fails.
+Error cleanup can stop only this run's parent and children. View completed instances at
 <http://localhost:8082>. All task names start with `GoSubOrchestrations`, and
-automatic worker filters isolate this sample.
+automatic worker filters keep this sample's work separate.
 
 ## Code map
 
@@ -64,13 +64,12 @@ then [activities.go](activities.go) for the simulated order source and operation
 go test .
 ```
 
-Tests run the child decision logic through typed activity payloads and verify
-exact call order, all early exits, error propagation, and fixture validity.
-They do not connect to a scheduler. The opt-in
-[integration suite](integration_test.go) supplies a five-order source fixture
-to the same parent/child workflows and business activities. It verifies success,
-each early failure, exact attempted steps, and the one-completed/four-failed
-aggregate. The exhaustive fixture is not part of the runnable demo.
+Tests check the child's decisions, activity data, call order, early stops, and
+errors. They do not connect to a scheduler. When enabled, the
+[integration suite](integration_test.go) supplies five sample orders to the
+same workflows and activities. It checks success and each failure case,
+including which steps were attempted. The total must be one completed order
+and four failed orders. These extra cases are not part of the demo.
 
 ```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .

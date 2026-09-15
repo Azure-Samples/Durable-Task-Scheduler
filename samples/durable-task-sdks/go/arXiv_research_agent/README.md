@@ -1,13 +1,14 @@
 # arXiv research agent (Go)
 
-A durable research agent in Go with iterative workflows, paper search and
-metadata fetching, model analysis, continuation decisions,
-follow-up queries, synthesis, and a REST status/report API.
+A research agent that saves its progress with Go workflows.
+It searches for papers, reads their details, asks a model to analyze them, and
+decides whether to search again. It then writes a report.
+A REST API lets you start research, check progress, and read the report.
 
-The default is an **explicit synthetic fixture**, so both emulator and live DTS
-verification require **no arXiv access or model credentials**. `fixture-001`,
-`fixture-002`, and `fixture-003` are intentionally not real arXiv IDs. Fixture
-reports are not academic evidence.
+The default **fixture mode uses made-up sample data**.
+Tests on the emulator and live DTS need **no arXiv access or model credentials**.
+`fixture-001`, `fixture-002`, and `fixture-003` are not real arXiv IDs.
+Reports made from this data are not academic evidence.
 
 ## Architecture
 
@@ -23,18 +24,18 @@ GET /agents/{id}, /wait -> persisted DTS metadata and output
 DELETE /agents/{id} -> recursive termination
 ```
 
-All network access is in activities. Orchestrators only manipulate typed,
-deterministic checkpoint data and durable tasks; they never read environment
-variables, call HTTP, use wall-clock time, or launch ordinary goroutines.
-Child IDs include the iteration and query slot, avoiding reuse across
-continue-as-new generations. Results merge in input order and papers deduplicate
-in sorted ID order.
+All network calls happen in activities. Orchestrators use typed checkpoint data
+and durable tasks. They do not read environment variables, make HTTP calls,
+read the system clock, or start ordinary goroutines.
+Child IDs include the iteration and query position so later executions do not
+reuse them. Results are combined in input order. Papers are sorted by ID, and
+duplicate IDs are removed.
 
-Both query-child and paper-fetch fan-outs use the SDK's `WhenAll` barrier before
-decoding results. It drains every sibling, including when one fails, before
-propagating failure; a failed root does not leave its sibling research calls
-running. Explicit termination can still interrupt orchestration progress and
-cannot undo already-started external calls.
+Both groups of parallel tasks use `WhenAll` before reading results.
+It waits for every child, even if one fails, before returning an error.
+This prevents a failed root from leaving its child research calls running.
+Explicit termination can still interrupt a workflow, and it cannot undo
+external calls that have already started.
 
 The agent retains up to two follow-up queries and runs their sub-orchestrations
 concurrently. Fetching retrieves paper **metadata and abstracts via `id_list`**,
@@ -44,8 +45,8 @@ not PDF contents.
 
 - Go 1.25+.
 - A running DTS emulator or an existing Azure task hub.
-- [Shared Go README](../README.md) for dependency setup, emulator connection, and
-  live DTS credentials/roles. This sample does not provision Azure resources.
+- [Shared Go README](../README.md) for dependencies, emulator setup, and Azure
+  credentials and roles. This sample does not create Azure resources.
 - Only for optional real mode: arXiv outbound access and an Azure OpenAI
   deployment supporting the v1 Responses API and JSON-object output.
 
@@ -60,12 +61,13 @@ RESEARCH_MODE=fixture go run . -timeout 2m
 ```
 
 From the Go module root, use `go run ./arXiv_research_agent`.
-The demo starts the worker and an ordinary loopback HTTP server on an ephemeral
-port, submits **one** fixture research job with two iterations, waits for its
-report through the HTTP API, prints it, and shuts down. It does not run an
-assertion suite. Fixture data is embedded in Go code and is CWD-independent.
-The shared default runtime is two minutes; HTTP and worker shutdown have
-separate bounds.
+The demo starts the worker and a local HTTP server on an available port.
+It submits **one** research job using sample data and two iterations.
+It waits for the report through the HTTP API, prints it, and shuts down.
+Detailed checks run in the tests, not in the demo.
+The sample data is in the Go code and does not depend on the current directory.
+The default runtime is two minutes. HTTP and worker shutdown have separate
+time limits.
 
 Example output includes:
 
@@ -85,34 +87,34 @@ go test .
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-Offline tests cover fixture stages, Atom/model parsing, prompt/data separation,
-HTTP contracts, retries, cancellation, checkpoint serialization, and draining
-failed fan-outs. They are not a substitute for durable execution.
+Offline tests check sample-data stages, Atom and model responses, HTTP behavior,
+retries, and cancellation. They also check that instructions stay separate from
+data, checkpoints can be saved and read, and failed parallel tasks finish.
+These checks do not replace tests against real DTS.
 
-The opt-in `TestIntegration` uses the shared two-minute context and the same
-production handlers/workflows against **real DTS**. It verifies the full exact
-fixture report, three paper IDs, two iterations, three analyses, HTTP
-status/header/termination behavior, and equality with durable output.
-It also reads execution-ID-pinned history and checks the current
-`ExecutionStarted` checkpoint contains the prior findings, fetched papers,
-and follow-up queries.
+When enabled, `TestIntegration` has a two-minute timeout.
+It runs the same handlers and workflows as the demo against **real DTS**.
+It checks the complete sample report, three paper IDs, two iterations, and three
+analyses. It also checks HTTP status, headers, termination, and workflow output.
+The test reads history for a specific execution ID. Its `ExecutionStarted`
+checkpoint must contain earlier findings, paper details, and follow-up queries.
 
 DTS metadata can retain the **original start input** across continue-as-new.
-Checkpoint verification therefore lives in `verification_test.go`, using pinned
-history, while the HTTP status API uses custom status/completed output for
-current progress. Go test results report verification separately from demo output.
+For this reason, `verification_test.go` reads history for a specific execution.
+The HTTP API uses custom status and completed output to show current progress.
+Go test output reports these checks separately from demo output.
 
 ## Code map / read order
 
 | File | Responsibility |
 |---|---|
-| `main.go`, `app.go`, `client.go` | CLI, worker/provider setup, one-job example client |
-| `models.go` | Typed requests, checkpoint/result data and domain validation |
-| `workflows.go` | Iterations, continue-as-new, fan-out/drain/aggregation |
-| `activities.go` | Activity registration, fixture work and provider calls |
-| `arxiv.go`, `model.go` | Validated arXiv and Azure OpenAI transports |
+| `main.go`, `app.go`, `client.go` | Command-line setup, worker/providers, and one-job client |
+| `models.go` | Requests, checkpoints, results, and input checks |
+| `workflows.go` | Research iterations, history resets, parallel work, and combined results |
+| `activities.go` | Activity registration, sample data, and provider calls |
+| `arxiv.go`, `model.go` | arXiv and Azure OpenAI clients with input checks |
 | `http.go`, `server.go` | Status/report/termination API and loopback server |
-| `integration_test.go`, `verification_test.go`, other tests | Real-backend verification and offline cases |
+| `integration_test.go`, `verification_test.go`, other tests | DTS integration tests and offline tests |
 
 ## Interactive API
 
@@ -126,37 +128,37 @@ curl 'http://127.0.0.1:8000/agents/go-arxiv-REPLACE/wait?timeout=30'
 curl -i -X DELETE http://127.0.0.1:8000/agents/go-arxiv-REPLACE
 ```
 
-Only loopback addresses are accepted. Ctrl+C or `-timeout` shuts down the API and
-worker; the shared default timeout is two minutes. This unauthenticated sample
-API is not suitable for public exposure.
+The server accepts only local addresses. Ctrl+C or `-timeout` stops the API and
+worker. The default timeout is two minutes.
+The API has no authentication. Do not expose it to the public.
 
 | Method | Route | Contract |
 |---|---|---|
-| GET | `/health` | `200`, process liveness and configured mode |
+| GET | `/health` | `200`, confirms the process is running and shows its mode |
 | POST | `/agents` | `202`, `{ok,instance_id,status_url,mode}`, polling headers |
 | GET | `/agents/{id}` | `200`, durable runtime status, progress, IDs, completed report |
 | GET | `/agents/{id}/wait?timeout=30` | `200` completed result; `408` wait timeout; `500` failed job; `409` terminated/canceled |
-| DELETE | `/agents/{id}` | `202` recursive termination requested; `409` already terminal |
+| DELETE | `/agents/{id}` | `202` requests a stop for the root and children; `409` if already finished |
 | GET | `/agents?continuation_token=...` | Paged `{agents,continuation_token}` from DTS, filtered to Go research roots |
 
 Listing uses the Go SDK's query API.
-If the scheduler does not support that capability, the endpoint reports `501`
-and directs users to instance lookup/the dashboard; it does not fabricate an
-empty result. A page may be empty after filtering child orchestrations; follow
-its continuation token.
+If the scheduler does not support listing, the endpoint returns `501` and
+suggests instance lookup or the dashboard. It does not return a false empty list.
+A page may be empty after child workflows are filtered out.
+Use its continuation token to request the next page.
 
 Request bodies are limited to 4096 bytes, topics to 200 bytes, iterations to 1–10
 (default 3), and each iteration to two queries / three papers per query.
-`start_delay_seconds` optionally schedules a start 0–30 seconds ahead (used for
-deterministic cancellation verification). Invalid ranges return `400`.
-Unknown JSON fields, invalid content type,
-oversized inputs, absent/foreign instances, and backend errors return
-`400`/`415`/`413`/`404`/`502` or `504`, respectively.
+`start_delay_seconds` can schedule a start 0–30 seconds later. Tests use this
+delay to check cancellation. Invalid ranges or unknown JSON fields return `400`.
+An invalid content type returns `415`, and oversized input returns `413`.
+Missing instances or instances from other samples return `404`.
+Backend errors return `502` or `504`.
 
 Client disconnection and `/wait` timeout do **not** cancel a durable job.
-DELETE recursively stops orchestration progress; already-running activities may
-finish and external model calls cannot be undone. Stopping the worker leaves
-unfinished durable jobs resumable by a worker with the same configured mode.
+DELETE stops the root workflow and its children. Activities that are already
+running may finish, and model calls cannot be undone.
+If the worker stops, another worker with the same mode can resume unfinished jobs.
 
 ## Optional real arXiv + Azure OpenAI
 
@@ -169,49 +171,51 @@ go run . -serve -mode real -timeout 15m
 
 Real mode uses:
 
-- The official arXiv Atom API, with per-worker serialized requests spaced at
-  least three seconds apart and at most three attempts for `429`/`503`.
-  Retry-After is honored within a bounded budget. Query keywords and arXiv
-  field/category syntax are URL-encoded. Paper IDs and canonical link hosts are
-  validated; arbitrary URLs returned by arXiv are never fetched.
-- Azure OpenAI **`/openai/v1/responses`** for analysis, continuation, query
-  generation, and synthesis. Fixed instructions are separate from user/paper
-  JSON data. Analysis shapes, scores, query counts and output sizes are checked.
-  Recognized arXiv citations outside retrieved evidence fail synthesis.
-- Context-bounded activities and durable retries. A model/auth/API/parse/budget
-  failure fails the activity/job, never silently changes to fixtures or a
-  placeholder report. Completed activity outputs are reused on replay; calls
-  interrupted before their result is committed can repeat and incur charges.
+- The official arXiv Atom API. Each worker sends requests one at a time, at least
+  three seconds apart. It makes at most three attempts for `429` or `503`.
+  It follows Retry-After within the retry time limit.
+  Queries are URL-encoded. Paper IDs and link hosts are checked; the sample does
+  not fetch arbitrary URLs returned in a response.
+- Azure OpenAI **`/openai/v1/responses`** to analyze papers, decide whether to
+  continue, generate queries, and write the report. Fixed instructions are
+  separate from user and paper data. The code checks response format, scores,
+  query counts, and output sizes. The report fails if it includes a recognized
+  arXiv citation outside the retrieved evidence.
+- Activities with time limits and durable retries. Model, authentication, API,
+  parsing, or budget errors fail the activity or job. They never silently switch
+  to sample data or a placeholder report. Saved activity results are reused
+  during replay. A call interrupted before its result is saved may repeat and
+  cause another charge.
 
-No PDF downloading, browser UI, or real-paper accuracy verification is claimed.
-The real model chooses whether to stop early, so its iterations/results are not
-deterministic like fixture output. Human review is required before treating an
-LLM summary as academic evidence. Real arXiv/OpenAI calls are **not** claimed as
-tested. Real mode requires `-serve`; the default demo and `TestIntegration`
-use fixtures even with a live Azure DTS backend.
+The sample does not download PDFs, provide a browser UI, or check the accuracy
+of real papers. A real model decides whether to stop early, so its results and
+iteration count can vary. A person must review an LLM summary before using it
+as academic evidence. Real arXiv/OpenAI calls are **not** claimed as tested.
+Real mode requires `-serve`. The default demo and `TestIntegration` use sample
+data even when connected to live Azure DTS.
 
-Budgets include 60 distinct papers, 20 findings, a 512 KiB checkpoint/model input,
+Limits include 60 different papers, 20 findings, a 512 KiB checkpoint/model input,
 24 KiB model text, 30-second model calls, 45-second arXiv activity calls, and
-bounded retries. Metadata/abstract fields are clipped before model use. The
-arXiv rate limit is per worker; coordinate an application-wide limiter before
-scaling real workers out.
+retries with a time limit. Long metadata and abstract fields are shortened
+before they are sent to the model. The arXiv rate limit applies to each worker.
+Add a shared rate limit before running several real workers.
 
 ## Environment
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `DTS_CONNECTION_STRING` | unset | Shared full connection string, takes precedence |
+| `DTS_CONNECTION_STRING` | unset | Full connection string; used instead of the connection settings below |
 | `ENDPOINT` | `http://localhost:8080` | DTS endpoint |
 | `TASKHUB` | `default` | DTS task hub |
-| `DTS_AUTHENTICATION` | inferred | `None` for HTTP loopback, otherwise `DefaultAzure` |
+| `DTS_AUTHENTICATION` | chosen automatically | `None` for local HTTP, otherwise `DefaultAzure` |
 | `RESEARCH_MODE` | `fixture` | Default for `-mode`; credentials do not switch modes |
 | `ARXIV_API_ENDPOINT` | `https://export.arxiv.org/api/query` | Real mode only; official HTTPS arXiv query endpoint |
-| `AZURE_OPENAI_ENDPOINT` | required in real mode | HTTPS Azure resource root; no path/query/userinfo |
-| `AZURE_OPENAI_DEPLOYMENT` | required in real mode | Responses-capable deployment |
+| `AZURE_OPENAI_ENDPOINT` | required in real mode | HTTPS Azure resource URL without a path, query, or user information |
+| `AZURE_OPENAI_DEPLOYMENT` | required in real mode | Deployment that supports the Responses API |
 | `AZURE_OPENAI_API_KEY` | unset | Optional API key; otherwise `DefaultAzureCredential` |
 | `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_CLIENT_SECRET` | unset | Optional standard Azure environment credentials; CLI/managed identity also supported |
 
 Workers use shared automatic task filters and stable Go-specific names. Do not
-put confidential material in topics: inputs, retrieved evidence, and reports
-are persisted in DTS and, in real mode, sent to the configured model resource.
+put confidential material in topics. Inputs, retrieved evidence, and reports
+are saved in DTS. In real mode, they are also sent to the configured model resource.
 arXiv is an independent open-access archive, not a Microsoft service.

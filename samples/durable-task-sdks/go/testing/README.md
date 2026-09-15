@@ -1,8 +1,8 @@
 # Testing Go workflows
 
-Process an order through validation, payment, and shipping. The same business
-workflow runs with durable activities in the application and local steps in
-unit tests. Money uses integer cents to avoid floating-point rounding.
+Process an order through validation, payment, and shipping. The application
+runs the workflow with durable activities. Unit tests use local steps to test
+the same business logic. Money is stored as whole cents to avoid rounding errors.
 
 ## Code map
 
@@ -10,12 +10,12 @@ Start with `processOrder` in [workflow.go](workflow.go).
 
 | File | Responsibility |
 | --- | --- |
-| [workflow.go](workflow.go) | Order types, business workflow, and durable activity adapter |
+| [workflow.go](workflow.go) | Order data, business workflow, and calls to durable activities |
 | [activities.go](activities.go) | Validation and simulated payment/shipping operations |
 | [worker.go](worker.go) | Register the orchestration and activities |
 | [client.go](client.go) | Start the worker, submit one order, and print its result |
-| [main.go](main.go) | CLI entrypoint |
-| [workflow_test.go](workflow_test.go) | Offline business-logic and failure-path tests |
+| [main.go](main.go) | Starts the command-line program |
+| [workflow_test.go](workflow_test.go) | Offline tests for business logic and errors |
 | [integration_test.go](integration_test.go) | Real DTS success/failure verification |
 
 ## Prerequisites
@@ -50,15 +50,16 @@ service calls.
 
 ## Run tests
 
-Offline tests verify activity order, exact results, input validation, overflow
-protection, and propagation of payment/shipping failures:
+Offline tests check activity order, results, input rules, and amounts that are
+too large. They also check that payment and shipping errors reach the caller:
 
 ```bash
 go test -v .
 ```
 
-The Go beta has no public in-memory orchestration backend. The local adapter
-tests business logic, not durable replay, persistence, or transport.
+The Go beta has no public in-memory orchestration backend. Local tests check
+business logic. They do not check replay, saved workflow state, or communication
+with DTS.
 
 With a configured DTS backend, run the integration test:
 
@@ -67,6 +68,6 @@ DTS_SAMPLES_E2E=1 go test -v -run '^TestIntegration$' .
 ```
 
 It uses the registered production workflow to process two valid and three invalid
-orders, checking exact outputs and persisted failure details. Failed instances
+orders. It checks exact outputs and saved failure details. Failed instances
 are intentional and remain visible in the dashboard. Verification logic lives
 in test files, not in the demo.

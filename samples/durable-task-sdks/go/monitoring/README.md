@@ -1,12 +1,12 @@
-# Monitoring — Go
+# Monitoring (Go)
 
-Periodically poll a job-status activity, expose progress through **custom status**,
-and stop when the job completes or its durable deadline expires. All
-orchestration time comes from `CurrentTimeUtc`; delays use `CreateTimer`, not
-`time.Sleep`. The client prints the final result; custom status remains available
-in the dashboard.
+Check a job's status at regular intervals and show progress through **custom
+status**. Stop when the job finishes or reaches its deadline.
+The orchestration reads time from `CurrentTimeUtc` and uses `CreateTimer` for
+delays, not `time.Sleep`. The client prints the final result. You can also view
+custom status in the dashboard.
 
-The external job API is an explicitly **simulated**, stateless fixture. The
+The job API uses **simulated data** and keeps no state between calls. The
 completion case reports `Running` for the first three checks and `Completed` on
 check **four**. Random timing is not used.
 
@@ -27,32 +27,32 @@ go run .
 
 Or, from the Go samples directory: `go run ./monitoring`.
 The process hosts worker and client and monitors one simulated job: four checks,
-a 250 ms polling interval, and a 20-second safety deadline. Timers are clamped to
-the deadline so the workflow never starts another poll after expiration.
+a 250 ms interval, and a 20-second deadline. Timer delays cannot extend past
+that deadline, so the workflow does not start another check after time runs out.
 
-Normal execution takes a few seconds. `-timeout` supplies the outer client
-deadline and defaults to two minutes.
+Normal execution takes a few seconds. `-timeout` limits the total client runtime
+and defaults to two minutes.
 
 ## Expected output
 
 The JSON result contains `final_status: "Completed"` and `checks_performed: 4`,
 along with unique job/instance IDs and `monitoring_duration_milliseconds`.
-Elapsed duration varies with scheduler and activity latency.
+The duration depends on how long the scheduler and activities take to respond.
 
 All work finishes before shutdown. If the run fails, cleanup targets only
-this run's instance. Nothing is purged; inspect timers, status, and results at
+this run's instance. Nothing is deleted. View timers, status, and results at
 <http://localhost:8082>. Names are prefixed `GoMonitoring`, with automatic worker
 filters.
 
 ## Production considerations
 
-Replace only the status activity with an external API call. The finite demo
-needs no history reset. A long-running production monitor should periodically
-`ContinueAsNew` with compact state: job ID, last status/check count, **original
-start time and absolute deadline**. Use `task.WithKeepUnprocessedEvents()` if
-events can arrive, so continuation does not discard them; do not restart the
-timeout budget on each execution. See [bounded coordinator](../bounded-coordinator/)
-for a runnable history-reset example.
+Replace the status activity with a call to your job API. This short demo does
+not need to reset its history. A long-running monitor should call
+`ContinueAsNew` at regular points. Carry only the job ID, last status, check
+count, **original start time, and original deadline**.
+Use `task.WithKeepUnprocessedEvents()` to keep events that have not yet been
+processed. Do not restart the timeout with each new execution.
+See [bounded coordinator](../bounded-coordinator/) for a history-reset example.
 
 ## Code map
 
@@ -67,10 +67,10 @@ status API. [client.go](client.go) monitors one job,
 go test .
 ```
 
-Tests cover job-state progression, never-completing jobs, invalid inputs, and
-deadline clamping without connecting to a scheduler. The opt-in
+Tests check status changes, jobs that never finish, invalid inputs, and timer
+limits without connecting to a scheduler. When enabled, the
 [integration suite](integration_test.go) checks exact completion and timeout
-results, custom-status consistency, and durable elapsed-time bounds:
+results, matching custom status, and elapsed-time limits:
 
 ```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .

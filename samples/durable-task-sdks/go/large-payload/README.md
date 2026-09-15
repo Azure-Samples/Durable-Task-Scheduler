@@ -4,8 +4,9 @@ Go | Durable Task SDK
 
 Send record data through an orchestration and two activities using
 `payload.AzureBlobStore`. The client sends a small batch and a 2.1 MB batch,
-receives the processed data, and prints a summary. The SDK transparently stores
-large inputs and outputs in Blob storage; the workflow contains no Blob code.
+receives the processed data, and prints a summary. The SDK stores large inputs
+and outputs in Blob storage and loads them when needed. This is called payload
+externalization. The workflow does not need Blob storage code.
 
 ## Prerequisites
 
@@ -30,13 +31,14 @@ Blob configuration is independent of the scheduler connection:
 | Environment | Storage |
 | --- | --- |
 | Neither variable set | Azurite's [public development account](https://github.com/Azure/Azurite#default-storage-account) |
-| `AZURE_STORAGE_CONNECTION_STRING` | Existing account connection string; `UseDevelopmentStorage=true` is explicitly expanded |
+| `AZURE_STORAGE_CONNECTION_STRING` | Connection string for an existing account; the sample expands `UseDevelopmentStorage=true` into the Azurite settings |
 | `AZURE_STORAGE_BLOB_ENDPOINT` | `https://<account>.blob.core.windows.net`, authenticated with `DefaultAzureCredential` |
 
-Choose only one Blob variable. For Azure, the identity needs Blob data access and
-container-creation permissions, such as Storage Blob Data Contributor. Only
-loopback HTTP is permitted; use HTTPS for Azure. No account or role is provisioned.
-**Live DTS with default Azurite exercises worker-side storage, not Azure Blob.**
+Choose only one Blob variable. For Azure, the identity needs permission to read
+and write Blob data and create containers. Storage Blob Data Contributor is one
+role that provides this access. HTTP is allowed only on the local machine.
+Use HTTPS for Azure. The sample does not create an account or assign roles.
+**Using live DTS with Azurite tests local storage access, not Azure-hosted Blob Storage.**
 
 Example output:
 
@@ -46,32 +48,35 @@ go-large-payload-...: completed with 10 records (70 bytes)
 go-large-payload-...: completed with 300000 records (2100000 bytes)
 ```
 
-The demo is bounded and exits nonzero on workflow, storage, or shutdown errors.
-It does not download blobs or run the test suite.
+The demo has a time limit. It returns a nonzero exit status if a workflow,
+storage operation, or shutdown fails. It does not download blobs or run the tests.
 
 ## Code map
 
 | File | Responsibility |
 | --- | --- |
-| [main.go](main.go) | Entrypoint and shared timeout handling |
+| [main.go](main.go) | Starts the command-line program and sets its timeout |
 | [workflow.go](workflow.go) | Echo the payload, then process its records |
 | [activities.go](activities.go) | Echo data and produce the record/byte summary |
 | [client.go](client.go) | Submit the two batches and display their results |
-| [worker.go](worker.go) | Register per-run task names and configure a shared client/worker payload store |
+| [worker.go](worker.go) | Register this run's task names and set up storage for the client and worker |
 | [storage.go](storage.go) | Azurite or Azure Blob authentication |
-| [integration_test.go](integration_test.go), [verify_test.go](verify_test.go) | Backend scenarios and detailed storage assertions |
+| [integration_test.go](integration_test.go), [verify_test.go](verify_test.go) | Backend test cases and detailed storage checks |
 
-The externalization threshold is **64 KiB**, the serialized payload limit is
-**4 MiB**, and gRPC messages are capped at **128 KiB**. Thus the large batch cannot
-travel inline. This deliberately lowers the SDK's usual 64 MiB gRPC bound.
-Gzip and SDK integrity checks remain enabled.
+The SDK stores data in Blob storage once it reaches **64 KiB**. Encoded payloads
+have a **4 MiB** limit, and gRPC messages have a **128 KiB** limit.
+The large batch therefore cannot fit inside a gRPC message. The sample lowers
+the usual SDK gRPC limit of 64 MiB to show this behavior.
+Gzip compression and SDK data-integrity checks stay enabled.
 
-Each invocation adds its random run/container ID to every registration,
-orchestration scheduling name, and activity call name. Those names stay fixed
-during replay. Concurrent runs on the same hub cannot execute each other's work
-against different containers. This is a per-run teaching worker: new invocations
-do not resume old in-flight instances. A shared production fleet instead needs
-consistent task names and a compatible shared payload store.
+Each run adds its random run/container ID to all task names. The same names are
+used for registration, scheduling, and activity calls, including during replay.
+This prevents workers on the same hub from taking another run's work and using
+the wrong Blob container.
+
+Each demo starts its own worker. A new demo run does not resume unfinished
+instances from an older run. Production workers that share work need stable
+task names and access to the same payload store.
 
 ## Testing
 
@@ -89,15 +94,17 @@ DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 
 The integration test runs two workers concurrently on the same hub. Each uses
 the production workflow and activities for small and large batches. Tests check
-byte-for-byte and SHA-256 round trips, zero blobs for the small batch, actual
-externalized blobs for the large batch, gzip decoding, and stored size/checksum
-metadata. Offline tests also protect per-run registration isolation.
+that returned bytes and SHA-256 values match the original data.
+The small batch must create no blobs. The large batch must create blobs with
+valid gzip data, sizes, and checksums. Offline tests also check that runs use
+separate task names.
 
 ## Cleanup
 
-Workers and clients stop automatically. Completed instances and their unique
-Blob containers are retained for inspection: deleting blobs first would break
-history hydration. Remove only the printed instance IDs/container when finished.
+Workers and clients stop automatically. Completed instances and their Blob
+containers remain available. Do not delete the blobs while keeping histories
+that need them to load data. When finished, remove only the printed instance
+IDs and their container.
 For a private compose instance, `docker compose down -v` removes its Azurite data;
 do not use it to clean shared storage.
 

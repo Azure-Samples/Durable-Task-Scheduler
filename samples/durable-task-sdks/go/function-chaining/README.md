@@ -1,11 +1,12 @@
-# Function chaining — Go
+# Function chaining (Go)
 
-Three sequential activities build a greeting: **say hello → process greeting →
-finalize response**. Each activity exchanges a typed
-`Greeting` containing `recipient` and `message`; the orchestration returns the
-final message. `GetInput` and `Await(&greeting)` decode the JSON boundaries into Go
-structs. Every activity failure is propagated, and orchestrator logging is
-replay-safe.
+Three activities run in order to build a greeting: **say hello → process greeting →
+finalize response**. They pass a `Greeting` value with `recipient` and `message`
+fields. The orchestration returns the final message.
+
+`GetInput` and `Await(&greeting)` read JSON data into Go structs. If an activity
+fails, the workflow returns the error. Its logger avoids duplicate messages
+when the SDK replays saved work.
 
 ## Prerequisites
 
@@ -24,9 +25,8 @@ go run .
 ```
 
 Or, from the Go samples directory: `go run ./function-chaining`.
-One process starts both the worker and client, runs one bounded greeting,
-prints the result, and shuts down. Exhaustive verification belongs to the tests,
-not the runnable demo.
+One process starts the worker and client, builds one greeting, prints the result,
+and shuts down. Detailed checks run in the tests, not in the demo.
 The default endpoint is `http://localhost:8080`; `-timeout` defaults to two minutes.
 Normal execution takes a few seconds.
 
@@ -39,17 +39,17 @@ Normal execution takes a few seconds.
 }
 ```
 
-Inspect the three activity inputs and outputs at <http://localhost:8082>. History
-is retained; nothing is purged. Task names are scoped with `GoFunctionChaining`,
-and worker filters prevent this worker from taking other samples' tasks.
+View the three activity inputs and outputs at <http://localhost:8082>. The sample
+keeps its history. Task names start with `GoFunctionChaining`. Worker filters
+prevent this worker from taking tasks from other samples.
 
 ## Code map
 
-Read [workflow.go](workflow.go) for the three awaited steps, then
-[activities.go](activities.go) for the typed greeting transformations.
+Read [workflow.go](workflow.go) to see the three steps, then
+[activities.go](activities.go) to see how each step changes the greeting.
 [client.go](client.go) starts one instance and prints its result;
 [worker.go](worker.go) registers the stable task names;
-[main.go](main.go) is only the CLI entrypoint.
+[main.go](main.go) starts the command-line program.
 
 ## Tests
 
@@ -59,9 +59,9 @@ Offline unit tests:
 go test .
 ```
 
-Tests cover typed payload round trips, exact transformations, malformed input,
-and registration names. Integration tests are skipped unless explicitly enabled.
-Against the emulator or live backend configured through [shared setup](../README.md):
+Tests check how data is sent and read, the greeting changes, invalid input,
+and registered task names. Integration tests run only when you enable them.
+Use the emulator or Azure backend from [shared setup](../README.md):
 
 ```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .

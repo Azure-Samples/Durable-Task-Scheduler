@@ -1,15 +1,14 @@
-# Fan-out/fan-in — Go
+# Fan-out/fan-in (Go)
 
-The orchestration schedules all work-item activities **before** waiting, uses
-`WhenAll` to drain the complete batch (including failed siblings), decodes each
-typed result, and calls a separate aggregation activity. Each item
-is squared and the final result contains its count, sum, and average.
+The orchestration schedules all activities **before** waiting for results.
+It uses `WhenAll` to wait for every activity, even if one fails. It then reads
+the results and calls another activity to combine them. Each activity squares
+one number. The final result contains the count, sum, and average.
 
-The demo processes one batch containing **1–10**. There are no random
-sleeps: these are bounded arithmetic operations, not a concurrency benchmark.
-Concurrency is visible in the scheduled tasks; actual execution concurrency
-depends on worker capacity. The sample caps batches at 100 items and magnitudes
-at 1,000,000 to keep arithmetic within `int64`.
+The demo processes one batch containing **1–10**. It does not add random delays
+or measure performance. Tasks are scheduled in parallel, but worker capacity
+controls how many can run at once. Each batch can contain up to 100 items.
+Numbers must be between -1,000,000 and 1,000,000 to keep calculations within `int64`.
 
 ## Prerequisites
 
@@ -39,16 +38,16 @@ The JSON output contains a unique instance ID and this summary:
 {"total_items": 10, "sum": 385, "average": 38.5}
 ```
 
-Open <http://localhost:8082> to inspect the parallel activity scheduling and final
-aggregation. Completed history is retained. All registered names start with
-`GoFanOutFanIn`; automatic worker filters isolate this sample.
+Open <http://localhost:8082> to view the parallel tasks and final result.
+Completed history stays available. Registered names start with `GoFanOutFanIn`.
+Automatic worker filters keep this sample's work separate.
 
 ## Code map
 
 Start with [workflow.go](workflow.go): schedule all tasks, wait for the batch,
-then aggregate. [activities.go](activities.go) contains the arithmetic and result
+then combine results. [activities.go](activities.go) contains the calculations and result
 types. [client.go](client.go) runs one batch, [worker.go](worker.go) registers
-tasks, and [main.go](main.go) delegates to the shared CLI helper.
+tasks, and [main.go](main.go) starts the shared command-line helper.
 
 ## Tests
 
@@ -58,11 +57,10 @@ Offline unit tests:
 go test .
 ```
 
-Tests cover exact aggregation, typed JSON activity boundaries, empty and
-duplicate batches, negative values, invalid results, and overflow prevention.
-The demo does not run an edge-case matrix. Opt-in backend verification is in
-[integration_test.go](integration_test.go), covering both the exact ten-item
-summary and the empty batch:
+Tests check result totals, JSON data, empty and duplicate batches, negative
+values, invalid results, and numbers that are too large. The demo does not run
+these test cases. Enable [integration_test.go](integration_test.go) to check the
+ten-item result and an empty batch against DTS:
 
 ```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
