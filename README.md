@@ -1,6 +1,6 @@
 # Azure Durable Task
 
-**Build reliable, fault-tolerant workflows that survive any failure.**
+**Build reliable workflows that can recover after failures.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE.md)
 [![Docs](https://img.shields.io/badge/docs-Microsoft%20Learn-blue)](https://aka.ms/dts-documentation)
@@ -23,29 +23,33 @@
 ---
 ## What is Durable Task?
 
-[Durable Task](http://aka.ms/durabletask) is Microsoft's technology for building workflows and orchestrations as ordinary code that automatically survives failures. Instead of managing complex retry logic, state machines, or message queues, you express your business logic as straightforward functions - Durable Task handles state persistence, automatic recovery, and distributed coordination for you. 
+[Durable Task](http://aka.ms/durabletask) helps you build reliable workflows in code. A workflow is a series of steps that complete a task. You write these steps as normal functions. Durable Task saves their progress and coordinates work across services.
 
-Workflows can run for hours, days, or even months, reliably resuming from the last completed step after any crash, restart, or redeployment. Common use cases include distributed transactions, multi-agent AI orchestration, data processing pipelines, and infrastructure management.
+Workflows can run for hours, days, or even months. They can resume from saved progress after an app crashes, restarts, or is deployed again. Common uses include coordinating AI agents, processing data, managing infrastructure, and running processes across several services.
 
-Durable Task encompasses the Durable Task SDKs for self-hosted applications, [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview) for serverless hosting on Azure Functions, and the [Durable Task Scheduler](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler) - a fully managed backend service purpose-built for durable workloads.
+Durable Task includes three main parts:
+
+- **Durable Task SDKs:** Build workflows in applications that you host.
+- **[Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview):** Run workflows in serverless Azure Functions apps.
+- **[Durable Task Scheduler](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler):** Use a managed service to store workflow state and distribute work.
 
 #### What is Durable Execution?
 
-Durable execution is an industry-wide approach to making ordinary code fault-tolerant by automatically persisting its progress.
+Durable execution means saving a workflow's progress automatically. The saved state allows the workflow to recover after an interruption.
 
 ---
 
 ## Why Durable Task Scheduler?
 
-- 🏗️ **Fully managed** - no storage accounts to configure, no infrastructure to maintain
-- ⚡ **Purpose-built & fast** - optimized compute+memory; push-model gRPC streaming (no polling)
-- 📊 **Built-in dashboard** - monitor orchestrations, drill into history, pause/terminate/restart instances ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-dashboard))
-- 🛡️ **Fault isolation** - runs as a separate Azure resource; failures don't cascade to your app
-- 📈 **Independent scaling** - scheduler scales separately from your app; multiple apps can share one scheduler
-- 🗂️ **Multiple task hubs** - isolate workloads by environment, team, or project ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler#multiple-task-hubs))
-- 🐳 **Emulator for local dev** - Docker-based emulator with dashboard included, zero Azure dependency
-- 🔐 **Identity-based auth** - Microsoft Entra ID / managed identity, no secrets in connection strings ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity))
-- 🌍 **Run anywhere** - Azure Functions, Container Apps, AKS, App Service, VMs
+- 🏗️ **Managed service:** No workflow storage accounts to set up or service infrastructure to maintain.
+- ⚡ **Direct work delivery:** gRPC streaming sends work to workers. Workers do not need to keep checking for new work.
+- 📊 **Built-in dashboard:** View workflow status and history. Pause, stop, or restart workflows ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-dashboard)).
+- 🛡️ **Separate service:** The scheduler runs as its own Azure resource, separate from your app.
+- 📈 **Independent scaling:** Change the scheduler's capacity separately from your app. Several apps can share one scheduler.
+- 🗂️ **Multiple task hubs:** Keep workloads separate by environment, team, or project ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler#multiple-task-hubs)).
+- 🐳 **Local development:** Run the emulator and its dashboard in Docker without an Azure connection.
+- 🔐 **Azure authentication:** Use Microsoft Entra ID or managed identity. You do not need secrets in connection strings ([Learn more](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity)).
+- 🌍 **Flexible hosting:** Run on Azure Functions, Container Apps, Azure Kubernetes Service (AKS), App Service, or virtual machines.
 
 ![Architecture](./media/images/durable-task-sdks/dts-in-all-computes.png)
 
@@ -60,7 +64,7 @@ git clone --recurse-submodules https://github.com/Azure-Samples/Durable-Task-Sch
 cd Durable-Task-Scheduler
 ```
 
-> **Note:** The `--recurse-submodules` flag is needed to pull sample code from linked repositories. If you already cloned without it, run: `git submodule update --init --recursive`
+> **Note:** The `--recurse-submodules` flag downloads sample code from linked repositories. If you already cloned the repo without this flag, run: `git submodule update --init --recursive`
 
 ### Step 1: Start the emulator
 
@@ -79,11 +83,13 @@ docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:lates
 | JavaScript | Function Chaining | `cd samples/durable-task-sdks/javascript/function-chaining && npm install && node worker.mjs` |
 | Go (1.25+) | [Function Chaining](./samples/durable-task-sdks/go/function-chaining) | `cd samples/durable-task-sdks/go && go mod download && go run ./function-chaining` |
 
-The Go samples use **`github.com/microsoft/durabletask-go` v1.0.0-beta.1**. By default, each runs its worker and client together, verifies the result, and exits. They default to `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`; see the [Go quickstart](./docs/quickstart.md#go) for setup and Azure connection instructions.
+The Go samples use **`github.com/microsoft/durabletask-go` v1.0.0-beta.1**. Each sample starts its worker and client, runs a short demo, prints the result, and exits. Detailed checks are in separate tests.
+
+The default connection is `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. See the [Go quickstart](./docs/quickstart.md#go) for setup and Azure connection instructions.
 
 ### Step 3: Open the dashboard
 
-Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestration status, history, and more.
+Open **[http://localhost:8082](http://localhost:8082)** to view workflow status and history.
 
 ---
 
@@ -91,13 +97,13 @@ Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestra
 
 | | Durable Functions | Durable Task SDKs |
 |---|---|---|
-| **Best for** | Serverless event-driven apps | Any compute (containers, VMs, etc.) |
-| **Hosting** | Azure Functions | Any host (ACA, AKS, App Service, VMs) |
-| **Triggers** | HTTP, Timer, Queue, etc. | Self-managed |
-| **Scaling** | Built-in auto-scale | Bring your own scaling |
+| **Best for** | Serverless apps that respond to events | Apps that run on containers, virtual machines, or other hosts |
+| **Hosting** | Azure Functions | Container Apps, AKS, App Service, virtual machines, and other hosts |
+| **Triggers** | HTTP requests, timers, queues, and more | You set up how workflows start |
+| **Scaling** | Built-in automatic scaling | You manage scaling |
 | **Languages** | .NET, Python, Java, JavaScript | .NET, Python, Java, JavaScript, Go (beta) |
 
-Go support is through the standalone Durable Task SDK, not Durable Functions or the Durable extension for Microsoft Agent Framework.
+Use the standalone Durable Task SDK for Go. Go is not supported by Durable Functions or the Durable extension for Microsoft Agent Framework.
 
 📖 [Choosing an orchestration framework →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework)
 
@@ -105,27 +111,29 @@ Go support is through the standalone Durable Task SDK, not Durable Functions or 
 
 ## Samples
 
-Explore runnable examples across languages and frameworks, including [Go SDK samples](./samples/durable-task-sdks/go).
+Explore examples that you can run in several languages and frameworks, including the [Go SDK samples](./samples/durable-task-sdks/go).
 
 📂 [**Full Sample Catalog →**](./samples/README.md)
 
 ### Featured Samples
 
-🤖 **[AI Research Agent](./samples/durable-task-sdks/python/arXiv_research_agent)** - Autonomous academic research agent that searches arXiv, analyzes papers, and synthesizes reports (Python)
+🤖 **[AI Research Agent](./samples/durable-task-sdks/python/arXiv_research_agent):** An agent that searches arXiv, reviews papers, and writes research reports (Python).
 
-✈️ **[AI Travel Planner](./samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator)** - Multi-agent travel planning with specialized agents and human approval (Durable Functions, .NET)
+✈️ **[AI Travel Planner](./samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator):** Plan trips with several AI agents and a human approval step (Durable Functions, .NET).
 
-🛒 **[Order Processor](./samples/durable-functions/dotnet/OrderProcessor)** - End-to-end order workflow with inventory, payment, and notifications (Durable Functions, .NET)
+🛒 **[Order Processor](./samples/durable-functions/dotnet/OrderProcessor):** Process orders with inventory checks, payments, and notifications (Durable Functions, .NET).
 
-🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga)** - Distributed transactions with compensating actions for failure recovery (Durable Functions, .NET)
+🔄 **[Saga Pattern](./samples/durable-functions/dotnet/Saga):** Undo completed steps when a later step fails (Durable Functions, .NET).
 
-🧩 **[Durable Extension for Microsoft Agent Framework](./samples/durable-extension-for-agent-framework/)** - Make any [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) agent durable with persistent sessions, multi-agent orchestrations, and graph-based workflows (.NET, Python)
+🧩 **[Durable Extension for Microsoft Agent Framework](./samples/durable-extension-for-agent-framework/):** Add saved state and failure recovery to [Microsoft Agent Framework](https://github.com/microsoft/agent-framework) agents. Coordinate several agents in one workflow (.NET, Python).
 
 ---
 
 ## Observability
 
-The Durable Task Scheduler provides a **built-in dashboard** for monitoring orchestration instances, inspecting execution history, and managing running workflows. The SDKs also support **OpenTelemetry distributed tracing** for end-to-end visibility across services. Durable Functions users can leverage [distributed tracing V2](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-diagnostics#distributed-tracing) for enhanced diagnostics.
+Use the **built-in dashboard** to check workflow status, review execution history, and manage running workflows.
+
+The SDKs support **OpenTelemetry distributed tracing**. It helps you follow work as it moves between services. Durable Functions users can also use [distributed tracing V2](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-diagnostics#distributed-tracing) to investigate problems.
 
 ---
 
@@ -150,36 +158,36 @@ The Durable Task Scheduler provides a **built-in dashboard** for monitoring orch
 
 ## AI-Assisted Development
 
-This repository includes specialized skills for AI coding assistants ([GitHub Copilot](https://github.com/features/copilot), [Claude Code](https://claude.ai/code)) to help you build durable workflows with best practices, code patterns, and contextual guidance.
+This repository includes instruction files called skills for AI coding assistants, such as [GitHub Copilot](https://github.com/features/copilot) and [Claude Code](https://claude.ai/code). Skills provide setup instructions, code examples, and guidance for building durable workflows.
 
 | Skill | Description | Path |
 |-------|-------------|------|
-| **durable-functions-dotnet** | Durable Functions with .NET isolated worker - orchestrations, activities, entities, and all workflow patterns | [Skill →](.github/skills/durable-functions-dotnet/SKILL.md) |
-| **durable-task-dotnet** | Durable Task SDK for .NET - portable orchestrations without Azure Functions dependency | [Skill →](.github/skills/durable-task-dotnet/SKILL.md) |
-| **durable-task-java** | Durable Task SDK for Java - orchestrations, activities, and common workflow patterns | [Skill →](.github/skills/durable-task-java/SKILL.md) |
-| **durable-task-python** | Durable Task SDK for Python - orchestrations, activities, entities, and stateful agents | [Skill →](.github/skills/durable-task-python/SKILL.md) |
-| **durable-task-go** | Durable Task SDK for Go (beta) - replay-safe workflows, SDK setup, and sample validation | [Skill →](.github/skills/durable-task-go/SKILL.md) |
+| **durable-functions-dotnet** | Build orchestrations, activities, and entities with the .NET isolated worker | [Skill →](.github/skills/durable-functions-dotnet/SKILL.md) |
+| **durable-task-dotnet** | Build .NET workflows without Azure Functions | [Skill →](.github/skills/durable-task-dotnet/SKILL.md) |
+| **durable-task-java** | Build Java orchestrations and activities | [Skill →](.github/skills/durable-task-java/SKILL.md) |
+| **durable-task-python** | Build Python workflows, entities, and agents that keep state | [Skill →](.github/skills/durable-task-python/SKILL.md) |
+| **durable-task-go** | Set up the Go SDK (beta), build workflows, and test samples | [Skill →](.github/skills/durable-task-go/SKILL.md) |
 
-**Usage:** Reference a skill file in your AI assistant (e.g., `#file:.github/skills/durable-task-dotnet/SKILL.md` in Copilot Chat) or ask it to read the skill before generating code. Skills are automatically detected by Claude Code when working on relevant files.
+**Usage:** Ask your AI assistant to read a skill before writing code. In Copilot Chat, you can reference a file, such as `#file:.github/skills/durable-task-dotnet/SKILL.md`. Claude Code can find relevant skills automatically.
 
 ---
 
 ## Contributing
 
-We welcome contributions! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to get involved, submit issues, and open pull requests.
+We welcome contributions. Read [CONTRIBUTING.md](./CONTRIBUTING.md) to learn how to report issues, suggest changes, and open pull requests.
 
 ---
 
 ## Community & Support
 
 - 📖 [Official Documentation](https://aka.ms/dts-documentation)
-- 💬 [GitHub Issues](https://github.com/Azure/Durable-Task-Scheduler/issues) - bugs and feature requests
+- 💬 [GitHub Issues](https://github.com/Azure/Durable-Task-Scheduler/issues): Report bugs and request features.
 - 📧 Contact: [nicholas.greenfield@microsoft.com](mailto:nicholas.greenfield@microsoft.com), [jiayma@microsoft.com](mailto:jiayma@microsoft.com)
 
 ---
 
 ## License
 
-This project is licensed under the [MIT License](./LICENSE.md).
+This project uses the [MIT License](./LICENSE.md).
 
 ⭐ **Star this repo if you find it useful!**
