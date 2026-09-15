@@ -239,6 +239,120 @@ jobs:
       - name: Syntax check Python files
         run: find samples -name "*.py" -not -path "*/__pycache__/*" -exec python -m py_compile {} +
 
+  go:
+    name: Go Samples
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: bash
+        working-directory: samples/durable-task-sdks/go
+    env:
+      DTS_SAMPLES_E2E: "0"
+      GO_DTS_CONTAINER: go-samples-dts-${{ github.run_id }}-${{ github.run_attempt }}
+      GO_AZURITE_CONTAINER: go-samples-azurite-${{ github.run_id }}-${{ github.run_attempt }}
+      GO_CONTAINERS_OWNER: go-samples-${{ github.run_id }}-${{ github.run_attempt }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      - name: Setup Go
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: samples/durable-task-sdks/go/go.mod
+          cache-dependency-path: samples/durable-task-sdks/go/go.sum
+
+      - name: Download Go dependencies
+        run: go mod download
+
+      - name: Build Go samples
+        run: go build ./...
+
+      - name: Test Go samples without a scheduler
+        run: go test ./...
+
+      - name: Vet Go samples
+        run: go vet ./...
+
+      - name: Start Go integration services
+        timeout-minutes: 5
+        run: |
+          docker run --detach --pull=always --name "$GO_DTS_CONTAINER" \
+            --label "dts-samples-owner=$GO_CONTAINERS_OWNER" \
+            --publish 127.0.0.1:8080:8080 --publish 127.0.0.1:8082:8082 \
+            --env DTS_TASK_HUB_NAMES=default \
+            mcr.microsoft.com/dts/dts-emulator:latest
+          docker run --detach --pull=always --name "$GO_AZURITE_CONTAINER" \
+            --label "dts-samples-owner=$GO_CONTAINERS_OWNER" \
+            --publish 127.0.0.1:10000:10000 \
+            mcr.microsoft.com/azure-storage/azurite:latest \
+            azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
+
+      - name: Wait for Go integration services
+        timeout-minutes: 3
+        run: |
+          deadline=$((SECONDS + 120))
+          while (( SECONDS < deadline )); do
+            for container in "$GO_DTS_CONTAINER" "$GO_AZURITE_CONTAINER"; do
+              if [[ "$(docker inspect --format '{{.State.Running}}' "$container")" != "true" ]]; then
+                echo "::error::Go integration container $container exited before becoming ready"
+                exit 1
+              fi
+            done
+            if curl --fail --silent --max-time 2 http://127.0.0.1:8082/ >/dev/null \
+              && timeout 2s bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080' 2>/dev/null \
+              && timeout 2s bash -c 'exec 3<>/dev/tcp/127.0.0.1/10000' 2>/dev/null; then
+              echo "Go integration services are ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::Go integration services did not become ready within 120 seconds"
+          exit 1
+
+      - name: Verify Go executable samples on the emulator
+        timeout-minutes: 17
+        env:
+          DTS_SAMPLES_E2E: "1"
+          HISTORY_EXPORT_ISOLATED_TASKHUB: "1"
+          DTS_CONNECTION_STRING: "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
+          AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true"
+          AZURE_STORAGE_BLOB_ENDPOINT: ""
+          OTEL_EXPORTER_OTLP_ENDPOINT: ""
+          OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: ""
+          CHAT_MODE: mock
+          RESEARCH_MODE: fixture
+        run: go test -v -count=1 -timeout 15m ./e2e
+
+      - name: Clean up Go integration services
+        if: always()
+        timeout-minutes: 2
+        working-directory: ${{ github.workspace }}
+        run: |
+          containers=$(docker container ls --all --format '{{.Names}}')
+          cleanup_status=0
+          for container in "$GO_DTS_CONTAINER" "$GO_AZURITE_CONTAINER"; do
+            if ! grep -Fxq -- "$container" <<<"$containers"; then
+              continue
+            fi
+            if ! owner=$(docker inspect --format '{{ index .Config.Labels "dts-samples-owner" }}' "$container"); then
+              echo "::error::Could not confirm ownership of container $container"
+              cleanup_status=1
+              continue
+            fi
+            if [[ "$owner" != "$GO_CONTAINERS_OWNER" ]]; then
+              echo "::error::Refusing to remove container $container owned by another job"
+              cleanup_status=1
+              continue
+            fi
+            if ! docker logs --tail 100 "$container"; then
+              cleanup_status=1
+            fi
+            if ! docker rm --force "$container"; then
+              cleanup_status=1
+            fi
+          done
+          exit "$cleanup_status"
+
   javascript:
     name: JavaScript Samples
     runs-on: ubuntu-latest
