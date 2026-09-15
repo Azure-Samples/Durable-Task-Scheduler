@@ -50,6 +50,16 @@ updates:
         patterns: ["*"]
         update-types: ["patch", "minor", "major"]
 
+  # Go (single shared module)
+  - package-ecosystem: "gomod"
+    directory: "/samples/durable-task-sdks/go"
+    schedule:
+      interval: "monthly"
+    groups:
+      gomod-all:
+        patterns: ["*"]
+        update-types: ["patch", "minor", "major"]
+
   # JavaScript (npm)
   - package-ecosystem: "npm"
     directories:

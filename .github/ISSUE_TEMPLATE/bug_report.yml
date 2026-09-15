@@ -15,6 +15,7 @@ body:
         - Durable Task SDK - .NET
         - Durable Task SDK - Python
         - Durable Task SDK - Java
+        - Durable Task SDK - Go
         - Durable Functions - .NET
         - Durable Functions - Python
         - Infrastructure / Deployment
@@ -53,6 +54,6 @@ body:
       label: Environment
       description: |
         - OS: [e.g., Windows 11, macOS 14, Ubuntu 22.04]
-        - Runtime: [e.g., .NET 8, Python 3.11, Java 17]
+        - Runtime: [e.g., .NET 8, Python 3.11, Java 17, Go 1.25]
         - Docker version (if using emulator)
       render: markdown

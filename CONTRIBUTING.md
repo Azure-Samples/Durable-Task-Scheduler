@@ -80,5 +80,37 @@ That's it! Thank you for your contribution!
 - Each sample should have its own directory under the appropriate framework/language folder.
 - Include a `README.md` following a consistent structure: description, prerequisites, how to run, and expected output.
 - Use the Durable Task Scheduler emulator as the default development experience.
-- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java).
+- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java). Go samples share the single `go.mod` and `go.sum` in `samples/durable-task-sdks/go`; do not create nested modules.
 - Test your sample with the emulator before submitting.
+- Add the sample to the [catalog](./samples/README.md) and relevant [pattern documentation](./docs/patterns.md).
+
+### Go samples
+
+Use Go **1.25.0 or later** and the SDK version pinned in the shared module (currently `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**). Put each runnable sample in its own package under `samples/durable-task-sdks/go`. The default command should start the worker and client, demonstrate the pattern, print a result, shut down, and exit.
+
+Keep `main.go` limited to the entrypoint and CLI wiring. Put orchestrations, activities, worker setup, and client code in focused files within the same package. Keep domain types near the code that uses them; avoid catch-all utility files and unnecessary package layers. A reader should be able to understand the workflow without reading a verification harness.
+
+Put assertions, exhaustive scenarios, and verification-only helpers in `*_test.go`. Each sample must have an opt-in `TestIntegration` in `integration_test.go`, using `testutil.IntegrationContext(t)` to select real-backend tests. Keep operational error handling, input validation, and resource cleanup in production code. README descriptions should stand alone and include a short code map.
+
+Format changed Go files with `gofmt`, then run the same offline checks as CI:
+
+```bash
+cd samples/durable-task-sdks/go
+go mod download
+go build ./...
+go test ./...
+go vet ./...
+```
+
+Ordinary tests must not require an emulator, Azure credentials, or cloud resources. The Go beta SDK has no public in-memory testing backend: test shared business logic offline through a local step adapter, as the testing sample does. Do not claim that these unit tests validate SDK execution or replay.
+
+Keep replay/integration tests against real DTS opt-in with `DTS_SAMPLES_E2E=1`. To run all demonstrations and their integration tests, first prepare an isolated task hub and Blob endpoint as described in the [Go validation guide](./samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). From the Go module, use the sequential runner rather than enabling resource-backed tests across all packages concurrently:
+
+```bash
+HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \
+  go test -v -count=1 -timeout 30m ./e2e
+```
+
+History-export validation requires a dedicated emulator or Azure task hub with no other export workers and no unrelated workloads completing during the sample's export window. Do not run it in parallel with shared-hub sample validation. For both emulator and Azure runs, set `HISTORY_EXPORT_ISOLATED_TASKHUB=1` only after confirming isolation; the flag is an acknowledgment, not an isolation mechanism.
+
+Use the emulator connection string by default: `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. Document any additional prerequisites and read `DTS_CONNECTION_STRING` for Azure connections. Use placeholders, never real resource identifiers or credentials, in committed examples. See the [Go quickstart](./docs/quickstart.md#go) for connection setup.

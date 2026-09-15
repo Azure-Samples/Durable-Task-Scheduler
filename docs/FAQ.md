@@ -9,7 +9,7 @@ A: The Durable Task Scheduler is a fully managed Azure service for durable execu
 A: Durable Functions is an extension of Azure Functions — best for serverless, event-driven apps with built-in triggers and auto-scaling. Durable Task SDKs are lightweight client libraries that work on any compute (Container Apps, AKS, VMs, etc.) — best when you need portability or already have a hosting environment. Both use the same Durable Task Scheduler backend. [See comparison →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework)
 
 **Q: What languages are supported?**
-A: Durable Task SDKs: .NET, Python, Java (JavaScript coming soon). Durable Functions: .NET, Python, Java, JavaScript/TypeScript.
+A: Durable Task SDKs: .NET, Python, Java, JavaScript, and Go (beta). Durable Functions: .NET, Python, Java, JavaScript/TypeScript. Go uses the standalone Durable Task SDK; it is not supported by Durable Functions or the Durable extension for Microsoft Agent Framework.
 
 **Q: How much does it cost?**
 A: The Durable Task Scheduler offers a Dedicated SKU (reserved capacity) and a Consumption SKU (preview, pay-per-use). The emulator is free for local development. [See pricing details →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-dedicated-sku)
@@ -19,8 +19,14 @@ A: The Durable Task Scheduler offers a Dedicated SKU (reserved capacity) and a C
 **Q: Can I develop locally without an Azure subscription?**
 A: Yes! The Durable Task Scheduler emulator runs in Docker and provides the full experience including a monitoring dashboard. Just run: `docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:latest`
 
+**Q: What do I need to run the Go samples?**
+A: Go 1.25.0 or later and the emulator; check each sample README for additional storage or telemetry prerequisites. The [Go samples](../samples/durable-task-sdks/go) share one module pinned to `github.com/microsoft/durabletask-go` v1.0.0-beta.1. From that module directory, run `go mod download` and `go run ./function-chaining`. Each sample starts its worker and client together, demonstrates the pattern, prints a result, and exits. Ordinary `go test ./...` runs without a scheduler; `TestIntegration` requires `DTS_SAMPLES_E2E=1`. See the [quickstart](./quickstart.md#go) for Azure configuration.
+
 **Q: What is a Task Hub?**
 A: A task hub is a logical container for orchestration and entity instances. You can create multiple task hubs within a single scheduler to isolate workloads by environment (dev/test/prod), team, or project. Each task hub gets its own monitoring dashboard. [Learn more →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-task-hubs)
+
+**Q: Do offline Go tests validate orchestration replay?**
+A: No. The beta Go SDK has no public in-memory testing backend. The [Go testing sample](../samples/durable-task-sdks/go/testing) uses a local step adapter to test shared order-workflow logic offline. SDK execution and replay require opt-in integration tests against a real DTS emulator or Azure scheduler with `DTS_SAMPLES_E2E=1`.
 
 **Q: How does authentication work?**
 A: The Durable Task Scheduler uses identity-based authentication only (Microsoft Entra ID / managed identity). No shared keys or connection string secrets. For local development with the emulator, no authentication is required. [Learn more →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity)
@@ -34,7 +40,7 @@ A: Yes! The Durable Task Scheduler is a backend provider for Durable Functions. 
 A: The Durable Task Scheduler provides a built-in dashboard at [dashboard.durabletask.io](https://dashboard.durabletask.io) where you can view orchestration status, drill into execution history, and perform management operations (pause, terminate, restart). The emulator includes a local dashboard at http://localhost:8082.
 
 **Q: Does it support distributed tracing?**
-A: Yes. Durable Functions supports distributed tracing V2 with Application Insights. The Durable Task SDKs emit OpenTelemetry-compatible traces that can be exported to Jaeger, Zipkin, Application Insights, or any OTel-compatible backend.
+A: Yes. Durable Functions supports distributed tracing V2 with Application Insights. Durable Task SDKs integrate with OpenTelemetry, but span creation differs by SDK. The Go SDK propagates W3C trace context and lets your application emit spans through an OpenTelemetry tracer provider; DTS emits the durable orchestration, activity, and timer spans. Do not expect the Go worker to automatically duplicate those service spans in a local exporter. See the [observability guide](./observability.md#go) for details.
 
 ## Troubleshooting
 
