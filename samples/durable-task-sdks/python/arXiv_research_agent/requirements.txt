@@ -23,7 +23,7 @@ python-dotenv>=1.2.2
 rich>=15.0.0
 
 # Pydantic for data validation (included with FastAPI)
-pydantic>=2.13.3
+pydantic>=2.13.5
 
 # Testing dependencies
 pytest>=9.0.3
