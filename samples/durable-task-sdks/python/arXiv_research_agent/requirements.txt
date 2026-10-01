@@ -26,6 +26,6 @@ rich>=15.0.0
 pydantic>=2.13.3
 
 # Testing dependencies
-pytest>=9.0.3
+pytest>=9.1.1
 pytest-asyncio>=1.4.0
 pytest-cov>=4.0.0
