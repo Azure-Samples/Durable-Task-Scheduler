@@ -213,6 +213,7 @@ client = DurableTaskSchedulerClient(..., payload_store=store)
 - [Function Chaining](../function-chaining/) - Basic sequential workflow pattern
 - [Fan-Out/Fan-In](../fan-out-fan-in/) - Parallel processing pattern
 - [Large Payload (.NET)](../../dotnet/LargePayload/) - Same pattern in .NET
+- [Large Payload (Go)](../../go/large-payload/) - Payload externalization with the Go SDK
 
 ## Learn More
 
