@@ -1,14 +1,14 @@
-# Agent-Directed Workflows — Durable Task SDK (.NET)
+# Agent-Directed Workflows - Durable Task SDK (.NET)
 
 This sample demonstrates how to build an **agent-directed workflow** (agent loop) using [durable entities](https://learn.microsoft.com/azure/durable-task/concepts/entities) from the [Durable Task SDK for .NET](https://github.com/microsoft/durabletask-dotnet) with the [Durable Task Scheduler](https://learn.microsoft.com/azure/durable-task/overview).
 
 It corresponds to the **"Build your own using orchestrations and entities"** approach described in the [Durable Task for AI Agents](https://learn.microsoft.com/azure/durable-task/sdks/durable-task-for-ai-agents) comparison table, using the **entity-based agent loop** pattern from [Agentic Application Patterns](https://learn.microsoft.com/azure/durable-task/sdks/durable-agents-patterns#entity-based-agent-loops).
 
-> **Note:** A [Durable Functions version](../../../durable-functions/dotnet/AgentDirectedWorkflows/) of this sample is also available. This version uses the Durable Task SDK directly (no Azure Functions dependency), which gives you full control over the web host and API surface.
+> **Note:** A [Durable Functions version](../../../../durable-functions/dotnet/AgentDirectedWorkflows/) of this sample is also available. This version uses the Durable Task SDK directly (no Azure Functions dependency), which gives you full control over the web host and API surface.
 
 ## What Is an Agent-Directed Workflow?
 
-In a typical deterministic workflow, *your code* controls the execution path — you define the sequence of steps ahead of time. In an **agent-directed workflow** (also called an agent loop), the **LLM drives the control flow**. You provide tools and instructions, but the agent decides which tools to call, in what order, and when the task is complete. The execution path isn't known until runtime.
+In a typical deterministic workflow, *your code* controls the execution path: you define the sequence of steps ahead of time. In an **agent-directed workflow** (also called an agent loop), the **LLM drives the control flow**. You provide tools and instructions, but the agent decides which tools to call, in what order, and when the task is complete. The execution path isn't known until runtime.
 
 This pattern is well suited for conversational agents with tool-calling capabilities, open-ended research tasks, and any scenario where the number and order of steps can't be predicted.
 
@@ -16,7 +16,7 @@ This pattern is well suited for conversational agents with tool-calling capabili
 
 ### The Core Idea
 
-Each chat session is a **durable entity** — a long-lived, stateful actor managed by the Durable Task Scheduler. The entity holds the full conversation history in its state. When you send it a message, it runs the agent loop internally and **streams the LLM's response in real-time** via Redis pub/sub:
+Each chat session is a **durable entity**, a long-lived, stateful actor managed by the Durable Task Scheduler. The entity holds the full conversation history in its state. When you send it a message, it runs the agent loop internally and **streams the LLM's response in real-time** via Redis pub/sub:
 
 ```
 User: "What's the weather in Seattle?"
@@ -49,14 +49,14 @@ User: "What's the weather in Seattle?"
 **Key properties:**
 - **Durable state**: The entity's conversation history survives restarts, crashes, and scaling events.
 - **Real-time streaming**: LLM response tokens are published to Redis and forwarded to the client as SSE events as they're generated.
-- **No orchestration bridge**: The HTTP layer signals the entity (fire-and-forget) and reads the response from Redis — no intermediate orchestration needed.
+- **No orchestration bridge**: The HTTP layer signals the entity (fire-and-forget) and reads the response from Redis, with no intermediate orchestration needed.
 
 ### Why Entities?
 
 Durable entities are a natural fit for AI agents because:
 
 - **Long-lived state**: An entity persists for as long as you need it. A chat session can last minutes, days, or weeks.
-- **Automatic persistence**: You just read and write `State` — the framework handles serialization and storage.
+- **Automatic persistence**: You read and write `State`; the framework handles serialization and storage.
 - **Actor model**: Each entity processes one operation at a time, so there are no concurrency issues with the conversation history.
 - **Addressable**: Each entity has a unique ID (the session ID), making it easy to route messages to the right agent.
 
@@ -86,15 +86,15 @@ AgentDirectedWorkflows/
 
 ### Key Files Explained
 
-**`ChatAgentEntity.cs`** — The durable entity. Its `Message()` method is the agent loop: it streams from the LLM via `GetStreamingResponseAsync`, publishes text chunks to Redis, checks for tool calls, and repeats until the LLM gives a final text reply. State (conversation history) is persisted automatically.
+**`ChatAgentEntity.cs`** - The durable entity. Its `Message()` method is the agent loop: it streams from the LLM via `GetStreamingResponseAsync`, publishes text chunks to Redis, checks for tool calls, and repeats until the LLM gives a final text reply. State (conversation history) is persisted automatically.
 
-**`Program.cs`** — A standard ASP.NET minimal API that:
+**`Program.cs`** - A standard ASP.NET minimal API that:
 1. Registers the `IChatClient` (Azure OpenAI if configured, echo fallback otherwise)
 2. Registers the Redis `IConnectionMultiplexer` for pub/sub streaming
 3. Registers the Durable Task worker with the entity
 4. Defines SSE streaming endpoints for interacting with agent sessions
 
-**`Tools/AgentTools.cs`** — Defines what tools the LLM can call. Currently includes `get_weather` (with a hardcoded response). To add new capabilities, add a definition and an execution case. The LLM discovers available tools automatically.
+**`Tools/AgentTools.cs`** - Defines what tools the LLM can call. Currently includes `get_weather` (with a hardcoded response). To add new capabilities, add a definition and an execution case. The LLM discovers available tools automatically.
 
 ## Prerequisites
 
@@ -122,7 +122,7 @@ export AZURE_OPENAI_ENDPOINT="https://<your-resource>.openai.azure.com"
 export AZURE_OPENAI_DEPLOYMENT="<your-deployment-name>"
 ```
 
-The sample uses `DefaultAzureCredential` for authentication — make sure you're signed in via `az login`.
+The sample uses `DefaultAzureCredential` for authentication. Make sure you're signed in via `az login`.
 
 ### 3. Run the app
 
@@ -135,7 +135,7 @@ The app connects to the local emulator at `http://localhost:8080` by default.
 ### 4. Chat with the agent
 
 ```bash
-# Streaming (default) — response streams as Server-Sent Events
+# Streaming (default): response streams as Server-Sent Events
 curl -N -X POST http://localhost:5000/chat/session1 \
   -H "Content-Type: application/json" \
   -d '{"message":"What is the weather in Seattle?"}'
@@ -147,7 +147,7 @@ curl -N -X POST http://localhost:5000/chat/session1 \
 # data: {"type":"chunk","content":" in Seattle."}
 # data: {"type":"done"}
 
-# Non-streaming — waits for the full response and returns JSON
+# Non-streaming: waits for the full response and returns JSON
 curl -X POST "http://localhost:5000/chat/session1?stream=false" \
   -H "Content-Type: application/json" \
   -d '{"message":"What is the weather in Seattle?"}'
@@ -201,7 +201,7 @@ The LLM will automatically discover the new tool and call it when appropriate.
 
 ## Learn More
 
-- [Durable Task for AI Agents](https://learn.microsoft.com/azure/durable-task/sdks/durable-task-for-ai-agents) — Overview of how durable execution solves production challenges for AI agents
-- [Agentic Application Patterns](https://learn.microsoft.com/azure/durable-task/sdks/durable-agents-patterns) — All supported patterns (deterministic workflows, agent loops, orchestration-based vs entity-based)
-- [Durable Entities](https://learn.microsoft.com/azure/durable-task/concepts/entities) — Deep dive on the entity programming model
-- [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai) — The AI abstraction layer used for LLM integration
+- [Durable Task for AI Agents](https://learn.microsoft.com/azure/durable-task/sdks/durable-task-for-ai-agents) - Overview of how durable execution solves production challenges for AI agents
+- [Agentic Application Patterns](https://learn.microsoft.com/azure/durable-task/sdks/durable-agents-patterns) - All supported patterns (deterministic workflows, agent loops, orchestration-based vs entity-based)
+- [Durable Entities](https://learn.microsoft.com/azure/durable-task/common/durable-task-entities) - Deep dive on the entity programming model
+- [Microsoft.Extensions.AI](https://learn.microsoft.com/dotnet/ai/microsoft-extensions-ai) - The AI abstraction layer used for LLM integration

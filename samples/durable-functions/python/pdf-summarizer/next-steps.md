@@ -43,7 +43,7 @@ To describe the infrastructure and application, `azure.yaml` along with Infrastr
 
 Each bicep file declares resources to be provisioned. The resources are provisioned when running `azd up` or `azd provision`.
 
-- [app/functions-app.bicep](./infra/app/functions-app.bicep) - Azure Container Apps resources to host the 'functions-app' service.
+- [app/durable-function.bicep](./infra/app/durable-function.bicep) - Azure Functions resources to host the `function-app` service.
 - [shared/keyvault.bicep](./infra/shared/keyvault.bicep) - Azure KeyVault to store secrets.
 - [shared/monitoring.bicep](./infra/shared/monitoring.bicep) - Azure Log Analytics workspace and Application Insights to log and store instrumentation logs.
 - [shared/registry.bicep](./infra/shared/registry.bicep) - Azure Container Registry to store docker images.
@@ -51,6 +51,8 @@ Each bicep file declares resources to be provisioned. The resources are provisio
 More information about [Bicep](https://aka.ms/bicep) language.
 
 ### Build from source (no Dockerfile)
+
+This sample's `azure.yaml` uses `host: function`, so `azd package` packages an Azure Functions app rather than a container image. The buildpack instructions below apply only if you adapt the service to use Azure Container Apps.
 
 #### Build with Buildpacks using Oryx
 
@@ -77,7 +79,9 @@ Visit the *Cost Management + Billing* page in Azure Portal to track current spen
 
 Q: I visited the service endpoint listed, and I'm seeing a blank page, a generic welcome page, or an error page.
 
-A: Your service may have failed to start, or it may be missing some configuration settings. To investigate further:
+A: Your service may have failed to start, or it may be missing some configuration settings. For this sample's Azure Functions deployment, open the Function App from `azd show` and inspect its deployment logs, Log stream, and Application Insights. Confirm that the required app settings match the sample README.
+
+If you have adapted the service to Azure Container Apps, investigate further:
 
 1. Run `azd show`. Click on the link under "View in Azure Portal" to open the resource group in Azure Portal.
 2. Navigate to the specific Container App service that is failing to deploy.

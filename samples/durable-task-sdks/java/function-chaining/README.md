@@ -26,7 +26,7 @@ This pattern is useful for:
 
 ## Prerequisites
 
-- Java 8 or later
+- [Java 21](https://adoptium.net/)
 - [Docker](https://www.docker.com/get-started)
 - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
@@ -82,10 +82,10 @@ For production scenarios or when you're ready to deploy to Azure:
 1. Set the connection string environment variable:
    ```bash
    # Windows
-   set DURABLE_TASK_CONNECTION_STRING="Endpoint={scheduler endpoint};Authentication=DefaultAzure"
+   set "DURABLE_TASK_CONNECTION_STRING=Endpoint={scheduler endpoint};TaskHub={task hub name};Authentication=DefaultAzure"
 
    # Linux/macOS
-   export DURABLE_TASK_CONNECTION_STRING="Endpoint={scheduler endpoint};Authentication=DefaultAzure"
+   export DURABLE_TASK_CONNECTION_STRING="Endpoint={scheduler endpoint};TaskHub={task hub name};Authentication=DefaultAzure"
    ```
 
 ## How to Run the Sample

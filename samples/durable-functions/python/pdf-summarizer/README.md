@@ -47,7 +47,15 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to deploy the app. Thi
    - The Azure subscription you'd like to use.
    - The Azure location to use.
 
-   > **Note:** At the moment, the Durable Task Scheduler can only be deployed to `West US2` and `NorthCentral US`. Unfortunately, the AZD CLI does not support `North Central US` and Azure Open AI does not support `West US2`. The best way to navigate discrepancies is to select `West US2` as your AZD location and hardcode the `openAi` module location to a region like `East US2`.
+   > **Region selection:** Durable Task Scheduler is available in [most Azure regions](https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler#supported-regions), not just West US 2 and North Central US. Query the current list before selecting your AZD location:
+
+   ```bash
+   az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+   ```
+
+   The template's allowed `location` values also apply. Choose a region from that list that appears in the provider output.
+
+   The template currently deploys Azure OpenAI separately in `eastus2`. Confirm that your model and quota are available there, or change the `openAi` module's location in `infra/main.bicep`. The model endpoint and scheduler do not need to use the same region.
 
 Once the azd up command finishes, the app will have successfully provisioned and deployed. 
 
@@ -59,7 +67,7 @@ If you want to run the app locally after deploying to Azure, follow these steps:
 - [Start and configure an Azurite storage emulator for local storage](https://learn.microsoft.com/azure/storage/common/storage-use-azurite).
 
 ### local.settings.json
-You will need to configure a `local.settings.json` file at the root of the repo that looks similar to the below. After running `azd up`, you can retrieve these values from the Azure portal or by running `azd env get-values`.
+You will need to configure a `local.settings.json` file in the sample directory (`samples/durable-functions/python/pdf-summarizer`) that looks similar to the below. After running `azd up`, you can retrieve these values from the Azure portal or by running `azd env get-values`.
 
 ```json
 {
@@ -76,6 +84,8 @@ You will need to configure a `local.settings.json` file at the root of the repo 
   }
 }
 ```
+
+The `hubName` setting in `host.json` resolves `%TASKHUB_NAME%` from these app settings, so it must match the task hub created by the deployment.
 
 ### Running locally
 

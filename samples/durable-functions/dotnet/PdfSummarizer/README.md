@@ -18,14 +18,15 @@ The application's workflow is as follows:
 
 Below, you will find the instructions to set up and run this app locally..
 
-## Prerequsites
+## Prerequisites
 - [Create an active Azure subscription](https://learn.microsoft.com/en-us/azure/guides/developer/azure-developer-guide#understanding-accounts-subscriptions-and-billing).
 - [Install the latest Azure Functions Core Tools to use the CLI](https://learn.microsoft.com/en-us/azure/azure-functions/functions-run-local)
-- [Enroll in the Durable Task Scheduler Preview](https://github.com/Azure/Azure-Functions-Durable-Task-Scheduler-Private-Preview/tree/main) and create a scheduler / taskhub resource.
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Create a Durable Task Scheduler and task hub](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler#create-a-scheduler-and-task-hub). Preview enrollment is not required.
 - [Start and configure an Azurite storage emulator for local storage](https://learn.microsoft.com/azure/storage/common/storage-use-azurite).
 
 ## local.settings.json
-You will need to configure a `local.settings.json` file at the root of the repo that looks similar to the below. Make sure to replace the placeholders with your specific values.
+You will need to configure a `local.settings.json` file in the sample directory (`samples/durable-functions/dotnet/PdfSummarizer`) that looks similar to the below. Make sure to replace the placeholders with your specific values.
 
 ```json
 {
@@ -72,7 +73,15 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
    - The Azure subscription you'd like to use.
    - The Azure location to use.
 
-   > **Note:** At the moment, the Durable Task Scheduler can only be deployed to `West US2` and `NorthCentral US`. Unfortunately, the AZD CLI does not support `North Central US` and Azure Open AI does not support `West US2`. The best way to navigage discrepencies is to select `West US2` as your AZD location and hardcode the `openAi` module location to a region like `East US2`.
+   > **Region selection:** Durable Task Scheduler is available in [most Azure regions](https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler#supported-regions), not just West US 2 and North Central US. Query the current list before selecting your AZD location:
+
+   ```bash
+   az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
+   ```
+
+   The template's allowed `location` values also apply. Choose a region from that list that appears in the provider output.
+
+   The template currently deploys Azure OpenAI separately in `eastus2`. Confirm that your model and quota are available there, or change the `openAi` module's location in `infra/main.bicep`. The model endpoint and scheduler do not need to use the same region.
 
 Once the azd up command finishes, the app will have successfully provisioned and deployed. 
 

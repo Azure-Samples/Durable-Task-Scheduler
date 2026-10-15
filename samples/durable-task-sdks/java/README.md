@@ -4,7 +4,7 @@ This directory contains sample applications demonstrating various patterns using
 
 ## Prerequisites
 
-- Java 8 or later
+- [Java 21](https://adoptium.net/)
 - [Docker](https://www.docker.com/get-started)
 
 ## Running the samples with the Durable Task Scheduler Emulator
@@ -24,7 +24,7 @@ The samples can be run locally using the Durable Task Scheduler Emulator. The em
 2. Set the connection string environment variable:
    ```bash
    # Windows
-   set DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
+   set "DURABLE_TASK_CONNECTION_STRING=Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
 
    # Linux/macOS
    export DURABLE_TASK_CONNECTION_STRING="Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
@@ -116,7 +116,7 @@ You can view the orchestrations in the Durable Task Scheduler emulator's dashboa
 
 ## Using Durable Task Scheduler
 
-To use a Durable Task Scheduler running in Azure instead of the emulator, set the connection string to your Durable Task Scheduler connection string. The [format of the string)[(https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity?tabs=df&pivots=az-cli)] depends on the type of managed identity you use. 
+To use a Durable Task Scheduler running in Azure instead of the emulator, set the connection string to your Durable Task Scheduler connection string. The [format of the string](https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler-identity) depends on the type of managed identity you use.
 
 ```bash
 # Windows

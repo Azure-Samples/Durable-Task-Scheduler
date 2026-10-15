@@ -51,12 +51,12 @@ chances of your issue being dealt with quickly:
 * **Suggest a Fix** - if you can't fix the bug yourself, perhaps you can point to what might be
   causing the problem (line of code or commit)
 
-You can file new issues by providing the above information at the corresponding repository's issues link: https://github.com/Azure/Durable-Task-Scheduler/issues/new.
+You can file new issues by providing the above information at the corresponding repository's issues link: https://github.com/Azure-Samples/Durable-Task-Scheduler/issues/new.
 
 ### <a name="submit-pr"></a> Submitting a Pull Request (PR)
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-* Search the repository (https://github.com/Azure/Durable-Task-Scheduler/pulls) for an open or closed PR
+* Search the repository (https://github.com/Azure-Samples/Durable-Task-Scheduler/pulls) for an open or closed PR
   that relates to your submission. You don't want to duplicate effort.
 
 * Make your changes in a new git fork:
@@ -69,7 +69,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
   * Rebase your fork and force push to your GitHub repository (this will update your Pull Request):
 
     ```shell
-    git rebase master -i
+    git rebase main -i
     git push -f
     ```
 
@@ -80,5 +80,5 @@ That's it! Thank you for your contribution!
 - Each sample should have its own directory under the appropriate framework/language folder.
 - Include a `README.md` following a consistent structure: description, prerequisites, how to run, and expected output.
 - Use the Durable Task Scheduler emulator as the default development experience.
-- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java).
+- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java, `package.json` for JavaScript/TypeScript).
 - Test your sample with the emulator before submitting.

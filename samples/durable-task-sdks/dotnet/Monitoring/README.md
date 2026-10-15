@@ -1,4 +1,4 @@
-# Monitor Pattern — Durable Task SDK (.NET)
+# Monitor Pattern - Durable Task SDK (.NET)
 
 .NET | Durable Task SDK
 
@@ -13,7 +13,7 @@ This pattern is useful for:
 
 ## Prerequisites
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 2. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
 
 ## Quick Run

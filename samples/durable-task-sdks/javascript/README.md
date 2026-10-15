@@ -1,6 +1,6 @@
 # JavaScript Samples for Durable Task SDK
 
-This directory contains sample applications demonstrating orchestration patterns using the Durable Task JavaScript SDK with Azure Durable Task Scheduler.
+This directory contains sample applications demonstrating orchestration patterns using the [Durable Task JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) with Azure Durable Task Scheduler. The SDK is available in preview. These samples use JavaScript.
 
 ## Prerequisites
 
@@ -22,8 +22,8 @@ This directory contains sample applications demonstrating orchestration patterns
 
 ## Available samples
 
-- **function-chaining**: Sequential activity pipeline workflow, with local emulator and `azd` deployment support.
-- **fan-out-fan-in**: Parallel processing and aggregation workflow, with both local emulator and `azd` deployment support.
+- **[function-chaining](./function-chaining/)**: Sequential activity pipeline workflow, with local emulator and `azd` deployment support.
+- **[fan-out-fan-in](./fan-out-fan-in/)**: Parallel processing and aggregation workflow, with both local emulator and `azd` deployment support.
 
 ## Running the sample
 

@@ -31,7 +31,6 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: "10.x"
-          dotnet-quality: "preview"
 
       # Durable Task SDK samples (net10.0)
       - name: Build DTS - FunctionChaining
@@ -248,7 +247,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
 
       # Durable Functions samples
       - name: Build DF JS - HelloCities
@@ -267,7 +266,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
 
       # Durable Functions samples
       - name: Build DF TS - HelloCities

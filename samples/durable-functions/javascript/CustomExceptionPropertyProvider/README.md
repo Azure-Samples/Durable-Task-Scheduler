@@ -1,4 +1,4 @@
-# Custom Exception Property Provider — Durable Functions JavaScript
+# Custom Exception Property Provider - Durable Functions JavaScript
 
 JavaScript | Durable Functions
 
@@ -10,7 +10,7 @@ An activity throws a `BusinessValidationException` carrying structured fields (s
 
 ## Prerequisites
 
-1. [Node.js 18+](https://nodejs.org/) (use Node 22 LTS; the Functions host does not yet support Node 24)
+1. [Node.js 22](https://nodejs.org/). Azure Functions v4 also supports Node.js 24; Node.js 22 is the last version supported on the classic Linux Consumption plan. See [supported languages](https://learn.microsoft.com/azure/azure-functions/functions-versions#languages).
 2. [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 3. [Docker](https://www.docker.com/products/docker-desktop/) (for the emulator)
 
@@ -70,7 +70,7 @@ The orchestration returns the caught `failureDetails`, whose `properties` carry 
 
 - `df.app.setExceptionPropertiesProvider({ getExceptionProperties(error) { ... } })` registers a global provider once at app startup.
 - `businessActivity` throws a `BusinessValidationException` carrying the structured fields.
-- `orchestrationWithCustomException` calls the activity, catches the propagated `TaskFailedError`, and returns `e.failureDetails` — including the custom `properties`.
+- `orchestrationWithCustomException` calls the activity, catches the propagated `TaskFailedError`, and returns `e.failureDetails`, including the custom `properties`.
 
 ## Learn More
 

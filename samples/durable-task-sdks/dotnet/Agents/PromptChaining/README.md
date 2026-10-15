@@ -16,7 +16,7 @@ The workflow is orchestrated using the Durable Task SDK, which handles the workf
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://www.docker.com/products/docker-desktop/) (for the Durable Task Scheduler emulator)
 - Azure AI Projects service
 - Azure credentials (via az login)
