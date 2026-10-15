@@ -92,9 +92,6 @@ jobs:
       - name: Build DF - Saga
         run: dotnet build samples/durable-functions/dotnet/Saga/DurableFunctionsSaga.csproj
 
-      - name: Build DF - PdfSummarizer
-        run: dotnet build samples/durable-functions/dotnet/PdfSummarizer/pdf-summarizer-dotnet.csproj
-
       - name: Build DF - AiAgentTravelPlanOrchestrator
         run: dotnet build samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/TravelPlannerFunctions.csproj
 
@@ -220,9 +217,6 @@ jobs:
       # Durable Functions samples
       - name: Install DF - fan-out-fan-in
         run: pip install -r samples/durable-functions/python/fan-out-fan-in/requirements.txt
-
-      - name: Install DF - pdf-summarizer
-        run: pip install -r samples/durable-functions/python/pdf-summarizer/requirements.txt
 
       - name: Install DF - work-item-filtering
         run: pip install -r samples/durable-functions/python/work-item-filtering/requirements.txt

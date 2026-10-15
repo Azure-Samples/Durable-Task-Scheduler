@@ -62,7 +62,6 @@ A quick-reference matrix showing which patterns are available in each language a
 | Distributed Tracing | [✅](./durable-functions/dotnet/DistributedTracing) | | | | | |
 | Large Payload | [✅](./durable-functions/dotnet/LargePayload) | | | | | |
 | Large Payload Fan-out/Fan-in | [✅](./durable-functions/dotnet/LargePayloadFanOutFanIn) | | | | | |
-| PDF Summarizer | [✅](./durable-functions/dotnet/PdfSummarizer) | [✅](./durable-functions/python/pdf-summarizer) | | | | |
 | AI Travel Planner | [✅](./durable-functions/dotnet/AiAgentTravelPlanOrchestrator) | | | | | |
 | Aspire Integration | [✅](./durable-functions/dotnet/AzureFunctionsAndDtsWithAspire) | | | | | |
 | Agent-Directed Workflows | [✅](./durable-functions/dotnet/AgentDirectedWorkflows) | [✅](./durable-functions/python/agent-directed-workflows) | | | | |
@@ -163,7 +162,6 @@ Go samples in this repository are coming soon. The [official Go SDK repository](
 | [Aspire Integration](./durable-functions/dotnet/AzureFunctionsAndDtsWithAspire) | Aspire | Azure Functions + DTS with Aspire |
 | [Large Payload](./durable-functions/dotnet/LargePayload) | Large Payload | Single round-trip orchestration that externalizes payloads larger than 1 MB to blob storage |
 | [Large Payload Fan-out/Fan-in](./durable-functions/dotnet/LargePayloadFanOutFanIn) | Large Payload | Parallel orchestration that externalizes payloads larger than 1 MB for each activity result |
-| [PDF Summarizer](./durable-functions/dotnet/PdfSummarizer) | AI Pipeline | AI-powered document processing pipeline |
 | [AI Travel Planner](./durable-functions/dotnet/AiAgentTravelPlanOrchestrator) | AI Agents | Multi-agent travel planning orchestration |
 | [Distributed Tracing](./durable-functions/dotnet/DistributedTracing) | Observability | Distributed tracing with Application Insights and Jaeger |
 | [Agent-Directed Workflows](./durable-functions/dotnet/AgentDirectedWorkflows) | AI Agents | Entity-based agent loop with tool calling and Redis-backed response streaming |
@@ -175,7 +173,6 @@ Go samples in this repository are coming soon. The [official Go SDK repository](
 | Sample | Pattern | Description |
 |--------|---------|-------------|
 | [Hello Cities](./durable-functions/python/hello-cities) | Quickstart | Basic orchestration with greeting activities |
-| [PDF Summarizer](./durable-functions/python/pdf-summarizer) | AI Pipeline | AI-powered PDF summarization |
 | [Fan-out/Fan-in](./durable-functions/python/fan-out-fan-in) | Fan-out/Fan-in | Parallel processing with result aggregation |
 | [Agent-Directed Workflows](./durable-functions/python/agent-directed-workflows) | AI Agents | Entity-based agent loop with tool calling and response streaming |
 | [Work Item Filtering](./durable-functions/python/work-item-filtering) | Work Item Filtering | Route work between two Function apps sharing a task hub |
