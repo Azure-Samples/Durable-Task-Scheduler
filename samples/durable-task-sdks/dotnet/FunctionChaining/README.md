@@ -18,7 +18,7 @@ This pattern is useful for:
 
 ## Prerequisites
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
 3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 
@@ -112,7 +112,7 @@ The connection string is constructed dynamically based on the environment:
 // For local emulator
 connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=None";
 
-// For Azure deployed emulator
+// For a deployed Azure scheduler
 connectionString = $"Endpoint={schedulerEndpoint};TaskHub={taskHubName};Authentication=DefaultAzure";
 ```
 
@@ -150,7 +150,7 @@ Once you have set up either the emulator or deployed scheduler, follow these ste
 
 This sample includes an `azure.yaml` configuration file that allows you to deploy the entire solution to Azure using Azure Developer CLI (AZD).
 
-> **Note:** This sample uses the shared infrastructure templates located at [`samples/infra/`](../../infra/).
+> **Note:** This sample uses the shared infrastructure templates located at [`samples/infra/`](../../../infra/).
 
 #### Prerequisites for AZD Deployment
 
@@ -287,36 +287,35 @@ foreach (string id in allInstanceIds)
 ## Understanding the Output
 
 When you run the client, you should see:
-1. The client starting an orchestration with a name input
+1. The client scheduling 20 orchestrations with name inputs (`User_1` through `User_20`), one every 5 seconds
 2. The worker processing the chained activities
-3. The client displaying the final result from the completed orchestration
+3. The client reporting completion for each orchestration and final completed/failed counts
 
 Example output:
 ```
-Starting greeting orchestration for name: GitHub Copilot
-Started orchestration with ID: 7f8e9a6b-1c2d-3e4f-5a6b-7c8d9e0f1a2b
-Waiting for orchestration to complete...
-Orchestration completed with status: Completed
-Greeting result: Hello GitHub Copilot! It's nice to meet you. Welcome to the Durable Task Framework!
+Scheduling orchestration #1 (User_1)
+Orchestration #1 scheduled in 42ms with ID: 7f8e9a6b-1c2d-3e4f-5a6b-7c8d9e0f1a2b
+All 20 orchestrations scheduled. Waiting for completion...
+Orchestration 7f8e9a6b-1c2d-3e4f-5a6b-7c8d9e0f1a2b completed successfully
+FINAL RESULTS: 20 completed, 0 failed, 20 total orchestrations
 ```
+
+The client does not fetch orchestration output. In the dashboard, the first orchestration's output is `Hello User_1! How are you today? I hope you're doing well!`.
 
 When you run the sample, you'll see output from both the worker and client processes:
 
 ### Worker Output
 The worker shows:
 - Registration of the orchestrator and activities
-- Log entries when each activity is called, showing details of the order processing
-- The progression through the chain of activities from order processing to payment to shipping to notification
+- Log entries when each activity is called, showing the name or greeting received
+- The progression through `SayHelloActivity`, `ProcessGreetingActivity`, and `FinalizeResponseActivity`
 
 ### Client Output
 The client shows:
-- Starting the orchestration with the order details
+- Starting each orchestration with its name input
 - The unique orchestration instance ID
-- The final result, which includes:
-  - The order ID
-  - Status (which should be "Completed")
-  - Payment ID (randomly generated)
-  - Shipping ID (randomly generated)
+- Completion status for each instance (which should be "Completed")
+- Final counts of completed, failed, and total orchestrations
 
 This demonstrates the chaining of functions in a sequence, with each function building on the state from the previous one.
 
@@ -329,7 +328,7 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 2. Click on the "default" task hub
 3. You'll see the orchestration instance in the list
 4. Click on the instance ID to view the execution details, which will show:
-   - The sequential execution of the four activities
+   - The sequential execution of the three activities
    - The input and output at each step
    - The time taken for each step
 
@@ -340,4 +339,4 @@ To access the Durable Task Scheduler Dashboard and review your orchestration:
 4. Search for your orchestration instance ID
 5. Review the execution details
 
-The dashboard visualizes the sequential nature of function chaining, making it easy to see the flow of data from one activity to the next throughout the order processing workflow.
+The dashboard shows the sequential nature of function chaining and the flow of greeting data from one activity to the next.

@@ -31,7 +31,6 @@ jobs:
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
           dotnet-version: "10.x"
-          dotnet-quality: "preview"
 
       # Durable Task SDK samples (net10.0)
       - name: Build DTS - FunctionChaining
@@ -92,9 +91,6 @@ jobs:
 
       - name: Build DF - Saga
         run: dotnet build samples/durable-functions/dotnet/Saga/DurableFunctionsSaga.csproj
-
-      - name: Build DF - PdfSummarizer
-        run: dotnet build samples/durable-functions/dotnet/PdfSummarizer/pdf-summarizer-dotnet.csproj
 
       - name: Build DF - AiAgentTravelPlanOrchestrator
         run: dotnet build samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/TravelPlannerFunctions.csproj
@@ -222,9 +218,6 @@ jobs:
       - name: Install DF - fan-out-fan-in
         run: pip install -r samples/durable-functions/python/fan-out-fan-in/requirements.txt
 
-      - name: Install DF - pdf-summarizer
-        run: pip install -r samples/durable-functions/python/pdf-summarizer/requirements.txt
-
       - name: Install DF - work-item-filtering
         run: pip install -r samples/durable-functions/python/work-item-filtering/requirements.txt
 
@@ -248,7 +241,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
 
       # Durable Functions samples
       - name: Build DF JS - HelloCities
@@ -267,7 +260,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
-          node-version: "20"
+          node-version: "22"
 
       # Durable Functions samples
       - name: Build DF TS - HelloCities

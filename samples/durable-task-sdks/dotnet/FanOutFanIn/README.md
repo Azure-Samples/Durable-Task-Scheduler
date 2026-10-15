@@ -20,7 +20,7 @@ This pattern is useful for:
 
 ## Prerequisites
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 2. [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
 3. [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli) (if using a deployed Durable Task Scheduler)
 

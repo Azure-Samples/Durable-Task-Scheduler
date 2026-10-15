@@ -21,9 +21,9 @@ Click the image below to watch the video on YouTube.
 
 <a href="https://youtu.be/8Ot13RgT2oI"><img src="../../../../media/images/video_thumbnail.png" width="600px"></a>
 
-Let's begin working with Durable Functions using the new Durable Task Scheduler (private preview) backend provider.
+This quickstart uses Durable Functions with the Durable Task Scheduler backend provider.
 
-In this quickstart, the [provided sample](https://github.com/Azure/Azure-Functions-Durable-Task-Scheduler-Private-Preview/tree/main/quickstarts/HelloCities) uses the [official Durable Functions "hello cities" quickstart](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-isolated-create-first-csharp?pivots=code-editor-vscode). The sample schedules orchestrations that include 3 activities via an HTTP trigger.
+In this quickstart, the [provided sample](./http/) uses the [official Durable Functions "hello cities" quickstart](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-isolated-create-first-csharp?pivots=code-editor-vscode). The sample schedules orchestrations that include 3 activities via an HTTP trigger.
 
 This quickstart showcases the necessary configuration for using Durable Task Scheduler as the backend provider for your Durable Function app. The template defaults to **Elastic Premium EP1 sku plan on Linux**.
 
@@ -32,6 +32,8 @@ This quickstart showcases the necessary configuration for using Durable Task Sch
 
 - [Create an active Azure subscription](https://learn.microsoft.com/azure/guides/developer/azure-developer-guide#understanding-accounts-subscriptions-and-billing).
 - [Azure Developer CLI (`azd`)](https://aka.ms/azd) installed
+- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local) for the `func` commands below
 
 
 ## Log into the Azure CLI
@@ -40,6 +42,7 @@ In a terminal window, run the following command to log into the Azure CLI.
 
 ```azurecli
 az login
+azd auth login
 ```
 
 ## Clone the project
@@ -47,13 +50,13 @@ az login
 1. Clone this repo to your developer machine:
 
     ```shell
-    git clone https://github.com/Azure/Durable-Task-Scheduler.git
+    git clone https://github.com/Azure-Samples/Durable-Task-Scheduler.git
     ```
 
-1. Navigate to the `hello cities` source code directory:
+1. Navigate to the `hello cities` sample directory. The function source code is in its `http/` subdirectory:
 
     ```shell
-    cd Durable-Task-Scheduler/samples/durable-functions/dotnet/HelloCities/http/
+    cd Durable-Task-Scheduler/samples/durable-functions/dotnet/HelloCities
     ```
 
 1. Open the Application in VS Code:
@@ -73,7 +76,7 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
     az provider show --namespace Microsoft.DurableTask --query "resourceTypes[?resourceType=='schedulers'].locations | [0]" --out table
     ```
 
-1. Navigate to `quickstarts/hello_cities` and run the following command to provision:
+1. From the `samples/durable-functions/dotnet/HelloCities` directory containing `azure.yaml`, run the following command to provision:
 
     ```bash
     azd up
@@ -109,7 +112,7 @@ Use the [Azure Developer CLI (`azd`)](https://aka.ms/azd) to easily deploy the a
         Invoke url: https://my-func-app.azurewebsites.net/api/durablefunctionsorchestrationcsharp1_httpstart
 
     ``` 
-1. Navigate to the `DurableFunctionsOrchestrationsCSharp1_HttpStart` URL to start an order processing orchestration instance. Use the durable task scheduler dashboard to check orchestration details.
+1. Navigate to the `DurableFunctionsOrchestrationCSharp1_HttpStart` URL to start a Hello Cities orchestration instance. Use the Durable Task Scheduler dashboard to check the three greeting activities and their results.
 
 ## Access dashboard after deployment
 
@@ -133,7 +136,7 @@ You can access the dashboard by going to **https://dashboard.durabletask.io/** a
 
 ## Identity-based authentication
 
-The durable task scheduler supports identity-based authentication only. This sample sets up the authentication through specifications in bicep files. If you're configuring identity-based access yourself, refer to [documentation on Microsoft Learn](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler?tabs=function-app-integrated-creation&pivots=az-cli#configure-identity-based-authentication-for-app-to-access-durable-task-scheduler). 
+The durable task scheduler supports identity-based authentication only. This sample sets up the authentication through specifications in bicep files. If you're configuring identity-based access yourself, refer to [documentation on Microsoft Learn](https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler-identity).
 
 ## Clean up resources
 
@@ -235,4 +238,4 @@ az durabletask taskhub list -s "SCHEDULER-NAME" -g "RESOURCE-GROUP"
 
 Learn more about:
 - [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview)
-- [Durable Task Scheduler](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler)
+- [Durable Task Scheduler](https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler)

@@ -2,9 +2,9 @@
 
 In addition to [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview), the [Durable Task SDK for .NET](https://github.com/microsoft/durabletask-dotnet) can also use the durable task scheduler for managing orchestration state.
 
-This directory includes a sample .NET console app that demonstrates how to utilize Orchestration Versioning with the Durable Task SDK for .NET.
+This directory includes a sample ASP.NET Core web app that demonstrates how to use Orchestration Versioning with the Durable Task SDK for .NET.
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
 
@@ -267,8 +267,9 @@ Once logged in, you should see the orchestrations that were created by the sampl
 ## Optional: Deploy to Azure Container Apps
 
 1. Create an container app following the instructions in the [Azure Container App documentation](https://learn.microsoft.com/azure/container-apps/get-started?tabs=bash).
-1. During step 1, specify the deployed container app code folder at samples\durable-task-sdks\dotnet\OrchestrationVersioning
-1. Follow the instructions to create a user managed identity and assign the `Durable Task Data Contributor` role then attach it to the container app you created in step 1 at [Azure-Functions-Durable-Task-Scheduler-Private-Preview](..\..\..\..\docs\configure-existing-app.md#run-the-app-on-azure-net). Please skip section "Add required environment variables to app" since these environment variables are not required for deploying to container app.
+1. During step 1, specify the deployed container app code folder at `samples/durable-task-sdks/dotnet/OrchestrationVersioning`.
+1. Follow the [identity-based authentication guidance](https://learn.microsoft.com/azure/durable-task/scheduler/durable-task-scheduler-identity) to create a user-assigned managed identity, assign it the `Durable Task Data Contributor` role on your task hub, and attach it to the container app.
+1. Set the container app's `DURABLE_TASK_SCHEDULER_CONNECTION_STRING` environment variable to `Endpoint=<scheduler endpoint>;TaskHub=<task hub name>;Authentication=ManagedIdentity;ClientID=<managed identity client ID>`. The app requires this setting in Azure as well as locally.
 1. Call the container app endpoint at `http://sampleapi-<your-container-app-name>.azurecontainerapps.io/scenarios/hellocities?count=10`, Sample curl command:
 
     ```bash

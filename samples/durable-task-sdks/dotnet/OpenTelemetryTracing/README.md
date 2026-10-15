@@ -2,14 +2,14 @@
 
 | | |
 |-|-|
-| **Language** | C# (.NET 8) |
+| **Language** | C# (.NET 10) |
 | **SDK** | Durable Task SDK |
 
 This sample shows how to wire up [OpenTelemetry](https://opentelemetry.io/) with the Durable Task SDK to visualize orchestration flows in [Jaeger](https://www.jaegertracing.io/). It demonstrates trace correlation across an orchestrator, activities, and sub-orchestrations so you can see the full distributed trace of an order-processing workflow.
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Docker](https://www.docker.com/products/docker-desktop)
 
 ## Quick Run
@@ -43,7 +43,7 @@ dotnet run --project Client
 1. Open the Jaeger UI at **http://localhost:16686**
 2. Select the **durable-worker** service from the dropdown
 3. Click **Find Traces**
-4. Click on a trace to see the full span tree — you'll see the orchestrator span with child spans for each activity (`ValidateOrder`, `ProcessPayment`, `ShipOrder`, `SendNotification`)
+4. Click on a trace to see the full span tree: the orchestrator span with child spans for each activity (`ValidateOrder`, `ProcessPayment`, `ShipOrder`, `SendNotification`)
 
 You can also view the orchestration status in the DTS Dashboard at **http://localhost:8082**.
 
