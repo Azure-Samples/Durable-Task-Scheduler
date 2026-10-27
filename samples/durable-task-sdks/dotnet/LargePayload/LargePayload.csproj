@@ -8,11 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Identity" Version="1.21.0" />
-    <PackageReference Include="Azure.Storage.Blobs" Version="12.30.0" />
+    <PackageReference Include="Azure.Storage.Blobs" Version="12.30.1" />
     <PackageReference Include="Grpc.Net.Client" Version="2.84.0" />
-    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.26.0" />
-    <PackageReference Include="Microsoft.DurableTask.Extensions.AzureBlobPayloads" Version="1.26.0" />
-    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.26.0" />
+    <PackageReference Include="Microsoft.DurableTask.Client.AzureManaged" Version="1.27.0" />
+    <PackageReference Include="Microsoft.DurableTask.Extensions.AzureBlobPayloads" Version="1.27.0" />
+    <PackageReference Include="Microsoft.DurableTask.Worker.AzureManaged" Version="1.27.0" />
   </ItemGroup>
 
 </Project>
