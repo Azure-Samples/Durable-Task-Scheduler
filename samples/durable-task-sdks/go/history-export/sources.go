@@ -9,6 +9,7 @@ import (
 	"github.com/Azure-Samples/Durable-Task-Scheduler/samples/durable-task-sdks/go/internal/sample"
 	"github.com/microsoft/durabletask-go/api"
 	dts "github.com/microsoft/durabletask-go/durabletaskscheduler"
+	"github.com/microsoft/durabletask-go/exporthistory"
 )
 
 const sourceCount = 5
@@ -87,7 +88,7 @@ func prepareExport(ctx context.Context, worker *historyWorker, batch exportBatch
 		CompletedTimeTo:   to,
 		PageSize:          2,
 	}
-	return query, waitUntilListable(ctx, worker.source, query)
+	return query, waitUntilListable(ctx, worker.sourceClient, query, len(batch.Sources))
 }
 
 func completionWindow(sources []sourceInstance) (time.Time, time.Time) {
@@ -105,11 +106,11 @@ func completionWindow(sources []sourceInstance) (time.Time, time.Time) {
 	return from.Truncate(time.Second), to.Truncate(time.Second).Add(time.Second)
 }
 
-func waitUntilListable(ctx context.Context, source *ownedHistorySource, query api.InstanceIDQuery) error {
+func waitUntilListable(ctx context.Context, source exporthistory.HistorySource, query api.InstanceIDQuery, expectedCount int) error {
 	visible := 0
 	err := sample.Until(ctx, 500*time.Millisecond, func() (bool, error) {
 		pageQuery := query
-		found := make(map[api.InstanceID]struct{}, len(source.allowed))
+		found := make(map[api.InstanceID]struct{}, expectedCount)
 		tokens := make(map[string]struct{})
 		for {
 			page, err := source.ListInstanceIDs(ctx, pageQuery)
@@ -121,7 +122,7 @@ func waitUntilListable(ctx context.Context, source *ownedHistorySource, query ap
 			}
 			if page.ContinuationToken == "" {
 				visible = len(found)
-				return visible == len(source.allowed), nil
+				return visible == expectedCount, nil
 			}
 			if _, repeated := tokens[page.ContinuationToken]; repeated {
 				return false, errors.New("instance listing returned a repeated continuation token")
@@ -131,7 +132,7 @@ func waitUntilListable(ctx context.Context, source *ownedHistorySource, query ap
 		}
 	})
 	if err != nil {
-		return fmt.Errorf("wait for all owned instances to be visible in the completion-time index (%d/%d visible): %w", visible, len(source.allowed), err)
+		return fmt.Errorf("wait for source instances to appear in the completion-time index (%d/%d visible): %w", visible, expectedCount, err)
 	}
 	return nil
 }

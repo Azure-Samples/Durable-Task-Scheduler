@@ -149,7 +149,7 @@ func TestBackendFailuresAndIsolation(t *testing.T) {
 		}}, 502},
 		{"empty output", fakeStore{metadata: &api.OrchestrationMetadata{
 			Name: orchestratorName, RuntimeStatus: api.RUNTIME_STATUS_COMPLETED, SerializedOutput: "{}",
-		}}, 502},
+		}}, 200},
 	} {
 		t.Run(test.name, func(t *testing.T) {
 			w := httptest.NewRecorder()

@@ -24,7 +24,7 @@ type payloadWorker struct {
 
 func startWorker(ctx context.Context) (*payloadWorker, error) {
 	container := string(sample.ID("large-payload"))
-	workflow := newPayloadWorkflow(container)
+	workflow := newPayloadWorkflow()
 	storeOptions, err := storageOptions(container)
 	if err != nil {
 		return nil, err

@@ -12,13 +12,9 @@ type versionResult struct {
 	ActivityVersions []string `json:"activity_versions"`
 }
 
-func versionedGreeting(ctx *task.OrchestrationContext) (any, error) {
+func versionedGreeting(ctx *task.OrchestrationContext, steps []string) (any, error) {
 	var name string
 	if err := ctx.GetInput(&name); err != nil {
-		return nil, err
-	}
-	steps, err := stepsForVersion(ctx.Version)
-	if err != nil {
 		return nil, err
 	}
 	result := versionResult{Version: ctx.Version}

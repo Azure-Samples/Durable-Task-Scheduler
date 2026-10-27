@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"os"
 
 	"github.com/Azure-Samples/Durable-Task-Scheduler/samples/durable-task-sdks/go/internal/sample"
 	"github.com/microsoft/durabletask-go/api"
@@ -20,14 +19,11 @@ const (
 type historyWorker struct {
 	*sample.Host
 	sourceClient *dts.Client
-	source       *ownedHistorySource
-	lifetime     exportWorkerLifetime
+	workerCtx    context.Context
+	cancelWorker context.CancelFunc
 }
 
-func startWorker(ctx context.Context, batch exportBatch, store exporthistory.Store) (_ *historyWorker, err error) {
-	if err := requireIsolatedTaskHub(os.Getenv("HISTORY_EXPORT_ISOLATED_TASKHUB")); err != nil {
-		return nil, err
-	}
+func startWorker(ctx context.Context, store exporthistory.Store) (_ *historyWorker, err error) {
 	options, err := sample.Options()
 	if err != nil {
 		return nil, err
@@ -41,11 +37,6 @@ func startWorker(ctx context.Context, batch exportBatch, store exporthistory.Sto
 			err = errors.Join(err, sourceClient.Close())
 		}
 	}()
-	allowed := make(map[api.InstanceID]struct{}, len(batch.Sources))
-	for _, source := range batch.Sources {
-		allowed[source.ID] = struct{}{}
-	}
-	source := &ownedHistorySource{inner: sourceClient, allowed: allowed}
 	registry := task.NewTaskRegistry()
 	if err := registry.AddOrchestratorN(orchestratorName, squareOrchestrator); err != nil {
 		return nil, err
@@ -54,32 +45,22 @@ func startWorker(ctx context.Context, batch exportBatch, store exporthistory.Sto
 		return nil, err
 	}
 	if err := exporthistory.Register(registry, exporthistory.WorkerOptions{
-		Source: source,
-		Store: &ownedHistoryStore{
-			inner: store, allowed: allowed, container: batch.Container, prefix: batch.Prefix,
-		},
+		Source:       sourceClient,
+		Store:        store,
 		HistoryQuery: api.HistoryQuery{MaxEvents: maxHistoryEvents, MaxBytes: maxHistoryBytes},
 	}); err != nil {
 		return nil, err
 	}
-	lifetime := newExportWorkerLifetime(ctx)
-	host, err := sample.StartWithWorkerContext(ctx, lifetime.context, registry, options, exporthistory.WithExportHistory())
+	workerCtx, cancelWorker := context.WithCancel(context.WithoutCancel(ctx))
+	host, err := sample.StartWithWorkerContext(ctx, workerCtx, registry, options, exporthistory.WithExportHistory())
 	if err != nil {
-		lifetime.cancel()
+		cancelWorker()
 		return nil, err
 	}
-	return &historyWorker{Host: host, sourceClient: sourceClient, source: source, lifetime: lifetime}, nil
+	return &historyWorker{Host: host, sourceClient: sourceClient, workerCtx: workerCtx, cancelWorker: cancelWorker}, nil
 }
 
 func (w *historyWorker) Close() error {
-	return errors.Join(w.lifetime.close(w.Host.Close), w.sourceClient.Close())
-}
-
-func requireIsolatedTaskHub(acknowledgement string) error {
-	if acknowledgement != "1" {
-		return errors.New("history export requires an isolated task hub with no other export workers: " +
-			"the SDK lists whole completion-time windows, not instance prefixes; " +
-			"set HISTORY_EXPORT_ISOLATED_TASKHUB=1 only after ensuring isolation")
-	}
-	return nil
+	defer w.cancelWorker()
+	return errors.Join(w.Host.Close(), w.sourceClient.Close())
 }

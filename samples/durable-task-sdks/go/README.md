@@ -134,14 +134,14 @@ docker run -d --rm --name go-azurite \
   -p 127.0.0.1:10000:10000 mcr.microsoft.com/azure-storage/azurite:latest \
   azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
 
-HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \
+DTS_SAMPLES_E2E=1 \
   go test -v -count=1 -timeout 30m ./e2e
 ```
 
-Set `HISTORY_EXPORT_ISOLATED_TASKHUB=1` only when the task hub has no other
-export workers and no unrelated work. The flag does not create or isolate a hub.
-
-The runner runs each demo, then its `TestIntegration`, one sample at a time.
+Configure the DTS emulator with both `default` and `historyexport` hubs
+(`DTS_TASK_HUB_NAMES=default,historyexport`). For Azure, create a dedicated
+`historyexport` hub. The runner uses that hub for history export and runs each
+demo, then its `TestIntegration`, one sample at a time.
 Skipped integration tests count as failures. To rerun one sample, add
 `-run 'TestSamples/function-chaining$'`. For Azure, set `DTS_CONNECTION_STRING`
 and run the same command.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ func exerciseHistoryExport(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	worker, err := startWorker(ctx, batch, store)
+	worker, err := startWorker(ctx, store)
 	if err != nil {
 		return err
 	}
@@ -62,7 +63,7 @@ func exerciseHistoryExport(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	return withJobCleanup(ctx, worker.lifetime.context, job, func() error {
+	return withJobCleanup(ctx, worker.workerCtx, job, func() error {
 		description, err := executeExport(ctx, job, query)
 		if err != nil {
 			return err
@@ -123,6 +124,19 @@ type pausedHistoryStore struct {
 	beforeWrite func(context.Context) error
 }
 
+func pauseBeforeWrite(ctx context.Context, reportActive func()) func(context.Context) error {
+	var once sync.Once
+	return func(writeCtx context.Context) error {
+		once.Do(reportActive)
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-writeCtx.Done():
+			return writeCtx.Err()
+		}
+	}
+}
+
 func (s pausedHistoryStore) Write(ctx context.Context, object exporthistory.ExportObject) error {
 	if err := s.beforeWrite(ctx); err != nil {
 		return err
@@ -142,7 +156,7 @@ func exerciseCanceledExport(ctx context.Context) (err error) {
 		return err
 	}
 	active := make(chan struct{})
-	worker, err := startWorker(scenario, batch, pausedHistoryStore{
+	worker, err := startWorker(scenario, pausedHistoryStore{
 		Store: store, beforeWrite: pauseBeforeWrite(scenario, func() { close(active) }),
 	})
 	if err != nil {
@@ -159,7 +173,7 @@ func exerciseCanceledExport(ctx context.Context) (err error) {
 	}
 	finished := make(chan error, 1)
 	go func() {
-		finished <- withJobCleanup(scenario, worker.lifetime.context, job, func() error {
+		finished <- withJobCleanup(scenario, worker.workerCtx, job, func() error {
 			_, err := executeExport(scenario, job, query)
 			return err
 		})
@@ -190,7 +204,7 @@ func exerciseCanceledExport(ctx context.Context) (err error) {
 		"cancellation was not preserved: %v", canceledErr); err != nil {
 		return err
 	}
-	if worker.lifetime.context.Err() != nil {
+	if worker.workerCtx.Err() != nil {
 		return errors.New("worker stopped before cleanup could finish")
 	}
 	if _, err := job.Describe(ctx); !errors.Is(err, exporthistory.ErrJobNotFound) {

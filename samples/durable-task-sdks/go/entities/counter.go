@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/microsoft/durabletask-go/task"
@@ -19,7 +20,8 @@ func counter(ctx *task.EntityContext) (any, error) {
 			return nil, err
 		}
 	}
-	switch ctx.Operation {
+	operation := strings.ToLower(ctx.Operation)
+	switch operation {
 	case "get":
 		return state.Value, nil
 	case "snapshot":
@@ -29,12 +31,12 @@ func counter(ctx *task.EntityContext) (any, error) {
 		return nil, nil
 	}
 	var amount int
-	if ctx.Operation == "add" || ctx.Operation == "subtract" {
+	if operation == "add" || operation == "subtract" {
 		if err := ctx.GetInput(&amount); err != nil {
 			return nil, err
 		}
 	}
-	if err := state.change(ctx.Operation, amount, ctx.CurrentTimeUTC()); err != nil {
+	if err := state.change(operation, amount, ctx.CurrentTimeUTC()); err != nil {
 		return nil, err
 	}
 	if err := ctx.SetState(state); err != nil {

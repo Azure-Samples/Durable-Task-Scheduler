@@ -17,7 +17,7 @@ func run(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	worker, err := startWorker(ctx, batch, store)
+	worker, err := startWorker(ctx, store)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func run(ctx context.Context) (err error) {
 		return err
 	}
 	fmt.Printf("Destination: %s/%s\n", batch.Container, batch.Prefix)
-	err = withJobCleanup(ctx, worker.lifetime.context, job, func() error {
+	err = withJobCleanup(ctx, worker.workerCtx, job, func() error {
 		description, err := executeExport(ctx, job, query)
 		if err != nil {
 			return err

@@ -71,8 +71,13 @@ func TestSamples(t *testing.T) {
 	}
 	for _, name := range samples {
 		t.Run(name, func(t *testing.T) {
-			// Keep workers sequential: history export must not overlap other
-			// workloads in the same hub.
+			if name == "history-export" {
+				if connection := os.Getenv("DTS_CONNECTION_STRING"); connection != "" {
+					t.Setenv("DTS_CONNECTION_STRING", taskHubConnectionString(connection, "historyexport"))
+				} else {
+					t.Setenv("TASKHUB", "historyexport")
+				}
+			}
 			t.Run("demo", func(t *testing.T) {
 				ctx, cancel := context.WithTimeout(t.Context(), 4*time.Minute)
 				defer cancel()
@@ -97,6 +102,37 @@ func TestSamples(t *testing.T) {
 				t.Logf("%s", output)
 			})
 		})
+	}
+}
+
+func taskHubConnectionString(connection, hub string) string {
+	parts := strings.Split(connection, ";")
+	found := false
+	for i, part := range parts {
+		key, _, ok := strings.Cut(part, "=")
+		if ok && strings.EqualFold(strings.TrimSpace(key), "TaskHub") {
+			parts[i] = "TaskHub=" + hub
+			found = true
+		}
+	}
+	if found {
+		return strings.Join(parts, ";")
+	}
+	return strings.TrimRight(connection, ";") + ";TaskHub=" + hub
+}
+
+func TestTaskHubConnectionString(t *testing.T) {
+	for _, test := range []struct {
+		connection string
+		want       string
+	}{
+		{"Endpoint=http://localhost:8080;TaskHub=default;Authentication=None", "Endpoint=http://localhost:8080;TaskHub=historyexport;Authentication=None"},
+		{"Endpoint=http://localhost:8080;Authentication=None", "Endpoint=http://localhost:8080;Authentication=None;TaskHub=historyexport"},
+		{"Endpoint=http://localhost:8080;taskhub=default;", "Endpoint=http://localhost:8080;TaskHub=historyexport;"},
+	} {
+		if got := taskHubConnectionString(test.connection, "historyexport"); got != test.want {
+			t.Errorf("taskHubConnectionString(%q) = %q, want %q", test.connection, got, test.want)
+		}
 	}
 }
 

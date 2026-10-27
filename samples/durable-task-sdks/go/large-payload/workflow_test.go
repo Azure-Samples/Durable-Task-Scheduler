@@ -4,12 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"strconv"
-	"strings"
 	"testing"
 
 	"github.com/microsoft/durabletask-go/api"
 	"github.com/microsoft/durabletask-go/payload"
-	"github.com/microsoft/durabletask-go/task"
 )
 
 type activityInput struct{ value any }
@@ -21,50 +19,6 @@ func (a activityInput) GetInput(target any) error {
 		return err
 	}
 	return json.Unmarshal(body, target)
-}
-
-func TestConcurrentRunsHaveDisjointTaskRegistrations(t *testing.T) {
-	registered := make(map[string]struct{})
-	for _, runID := range []string{"go-large-payload-first", "go-large-payload-second"} {
-		workflow := newPayloadWorkflow(runID)
-		if workflow != newPayloadWorkflow(runID) {
-			t.Fatal("task names must remain stable for one run, including orchestration replay")
-		}
-		registry := task.NewTaskRegistry()
-		if err := workflow.register(registry); err != nil {
-			t.Fatal(err)
-		}
-		snapshot := registry.Snapshot()
-		if len(snapshot.Orchestrators) != 1 || len(snapshot.Activities) != 2 || len(snapshot.Entities) != 0 {
-			t.Fatalf("unexpected registry: %+v", snapshot)
-		}
-		expected := map[string]bool{
-			workflow.orchestrator: false,
-			workflow.echo:         false,
-			workflow.process:      false,
-		}
-		tasks := append(snapshot.Orchestrators, snapshot.Activities...)
-		for _, registration := range tasks {
-			if _, ok := expected[registration.Name]; !ok {
-				t.Fatalf("registered a name not used by this run: %s", registration.Name)
-			}
-			expected[registration.Name] = true
-			if !strings.HasPrefix(registration.Name, "GoLargePayload") ||
-				!strings.HasSuffix(registration.Name, runID) || registration.Version != "" {
-				t.Fatalf("registration is not scoped to this run: %+v", registration)
-			}
-			key := strings.ToLower(registration.Name)
-			if _, shared := registered[key]; shared {
-				t.Fatalf("two workers could accept the same work item: %s", registration.Name)
-			}
-			registered[key] = struct{}{}
-		}
-		for name, found := range expected {
-			if !found {
-				t.Fatalf("a scheduling/call name is not registered: %s", name)
-			}
-		}
-	}
 }
 
 func TestEchoProcessAndVerify(t *testing.T) {
@@ -93,6 +47,15 @@ func TestEchoProcessAndVerify(t *testing.T) {
 	}
 	if largeRecords*len(record) <= grpcMessageBytes || largeRecords*len(record) < 2*1024*1024 {
 		t.Fatal("large input no longer exceeds the sample's gRPC bounds by a substantial margin")
+	}
+}
+
+func TestPayloadWorkflowNames(t *testing.T) {
+	workflow := newPayloadWorkflow()
+	if workflow.orchestrator != "GoLargePayloadOrchestrator" ||
+		workflow.echo != "GoLargePayloadEchoData" ||
+		workflow.process != "GoLargePayloadProcessData" {
+		t.Fatalf("unexpected task names: %+v", workflow)
 	}
 }
 

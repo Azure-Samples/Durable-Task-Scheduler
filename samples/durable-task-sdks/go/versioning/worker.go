@@ -20,7 +20,11 @@ var versions = []string{"1.0.0", "2.0.0", "3.0.0", currentVersion}
 func newRegistry() (*task.TaskRegistry, error) {
 	registry := task.NewTaskRegistry()
 	for _, version := range versions {
-		if err := registry.AddOrchestratorNVersion(orchestrationName, version, versionedGreeting); err != nil {
+		steps, err := stepsForVersion(version)
+		if err != nil {
+			return nil, err
+		}
+		if err := registry.AddOrchestratorNVersion(orchestrationName, version, greetingForSteps(steps)); err != nil {
 			return nil, err
 		}
 		for _, activity := range []struct {
@@ -37,6 +41,12 @@ func newRegistry() (*task.TaskRegistry, error) {
 		}
 	}
 	return registry, nil
+}
+
+func greetingForSteps(steps []string) task.Orchestrator {
+	return func(ctx *task.OrchestrationContext) (any, error) {
+		return versionedGreeting(ctx, steps)
+	}
 }
 
 func startWorker(ctx context.Context) (*sample.Host, error) {

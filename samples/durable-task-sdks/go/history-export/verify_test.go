@@ -55,7 +55,7 @@ func verifyExportBlobs(ctx context.Context, client *azblob.Client, container, pr
 			}
 			source, owned := expected[api.InstanceID(instanceID)]
 			if !owned {
-				return 0, errUnownedHistory
+				return 0, errors.New("export contains an unexpected instance")
 			}
 			if _, duplicate := seen[source.ID]; duplicate {
 				return 0, errors.New("duplicate exported instance")

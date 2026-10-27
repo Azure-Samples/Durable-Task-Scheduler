@@ -8,11 +8,11 @@ type payloadWorkflow struct {
 	process      string
 }
 
-func newPayloadWorkflow(runID string) payloadWorkflow {
+func newPayloadWorkflow() payloadWorkflow {
 	return payloadWorkflow{
-		orchestrator: "GoLargePayloadOrchestrator-" + runID,
-		echo:         "GoLargePayloadEchoData-" + runID,
-		process:      "GoLargePayloadProcessData-" + runID,
+		orchestrator: "GoLargePayloadOrchestrator",
+		echo:         "GoLargePayloadEchoData",
+		process:      "GoLargePayloadProcessData",
 	}
 }
 

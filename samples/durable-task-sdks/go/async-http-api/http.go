@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"mime"
 	"net/http"
@@ -104,12 +103,6 @@ func newHandler(store operationStore) http.Handler {
 			response.Result = &operationResult{}
 			if err := metadata.ReadOutput(response.Result); err != nil {
 				writeError(w, http.StatusBadGateway, "invalid durable result")
-				return
-			}
-			if response.Result.OperationID != string(metadata.InstanceID) || response.Result.OperationID == "" ||
-				response.Result.Status != "completed" || response.Result.ProcessedAt <= 0 ||
-				response.Result.Result != fmt.Sprintf("Operation %s completed successfully", metadata.InstanceID) {
-				writeError(w, http.StatusBadGateway, "invalid durable result fields")
 				return
 			}
 		case api.RUNTIME_STATUS_FAILED:

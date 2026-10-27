@@ -279,7 +279,7 @@ jobs:
           docker run --detach --pull=always --name "$GO_DTS_CONTAINER" \
             --label "dts-samples-owner=$GO_CONTAINERS_OWNER" \
             --publish 127.0.0.1:8080:8080 --publish 127.0.0.1:8082:8082 \
-            --env DTS_TASK_HUB_NAMES=default \
+            --env DTS_TASK_HUB_NAMES=default,historyexport \
             mcr.microsoft.com/dts/dts-emulator:latest
           docker run --detach --pull=always --name "$GO_AZURITE_CONTAINER" \
             --label "dts-samples-owner=$GO_CONTAINERS_OWNER" \
@@ -313,7 +313,6 @@ jobs:
         timeout-minutes: 17
         env:
           DTS_SAMPLES_E2E: "1"
-          HISTORY_EXPORT_ISOLATED_TASKHUB: "1"
           DTS_CONNECTION_STRING: "Endpoint=http://localhost:8080;TaskHub=default;Authentication=None"
           AZURE_STORAGE_CONNECTION_STRING: "UseDevelopmentStorage=true"
           AZURE_STORAGE_BLOB_ENDPOINT: ""

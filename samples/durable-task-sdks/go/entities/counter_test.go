@@ -34,7 +34,7 @@ func TestCounterOperations(t *testing.T) {
 }
 
 func TestCounterStateCallsAndDeletion(t *testing.T) {
-	ctx := &task.EntityContext{Operation: "get"}
+	ctx := &task.EntityContext{Operation: "GET"}
 	got, err := counter(ctx)
 	if err != nil || got != 0 || ctx.HasState() {
 		t.Fatalf("initial get = %v, %v; has state = %v", got, err, ctx.HasState())

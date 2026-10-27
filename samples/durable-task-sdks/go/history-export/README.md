@@ -11,21 +11,18 @@ job. Exported history blobs are kept.
 - Azurite at `127.0.0.1:10000`, or an existing Azure Blob Storage account. The
   [large-payload compose file](../large-payload/docker-compose.yml) can start
   Azurite.
-- **A separate task hub** with no other export workers. No unrelated
-  orchestrations may complete during the export time range. This applies to the
-  emulator and to Azure.
+- **A separate task hub** with no unrelated orchestrations completing during
+  the export time range. The export API filters by completion time and status,
+  not by instance ID.
 
-The export can filter only by completion time and status, not by instance ID,
-name, or tag. The sample checks instance IDs and returns an error if it finds
-another run's data. `HISTORY_EXPORT_ISOLATED_TASKHUB=1` only confirms that you
-use a separate hub. It does not create one.
+Use a task hub dedicated to this sample. The demo and integration test also
+create their own source histories in that hub.
 
 ## Run
 
-From this directory, after you confirm the hub is separate:
+Set `DTS_CONNECTION_STRING` to the dedicated task hub, then run:
 
 ```bash
-export HISTORY_EXPORT_ISOLATED_TASKHUB=1
 go run . -timeout 3m
 ```
 
@@ -61,9 +58,8 @@ Export job deleted; history blobs retained.
 | [client.go](client.go) | Creates the export job and shows its status |
 | [worker.go](worker.go) | Registers the export feature and starts the worker |
 | [sources.go](sources.go) | Creates source instances and picks the time range |
-| [storage.go](storage.go), [ownership.go](ownership.go) | Blob setup and checks that block unrelated data |
-| [lifecycle.go](lifecycle.go) | Deletes jobs and stops workers |
-| [integration_test.go](integration_test.go), [verify_test.go](verify_test.go) | Archive checks and job cancellation |
+| [storage.go](storage.go) | Configures Blob Storage |
+| [integration_test.go](integration_test.go), [verify_test.go](verify_test.go) | Checks exports and job cancellation |
 
 ## Tests
 
@@ -72,13 +68,12 @@ go test -mod=readonly .
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-Run the integration test only on a separate hub with Blob Storage configured.
+Run the integration test only on a dedicated hub with Blob Storage configured.
 It downloads the five gzip JSONL blobs and checks their content. It also
 cancels an active export job and checks cleanup.
 
 ## Cleanup
 
-Cleanup deletes only this run's export job, with a 30-second limit. Source
-histories and Blob containers are kept. Nothing else in the hub is deleted.
+The sample deletes its export job. It keeps source histories and Blob containers.
 
 See the [export API and limitations](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta3/exporthistory/README.md).

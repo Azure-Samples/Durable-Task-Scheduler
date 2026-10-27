@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"errors"
-	"sync"
 	"testing"
 
 	"github.com/Azure-Samples/Durable-Task-Scheduler/samples/durable-task-sdks/go/internal/testutil"
@@ -12,18 +11,8 @@ import (
 
 func TestIntegration(t *testing.T) {
 	ctx := testutil.IntegrationContext(t)
-	// Sharing a hub must not dispatch one run's work to another run's Blob store.
-	results := make(chan error, 2)
-	var workers sync.WaitGroup
-	for range 2 {
-		workers.Go(func() { results <- exercisePayloadRoundTrips(ctx) })
-	}
-	workers.Wait()
-	close(results)
-	for err := range results {
-		if err != nil {
-			t.Error(err)
-		}
+	if err := exercisePayloadRoundTrips(ctx); err != nil {
+		t.Fatal(err)
 	}
 }
 

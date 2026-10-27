@@ -3,101 +3,14 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
-	"context"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
-	"io"
-	"reflect"
 	"testing"
 	"time"
 
 	"github.com/microsoft/durabletask-go/api"
 	"github.com/microsoft/durabletask-go/exporthistory"
 )
-
-type fakeSource struct {
-	ids   []api.InstanceID
-	query api.InstanceIDQuery
-	reads int
-}
-
-func (s *fakeSource) ListInstanceIDs(_ context.Context, query api.InstanceIDQuery) (*api.InstanceIDQueryResult, error) {
-	s.query = query
-	return &api.InstanceIDQueryResult{InstanceIDs: s.ids}, nil
-}
-func (s *fakeSource) FetchOrchestrationMetadata(_ context.Context, _ api.InstanceID, _ ...api.FetchOrchestrationMetadataOptions) (*api.OrchestrationMetadata, error) {
-	s.reads++
-	return &api.OrchestrationMetadata{}, nil
-}
-func (s *fakeSource) StreamOrchestrationHistory(_ context.Context, _ api.InstanceID, _ api.HistoryQuery, _ api.HistoryEventHandler) error {
-	s.reads++
-	return nil
-}
-
-func TestOwnershipGuardNeverReadsUnrelatedHistory(t *testing.T) {
-	inner := &fakeSource{ids: []api.InstanceID{"mine"}}
-	source := &ownedHistorySource{inner: inner, allowed: map[api.InstanceID]struct{}{"mine": {}}}
-	ctx := context.Background()
-	query := api.InstanceIDQuery{
-		CompletedTimeFrom: time.Now().Add(-time.Minute), CompletedTimeTo: time.Now(),
-		RuntimeStatus: []api.OrchestrationStatus{api.RUNTIME_STATUS_COMPLETED}, PageSize: 2,
-	}
-	if _, err := source.ListInstanceIDs(ctx, query); err != nil {
-		t.Fatal(err)
-	}
-	if !reflect.DeepEqual(inner.query, query) {
-		t.Fatal("the bounded query was not preserved")
-	}
-	inner.ids = append(inner.ids, "unrelated")
-	if _, err := source.ListInstanceIDs(ctx, query); !errors.Is(err, errUnownedHistory) {
-		t.Fatalf("mixed page was not rejected: %v", err)
-	}
-	if _, err := source.FetchOrchestrationMetadata(ctx, "unrelated"); !errors.Is(err, errUnownedHistory) {
-		t.Fatalf("unrelated metadata read was not rejected: %v", err)
-	}
-	if err := source.StreamOrchestrationHistory(ctx, "unrelated", api.HistoryQuery{}, nil); !errors.Is(err, errUnownedHistory) {
-		t.Fatalf("unrelated history read was not rejected: %v", err)
-	}
-	if inner.reads != 0 {
-		t.Fatal("guard allowed an unrelated read to reach the SDK")
-	}
-}
-
-type fakeStore struct{ writes int }
-
-func (s *fakeStore) Write(_ context.Context, object exporthistory.ExportObject) error {
-	s.writes++
-	_, err := io.Copy(io.Discard, object.Content)
-	return err
-}
-
-func TestStorageOwnershipGuard(t *testing.T) {
-	inner := &fakeStore{}
-	store := &ownedHistoryStore{
-		inner: inner, container: "mine", prefix: "job/",
-		allowed: map[api.InstanceID]struct{}{"mine": {}},
-	}
-	object := exporthistory.ExportObject{
-		Container: "mine", Name: "job/history.jsonl.gz",
-		Metadata: map[string]string{"instanceId": "mine"}, Content: bytes.NewReader(nil),
-	}
-	if err := store.Write(context.Background(), object); err != nil {
-		t.Fatal(err)
-	}
-	object.Name = "other-job/history.jsonl.gz"
-	if err := store.Write(context.Background(), object); err == nil {
-		t.Fatal("wrong prefix accepted")
-	}
-	object.Name = "job/history.jsonl.gz"
-	object.Metadata["instanceId"] = "other"
-	if err := store.Write(context.Background(), object); err == nil {
-		t.Fatal("unowned history accepted")
-	}
-	if inner.writes != 1 {
-		t.Fatal("invalid writes reached the underlying store")
-	}
-}
 
 func validHistory() ([]api.HistoryEvent, sourceExecution) {
 	source := sourceExecution{ID: "go-source", ExecutionID: "execution", Input: 3}
@@ -176,7 +89,7 @@ func TestRejectIncompleteOrCorruptHistory(t *testing.T) {
 	}
 }
 
-func TestMetadataAndIsolation(t *testing.T) {
+func TestMetadataID(t *testing.T) {
 	value := base64.RawURLEncoding.EncodeToString([]byte("go-source-你好"))
 	got, err := decodeMetadataID(map[string]*string{"Instanceidbase64": &value}, "instanceIdBase64")
 	if err != nil || got != "go-source-你好" {
@@ -184,14 +97,6 @@ func TestMetadataAndIsolation(t *testing.T) {
 	}
 	if _, err := decodeMetadataID(nil, "instanceIdBase64"); err == nil {
 		t.Fatal("missing metadata accepted")
-	}
-	for _, flag := range []string{"", "true", "0"} {
-		if requireIsolatedTaskHub(flag) == nil {
-			t.Fatal("isolation must be explicitly acknowledged with 1")
-		}
-	}
-	if err := requireIsolatedTaskHub("1"); err != nil {
-		t.Fatal(err)
 	}
 }
 
