@@ -4,7 +4,7 @@
 durabletask-azuremanaged>=1.9.0
 
 # OpenAI SDK (Responses API)
-openai>=3.6.0
+openai>=3.20.0
 
 # Azure Identity for Entra ID authentication (optional)
 azure-identity>=1.25.3
@@ -23,9 +23,9 @@ python-dotenv>=1.2.2
 rich>=15.0.0
 
 # Pydantic for data validation (included with FastAPI)
-pydantic>=2.13.3
+pydantic>=2.13.5
 
 # Testing dependencies
-pytest>=9.0.3
+pytest>=9.1.1
 pytest-asyncio>=1.4.0
 pytest-cov>=4.0.0

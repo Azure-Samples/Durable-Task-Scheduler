@@ -1,5 +1,5 @@
 azure-functions
 azure-functions-durable
 redis
-openai>=3.6.0
+openai>=3.28.0
 azure-identity>=1.25.3

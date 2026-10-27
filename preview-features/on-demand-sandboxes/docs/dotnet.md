@@ -1,9 +1,9 @@
 # On-demand Sandboxes: .NET guide
 
-> **Status:** Private preview · [Back to overview](./README.md)
+> **Status:** Private preview · [Back to overview](../README.md)
 
 This guide walks through using On-demand Sandboxes with the **.NET** Durable Task SDK.
-Make sure you've read the [overview](./README.md) first.
+Make sure you've read the [overview](../README.md) first.
 
 On-demand Sandboxes use a two-part model: a **sandbox worker profile** in your
 orchestrator app that tells DTS which activities to offload, and a **worker image** that
@@ -258,4 +258,4 @@ sinks or building your own observability pipeline.
 - [Configure the scheduler identity for image pull](#configure-the-scheduler-identity-for-image-pull)
 - [End-to-end .NET sample](../samples/dotnet)
 - [Python guide](./python.md)
-- [Back to overview](./README.md)
+- [Back to overview](../README.md)

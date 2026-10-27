@@ -51,12 +51,12 @@ chances of your issue being dealt with quickly:
 * **Suggest a Fix** - if you can't fix the bug yourself, perhaps you can point to what might be
   causing the problem (line of code or commit)
 
-You can file new issues by providing the above information at the corresponding repository's issues link: https://github.com/Azure/Durable-Task-Scheduler/issues/new.
+You can file new issues by providing the above information at the corresponding repository's issues link: https://github.com/Azure-Samples/Durable-Task-Scheduler/issues/new.
 
 ### <a name="submit-pr"></a> Submitting a Pull Request (PR)
 Before you submit your Pull Request (PR) consider the following guidelines:
 
-* Search the repository (https://github.com/Azure/Durable-Task-Scheduler/pulls) for an open or closed PR
+* Search the repository (https://github.com/Azure-Samples/Durable-Task-Scheduler/pulls) for an open or closed PR
   that relates to your submission. You don't want to duplicate effort.
 
 * Make your changes in a new git fork:
@@ -69,7 +69,7 @@ Before you submit your Pull Request (PR) consider the following guidelines:
   * Rebase your fork and force push to your GitHub repository (this will update your Pull Request):
 
     ```shell
-    git rebase master -i
+    git rebase main -i
     git push -f
     ```
 
@@ -80,7 +80,7 @@ That's it! Thank you for your contribution!
 - Each sample should have its own directory under the appropriate framework/language folder.
 - Include a `README.md` following a consistent structure: description, prerequisites, how to run, and expected output.
 - Use the Durable Task Scheduler emulator as the default development experience.
-- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java). Go samples share one `go.mod` in `samples/durable-task-sdks/go`; do not create nested modules.
+- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java, `package.json` for JavaScript/TypeScript). Go samples share one `go.mod` in `samples/durable-task-sdks/go`; do not create nested modules.
 - Test your sample with the emulator before submitting.
 - Add the sample to the [catalog](./samples/README.md) and relevant [pattern documentation](./docs/patterns.md).
 
@@ -105,10 +105,9 @@ Ordinary tests must not need an emulator, Azure credentials, or cloud resources.
 Integration tests against real DTS run only with `DTS_SAMPLES_E2E=1`. To run all demos and integration tests, first prepare a separate task hub and Blob endpoint as described in the [Go validation guide](./samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). Then use the sequential runner from the Go module:
 
 ```bash
-HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \
-  go test -v -count=1 -timeout 30m ./e2e
+DTS_SAMPLES_E2E=1 go test -v -count=1 -timeout 30m ./e2e
 ```
 
-History export needs a task hub with no other export workers and no unrelated work. Set `HISTORY_EXPORT_ISOLATED_TASKHUB=1` only after you confirm this. The flag does not isolate the hub.
+The runner runs history export on a separate `historyexport` task hub, because export selects instances by completion time, not instance ID.
 
 Use the emulator connection string by default: `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. Read `DTS_CONNECTION_STRING` for Azure. Use placeholders, never real resource IDs or credentials, in examples. See the [Go quickstart](./docs/quickstart.md#go) for connection setup.

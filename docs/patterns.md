@@ -1,6 +1,10 @@
 # Orchestration Patterns
 
-This guide maps each common orchestration pattern to available samples and documentation. All patterns can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler).
+This guide maps each common orchestration pattern to available samples and documentation. All patterns can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler).
+
+The [JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) is available in preview, with JavaScript examples linked below. [Go (beta) samples](../samples/durable-task-sdks/go/) are also linked below.
+
+A blank table cell means no sample is linked here.
 
 Go samples need Go 1.25.0+ and use the Durable Task SDK (beta), not Durable Functions. See the [Go quickstart](./quickstart.md#go) for setup.
 
@@ -18,10 +22,11 @@ Activity A → Activity B → Activity C → Result
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
 | .NET | [Sample](../samples/durable-task-sdks/dotnet/FunctionChaining) | [HelloCities](../samples/durable-functions/dotnet/HelloCities) |
-| Python | [Sample](../samples/durable-task-sdks/python/function-chaining) | — |
+| Python | [Sample](../samples/durable-task-sdks/python/function-chaining) | [Hello Cities](../samples/durable-functions/python/hello-cities) |
 | Java | [Sample](../samples/durable-task-sdks/java/function-chaining) | [HelloCities](../samples/durable-functions/java/HelloCities) |
-| JavaScript | — | [HelloCities](../samples/durable-functions/javascript/HelloCities) |
-| Go | [Sample](../samples/durable-task-sdks/go/function-chaining) | — |
+| JavaScript | [Sample](../samples/durable-task-sdks/javascript/function-chaining) | [HelloCities](../samples/durable-functions/javascript/HelloCities) |
+| TypeScript | See the JavaScript SDK sample above | [HelloCities](../samples/durable-functions/typescript/HelloCities) |
+| Go | [Sample](../samples/durable-task-sdks/go/function-chaining) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-sequence)
 
@@ -40,11 +45,12 @@ Input ───┼→ Activity B ──┼→ Aggregate → Result
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/FanOutFanIn) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/FanOutFanIn) | [Large Payload Fan-out/Fan-in](../samples/durable-functions/dotnet/LargePayloadFanOutFanIn) |
 | Python | [Sample](../samples/durable-task-sdks/python/fan-out-fan-in) | [Fan-out/Fan-in](../samples/durable-functions/python/fan-out-fan-in) |
 | Java | [Sample](../samples/durable-task-sdks/java/fan-out-fan-in) | [HelloCities](../samples/durable-functions/java/HelloCities) |
-| JavaScript | — | [HelloCities](../samples/durable-functions/javascript/HelloCities) |
-| Go | [Sample](../samples/durable-task-sdks/go/fan-out-fan-in) | — |
+| JavaScript | [Sample](../samples/durable-task-sdks/javascript/fan-out-fan-in) | [HelloCities](../samples/durable-functions/javascript/HelloCities) |
+| TypeScript | See the JavaScript SDK sample above | [HelloCities](../samples/durable-functions/typescript/HelloCities) |
+| Go | [Sample](../samples/durable-task-sdks/go/fan-out-fan-in) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-cloud-backup)
 
@@ -64,9 +70,9 @@ Client → GET /status  → 200 Completed (with result)
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
 | .NET | [ASP.NET Web App](../samples/durable-task-sdks/dotnet/AspNetWebApp) | [HelloCities](../samples/durable-functions/dotnet/HelloCities) |
-| Python | [Sample](../samples/durable-task-sdks/python/async-http-api) | — |
-| Java | [Sample](../samples/durable-task-sdks/java/async-http-api) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/async-http-api) | — |
+| Python | [Sample](../samples/durable-task-sdks/python/async-http-api) | |
+| Java | [Sample](../samples/durable-task-sdks/java/async-http-api) | |
+| Go | [Sample](../samples/durable-task-sdks/go/async-http-api) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-http-api)
 
@@ -85,10 +91,10 @@ Orchestration → Wait for approval event
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/HumanInteraction) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/human-interaction) | — |
-| Java | [Sample](../samples/durable-task-sdks/java/human-interaction) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/human-interaction) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/HumanInteraction) | |
+| Python | [Sample](../samples/durable-task-sdks/python/human-interaction) | |
+| Java | [Sample](../samples/durable-task-sdks/java/human-interaction) | |
+| Go | [Sample](../samples/durable-task-sdks/go/human-interaction) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-phone-verification)
 
@@ -105,10 +111,10 @@ Check status → Not ready → Wait → Check status → Ready → Done
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/Monitoring) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/monitoring) | — |
-| Java | [Sample](../samples/durable-task-sdks/java/monitoring) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/monitoring) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/Monitoring) | |
+| Python | [Sample](../samples/durable-task-sdks/python/monitoring) | |
+| Java | [Sample](../samples/durable-task-sdks/java/monitoring) | |
+| Go | [Sample](../samples/durable-task-sdks/go/monitoring) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-monitor)
 
@@ -127,10 +133,10 @@ Parent Orchestration
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/SubOrchestrations) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/sub-orchestrations) | — |
-| Java | [Sample](../samples/durable-task-sdks/java/sub-orchestrations) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/sub-orchestrations) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/SubOrchestrations) | |
+| Python | [Sample](../samples/durable-task-sdks/python/sub-orchestrations) | |
+| Java | [Sample](../samples/durable-task-sdks/java/sub-orchestrations) | |
+| Go | [Sample](../samples/durable-task-sdks/go/sub-orchestrations) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-sub-orchestrations)
 
@@ -147,10 +153,10 @@ Process batch → Continue as new → Process batch → Continue as new → ...
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/EternalOrchestrations) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/eternal-orchestrations) | — |
-| Java | [Sample](../samples/durable-task-sdks/java/eternal-orchestrations) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/eternal-orchestrations) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/EternalOrchestrations) | |
+| Python | [Sample](../samples/durable-task-sdks/python/eternal-orchestrations) | |
+| Java | [Sample](../samples/durable-task-sdks/java/eternal-orchestrations) | |
+| Go | [Sample](../samples/durable-task-sdks/go/eternal-orchestrations) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-eternal-orchestrations)
 
@@ -167,9 +173,9 @@ Coordinator (batch N) → fan out children → wait all → continue_as_new → 
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/BoundedCoordinator) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/bounded-coordinator) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/bounded-coordinator) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/BoundedCoordinator) | |
+| Python | [Sample](../samples/durable-task-sdks/python/bounded-coordinator) | |
+| Go | [Sample](../samples/durable-task-sdks/go/bounded-coordinator) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-eternal-orchestrations)
 
@@ -189,9 +195,10 @@ Entity: Counter
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/EntitiesSample) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/entities) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/entities) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/EntitiesSample) | |
+| Python | [Sample](../samples/durable-task-sdks/python/entities) | |
+| Java | [Sample](../samples/durable-task-sdks/java/entities) | [Entities](../samples/durable-functions/java/Entities) |
+| Go | [Sample](../samples/durable-task-sdks/go/entities) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-entities)
 
@@ -209,9 +216,9 @@ Step 1 → Step 2 → Step 3 (fails!)
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | — | [Saga Sample](../samples/durable-functions/dotnet/Saga) |
-| Python | [Sample](../samples/durable-task-sdks/python/saga) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/saga) | — |
+| .NET | | [Saga Sample](../samples/durable-functions/dotnet/Saga) |
+| Python | [Sample](../samples/durable-task-sdks/python/saga) | |
+| Go | [Sample](../samples/durable-task-sdks/go/saga) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/architecture/reference-architectures/saga/saga)
 
@@ -222,9 +229,9 @@ Safely evolve orchestration logic without breaking in-flight instances.
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Sample](../samples/durable-task-sdks/dotnet/OrchestrationVersioning) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/versioning) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/versioning) | — |
+| .NET | [Sample](../samples/durable-task-sdks/dotnet/OrchestrationVersioning) | |
+| Python | [Sample](../samples/durable-task-sdks/python/versioning) | |
+| Go | [Sample](../samples/durable-task-sdks/go/versioning) | |
 
 📖 [Learn more on Microsoft Learn →](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-versioning)
 
@@ -241,9 +248,9 @@ Schedule (every 5s) → Start orchestration → ... → Start orchestration
 
 | Language | Durable Task SDK | Durable Functions |
 |----------|-----------------|-------------------|
-| .NET | [Schedule Web App](../samples/durable-task-sdks/dotnet/ScheduleWebApp) | — |
-| Python | [Sample](../samples/durable-task-sdks/python/scheduled-tasks) | — |
-| Go | [Sample](../samples/durable-task-sdks/go/scheduled-tasks) | — |
+| .NET | [Schedule Web App](../samples/durable-task-sdks/dotnet/ScheduleWebApp) | |
+| Python | [Sample](../samples/durable-task-sdks/python/scheduled-tasks) | |
+| Go | [Sample](../samples/durable-task-sdks/go/scheduled-tasks) | |
 
 ---
 

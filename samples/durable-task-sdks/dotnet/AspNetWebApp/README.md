@@ -2,11 +2,11 @@
 
 In addition to [Durable Functions](https://learn.microsoft.com/azure/azure-functions/durable/durable-functions-overview), the [Durable Task SDK for .NET](https://github.com/microsoft/durabletask-dotnet) can also use the durable task scheduler for managing orchestration state.
 
-This directory includes a sample .NET console app that demonstrates how to use the scheduler with the Durable Task SDK for .NET (without any Azure Functions dependency).
+This directory includes a sample ASP.NET Core web app that demonstrates how to use the scheduler with the Durable Task SDK for .NET (without any Azure Functions dependency).
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Azure CLI](https://docs.microsoft.com/cli/azure/install-azure-cli)
 - [Docker](https://www.docker.com/products/docker-desktop/) (for running the emulator) installed
 

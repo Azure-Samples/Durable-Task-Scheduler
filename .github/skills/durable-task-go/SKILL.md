@@ -39,8 +39,7 @@ Each sample starts its worker and client, runs a short demo, prints the result, 
 - Register tasks with `task.NewTaskRegistry`, `AddOrchestratorN`, and `AddActivityN`. Check registration errors.
 - Use `durabletaskscheduler.NewClient` for management and `durabletaskscheduler.NewWorker` for execution. `client.WithAutoWorkItemFilters()` routes work by registration, so sample workers can share a hub.
 - Start the worker before you schedule work. Use client contexts with timeouts, check the final status and output, close the client, and stop the worker. Clean up only resources the sample created.
-- History export needs a separate hub with no other export workers and no unrelated work completing during the export window. Work-item filters do not limit export queries. `HISTORY_EXPORT_ISOLATED_TASKHUB=1` confirms isolation; it does not create it.
-- Keep the history-export [ownership guards](../../../samples/durable-task-sdks/go/history-export/ownership.go) and their [unit tests](../../../samples/durable-task-sdks/go/history-export/main_test.go). Unit tests are not proof of backend validation.
+- History export needs its own task hub (`historyexport` in the e2e runner). Export queries filter by time and status, not instance ID, and work-item filters do not limit them.
 
 The [SDK connection guide](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta3/durabletaskscheduler/README.md) is the reference for authentication, worker options, and extensions. The samples have no `azd` deployment templates.
 
@@ -95,8 +94,7 @@ Ordinary tests must not contact a scheduler. Integration tests need `DTS_SAMPLES
 For the full suite, prepare a separate task hub and Blob endpoint, then run the sequential runner:
 
 ```bash
-HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \
-  go test -v -count=1 -timeout 30m ./e2e
+DTS_SAMPLES_E2E=1 go test -v -count=1 -timeout 30m ./e2e
 ```
 
 See the [Go validation setup](../../../samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend).

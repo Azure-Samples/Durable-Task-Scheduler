@@ -79,7 +79,7 @@ Upon successful booking, the user receives a final confirmation with all travel 
 - Docker
 - .NET 8 SDK
 - Azure Functions Core Tools v4
-- Node.js 16+ and npm
+- Node.js 22.12+ and npm (required by the frontend's Azure Storage and Vite dependencies)
 - Azure Developer CLI (azd)
 - Azure Subscription with:
   - Azure Functions resource
@@ -92,8 +92,8 @@ Upon successful booking, the user receives a final confirmation with all travel 
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/AiAgentOrchestrator.git
-cd AiAgentOrchestrator
+git clone https://github.com/Azure-Samples/Durable-Task-Scheduler.git
+cd Durable-Task-Scheduler/samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator
 ```
 
 ### 2. Configure Environment Variables
