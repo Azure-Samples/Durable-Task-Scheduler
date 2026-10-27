@@ -79,7 +79,7 @@ docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:lates
 | JavaScript | Function Chaining | `cd samples/durable-task-sdks/javascript/function-chaining && npm install && node worker.mjs` |
 | Go (1.25+) | [Function Chaining](./samples/durable-task-sdks/go/function-chaining) | `cd samples/durable-task-sdks/go && go mod download && go run ./function-chaining` |
 
-The Go samples use **`github.com/microsoft/durabletask-go` v1.0.0-beta.1**. By default, each runs its worker and client together, verifies the result, and exits. They default to `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`; see the [Go quickstart](./docs/quickstart.md#go) for setup and Azure connection instructions.
+The Go samples use **`github.com/microsoft/durabletask-go` v1.0.0-beta3**. Each one runs its worker and client together and then exits. See the [Go quickstart](./docs/quickstart.md#go) for setup and Azure connection.
 
 ### Step 3: Open the dashboard
 
@@ -97,7 +97,7 @@ Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestra
 | **Scaling** | Built-in auto-scale | Bring your own scaling |
 | **Languages** | .NET, Python, Java, JavaScript | .NET, Python, Java, JavaScript, Go (beta) |
 
-Go support is through the standalone Durable Task SDK, not Durable Functions or the Durable extension for Microsoft Agent Framework.
+Go is supported only through the Durable Task SDK, not Durable Functions or Microsoft Agent Framework.
 
 📖 [Choosing an orchestration framework →](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/choose-orchestration-framework)
 
@@ -137,7 +137,7 @@ The Durable Task Scheduler provides a **built-in dashboard** for monitoring orch
 - [Python](https://github.com/microsoft/durabletask-python)
 - [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask?view=durabletask-java-1.x)
 - JavaScript (coming soon)
-- [Go (beta)](https://pkg.go.dev/github.com/microsoft/durabletask-go@v1.0.0-beta.1)
+- [Go (beta)](https://pkg.go.dev/github.com/microsoft/durabletask-go@v1.0.0-beta3)
 
 ### Durable Functions
 
@@ -158,7 +158,7 @@ This repository includes specialized skills for AI coding assistants ([GitHub Co
 | **durable-task-dotnet** | Durable Task SDK for .NET - portable orchestrations without Azure Functions dependency | [Skill →](.github/skills/durable-task-dotnet/SKILL.md) |
 | **durable-task-java** | Durable Task SDK for Java - orchestrations, activities, and common workflow patterns | [Skill →](.github/skills/durable-task-java/SKILL.md) |
 | **durable-task-python** | Durable Task SDK for Python - orchestrations, activities, entities, and stateful agents | [Skill →](.github/skills/durable-task-python/SKILL.md) |
-| **durable-task-go** | Durable Task SDK for Go (beta) - replay-safe workflows, SDK setup, and sample validation | [Skill →](.github/skills/durable-task-go/SKILL.md) |
+| **durable-task-go** | Durable Task SDK for Go (beta) - orchestrations, activities, entities, and sample validation | [Skill →](.github/skills/durable-task-go/SKILL.md) |
 
 **Usage:** Reference a skill file in your AI assistant (e.g., `#file:.github/skills/durable-task-dotnet/SKILL.md` in Copilot Chat) or ask it to read the skill before generating code. Skills are automatically detected by Claude Code when working on relevant files.
 

@@ -94,7 +94,7 @@ The Gantt chart shows the full orchestration flow — when each activity started
 
 ## Durable Task SDKs Tracing
 
-The Durable Task SDKs integrate with OpenTelemetry. Which spans are emitted locally versus by DTS depends on the SDK; configure the tracer provider and exporter for your language.
+The Durable Task SDKs integrate with OpenTelemetry. Some spans come from your app and some come from DTS, depending on the SDK. Configure the tracer provider and exporter for your language.
 
 ### .NET
 
@@ -145,11 +145,11 @@ trace.set_tracer_provider(provider)
 
 ### Go
 
-The Go SDK (`github.com/microsoft/durabletask-go` v1.0.0-beta.1, Go 1.25.0+) propagates **W3C trace context** from the caller through DTS to activities. Configure an OpenTelemetry tracer provider and exporter in your application, start a caller span, and pass that context when scheduling an orchestration. Activities can create application or dependency spans using the propagated context.
+The Go SDK (`github.com/microsoft/durabletask-go` v1.0.0-beta3, Go 1.25.0+) passes **W3C trace context** from the caller through DTS to activities. Set up an OpenTelemetry tracer provider and exporter in your app, start a caller span, and pass its context when you schedule an orchestration. Activities can create their own spans from that context.
 
-**DTS owns the durable orchestration, activity, and timer spans.** The Go worker does not duplicate these service spans in your local exporter. Seeing application spans or matching trace IDs in orchestration history verifies propagation, not export of the full service-side trace.
+**DTS creates the orchestration, activity, and timer spans.** The Go worker does not export these spans locally. Matching trace IDs show that context was passed; they do not show the full DTS trace.
 
-Start with the [Go OpenTelemetry sample](../samples/durable-task-sdks/go/opentelemetry-tracing):
+Start with the [Go OpenTelemetry sample](../samples/durable-task-sdks/go/opentelemetry-tracing). With the emulator running:
 
 ```bash
 cd samples/durable-task-sdks/go
@@ -157,17 +157,15 @@ go mod download
 go run ./opentelemetry-tracing
 ```
 
-Run the emulator first and follow that sample's README for its tracing configuration. The demo shows a traced workflow; its opt-in integration tests verify application spans and trace parentage separately.
-
-To also export application spans to a running OTLP/HTTP collector or Jaeger, set the optional endpoint from the same Go module:
+To send application spans to an OTLP/HTTP collector or Jaeger, set the endpoint:
 
 ```bash
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 go run ./opentelemetry-tracing
 ```
 
-Use HTTP port **4318**, not OTLP/gRPC port 4317. An explicitly configured but unavailable collector fails the sample. Setting this endpoint configures the sample's application exporter, not export of DTS-owned durable spans.
+Use port **4318** (OTLP/HTTP), not 4317 (OTLP/gRPC). If the collector is not available, the sample fails. This setting does not export DTS spans.
 
-See the [released SDK tracing example](https://github.com/microsoft/durabletask-go/tree/v1.0.0-beta.1/samples/distributedtracing) and [OpenTelemetry Go documentation](https://opentelemetry.io/docs/languages/go/) for exporter setup.
+See the [SDK tracing example](https://github.com/microsoft/durabletask-go/tree/v1.0.0-beta3/samples/distributedtracing) and the [OpenTelemetry Go documentation](https://opentelemetry.io/docs/languages/go/) for exporter setup.
 
 ---
 
@@ -212,7 +210,7 @@ After starting both services:
 | **Grafana Tempo** | Grafana ecosystem users | Medium |
 | **OTLP (generic)** | Any OTel-compatible backend | Varies |
 
-For Azure production workloads in supported languages, use **Application Insights** with the [Azure Monitor OpenTelemetry Distro](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable). Check its language support before choosing an exporter; the distro setup is not a Go SDK integration. For Go, configure an OpenTelemetry Go exporter and an appropriate collector/backend.
+For Azure production workloads, use **Application Insights** with the [Azure Monitor OpenTelemetry Distro](https://learn.microsoft.com/azure/azure-monitor/app/opentelemetry-enable) in supported languages. The distro is not a Go integration. For Go, use an OpenTelemetry Go exporter and a collector.
 
 ---
 

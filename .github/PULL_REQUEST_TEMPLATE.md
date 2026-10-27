@@ -34,7 +34,7 @@ git checkout [branch-name]
 
 * Test the code
 <!-- Add steps to run the tests suite and/or manually test -->
-<!-- For Go, run go mod download, go build ./..., go test ./..., and go vet ./... from samples/durable-task-sdks/go. State separately whether the sequential ./e2e runner was used with DTS_SAMPLES_E2E=1 and HISTORY_EXPORT_ISOLATED_TASKHUB=1 after preparing the isolated hub and Blob endpoint described in CONTRIBUTING.md. -->
+<!-- For Go, run go mod download, go build ./..., go test ./..., and go vet ./... from samples/durable-task-sdks/go. Say whether you also ran the ./e2e runner (see CONTRIBUTING.md). -->
 ```
 ```
 

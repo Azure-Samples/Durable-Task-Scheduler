@@ -5,13 +5,13 @@ description: Build durable workflows in Go with the standalone Durable Task SDK 
 
 # Durable Task Go SDK with Durable Task Scheduler
 
-Use Go **1.25.0+** and `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**. This beta SDK targets DTS; do not substitute the older `durabletask-go` storage-backend APIs or generate Azure Functions bindings.
+Use Go **1.25.0+** and `github.com/microsoft/durabletask-go` **v1.0.0-beta3**. This SDK connects to DTS. Do not use the older `durabletask-go` storage-backend APIs, and do not generate Azure Functions bindings.
 
 ## Start from the samples
 
-Read the [Go sample guide](../../../samples/durable-task-sdks/go) and the relevant sample before changing code. The samples share one module; do not create a nested `go.mod`.
+Read the [Go sample guide](../../../samples/durable-task-sdks/go) and the relevant sample before you change code. All samples share one module; do not create a nested `go.mod`.
 
-With the emulator already running, from the repository root:
+With the emulator running, from the repository root:
 
 ```bash
 cd samples/durable-task-sdks/go
@@ -19,67 +19,67 @@ go mod download
 go run ./function-chaining
 ```
 
-Each package starts its worker and client together, runs a short demonstration, prints the result, and exits. Run other samples with `go run ./<sample-name>`.
+Each sample starts its worker and client, runs a short demo, prints the result, and exits. Run other samples with `go run ./<sample-name>`.
 
-## Keep samples readable
+## Sample structure
 
-- Limit `main.go` to the entrypoint and CLI wiring.
-- Keep orchestrations, activities, client code, and worker setup in focused files in the same sample package.
-- Put domain types near their behavior. Avoid catch-all utility files, unnecessary interfaces, and extra package hierarchies.
-- Make the default command demonstrate the pattern, not run an exhaustive test matrix.
-- Put assertions and verification helpers in `*_test.go`; provide `TestIntegration` in `integration_test.go` using `testutil.IntegrationContext(t)`.
-- Keep real input validation, operational errors, and safe cleanup in application code.
-- Include a short README code map and standalone Go explanations.
+- `main.go` has only the entry point and CLI flags.
+- Put orchestrations, activities, client code, and worker setup in separate files in the same package.
+- Keep types near the code that uses them. Avoid catch-all utility files, extra interfaces, and extra packages.
+- The default command shows the pattern. It does not run a full test matrix.
+- Put assertions in `*_test.go`. Add `TestIntegration` in `integration_test.go` using `testutil.IntegrationContext(t)`.
+- Keep input validation, error handling, and cleanup in app code.
+- Add a short README with a code map.
 
 ## Connection and lifecycle
 
-- Default to `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`, overridden by `DTS_CONNECTION_STRING`.
-- For Azure, use `Endpoint=https://<scheduler-host>;TaskHub=<hub>;Authentication=DefaultAzure` or `Authentication=AzureCLI`. The identity needs Durable Task Data Contributor access. Never hard-code real resource identifiers or credentials.
+- Default connection: `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. `DTS_CONNECTION_STRING` overrides it.
+- Azure: `Endpoint=https://<scheduler-host>;TaskHub=<hub>;Authentication=DefaultAzure` or `Authentication=AzureCLI`. The identity needs the Durable Task Data Contributor role. Never hard-code real resource IDs or credentials.
 - Parse the connection string with `durabletaskscheduler.NewOptionsFromConnectionString`.
-- Register orchestrators and activities with `task.NewTaskRegistry`, `AddOrchestratorN`, and `AddActivityN`; check registration errors.
-- Use `durabletaskscheduler.NewClient` for management and `durabletaskscheduler.NewWorker` for execution. `client.WithAutoWorkItemFilters()` routes work by registrations, allowing sample workers to share a hub.
-- Start the worker before scheduling. Use bounded client contexts, inspect terminal status and output, close the client, and shut down the worker. Clean up only resources created by the sample.
-- History-export requires a dedicated hub with no other export workers and no unrelated workloads completing during its export window; automatic work-item filters do not scope history-export queries. For both emulator and Azure runs, `HISTORY_EXPORT_ISOLATED_TASKHUB=1` acknowledges verified isolation but does not create or isolate a hub. Do not validate this sample alongside other samples on a shared hub.
-- Preserve the sample's [implemented ownership guards](../../../samples/durable-task-sdks/go/history-export/ownership.go) and completion-window preflight. They reject unowned pages, metadata/history reads, and Blob writes and are covered by [offline unit tests](../../../samples/durable-task-sdks/go/history-export/main_test.go). These unit checks are not evidence of emulator or live backend validation.
+- Register tasks with `task.NewTaskRegistry`, `AddOrchestratorN`, and `AddActivityN`. Check registration errors.
+- Use `durabletaskscheduler.NewClient` for management and `durabletaskscheduler.NewWorker` for execution. `client.WithAutoWorkItemFilters()` routes work by registration, so sample workers can share a hub.
+- Start the worker before you schedule work. Use client contexts with timeouts, check the final status and output, close the client, and stop the worker. Clean up only resources the sample created.
+- History export needs a separate hub with no other export workers and no unrelated work completing during the export window. Work-item filters do not limit export queries. `HISTORY_EXPORT_ISOLATED_TASKHUB=1` confirms isolation; it does not create it.
+- Keep the history-export [ownership guards](../../../samples/durable-task-sdks/go/history-export/ownership.go) and their [unit tests](../../../samples/durable-task-sdks/go/history-export/main_test.go). Unit tests are not proof of backend validation.
 
-The [released connection guide](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta.1/durabletaskscheduler/README.md) is the authority for authentication, worker options, and feature-specific extension setup. Connecting a process to Azure is not deploying that process; these samples have no `azd` deployment templates.
+The [SDK connection guide](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta3/durabletaskscheduler/README.md) is the reference for authentication, worker options, and extensions. The samples have no `azd` deployment templates.
 
-## Replay-safe workflows
+## Replay-safe orchestrations
 
-An orchestrator has signature `func(*task.OrchestrationContext) (any, error)`; an activity has signature `func(task.ActivityContext) (any, error)`.
+Orchestrator signature: `func(*task.OrchestrationContext) (any, error)`. Activity signature: `func(task.ActivityContext) (any, error)`.
 
-- Use `ctx.CallActivity("Name", task.WithActivityInput(input)).Await(&result)` for activity results and handle errors.
-- Keep HTTP, database access, filesystem access, random values, and environment reads out of orchestrators. Use activities, startup code, or supported context-bounded entity operations. External side effects can repeat if an entity operation fails before committing state.
-- Use durable timers instead of `time.Sleep`; do not read the wall clock during replay.
-- Use SDK tasks for concurrency, not native goroutines, channels, or `select` in orchestrators. Start all fan-out tasks before awaiting them.
-- Keep ordering deterministic: sort map keys before scheduling work. Avoid mutable global state.
-- Design activities for retries and possible duplicate execution; do not assume exactly-once side effects.
-- Bound history with continue-as-new for recurring workflows. Sample demonstrations must still terminate.
-- Use SDK entity operations and locks for durable state and coordination, not process-local mutexes. Check extension prerequisites for schedules, large payloads, and history export.
-- Use numeric task versions such as `"1.0"` and `"2.0"` for DTS, even though the local registry accepts opaque version strings.
+- Call activities with `ctx.CallActivity("Name", task.WithActivityInput(input)).Await(&result)` and handle the error.
+- No HTTP, database, file, random, or environment access in orchestrators. Use activities or entity operations. Entity side effects can repeat if the operation fails before it saves state.
+- Use durable timers, not `time.Sleep`. Do not read the wall clock.
+- Use SDK tasks for concurrency, not goroutines, channels, or `select`. Start all fan-out tasks before you wait for them.
+- Keep order deterministic: sort map keys before scheduling work. Avoid mutable global state.
+- Activities can run more than once. Do not assume exactly-once side effects.
+- Use continue-as-new to limit history in recurring orchestrations. Sample demos must still end.
+- Use entities and entity locks for durable state, not process mutexes.
+- Use numeric versions such as `"1.0"` and `"2.0"` for DTS.
 
 ## Find the right pattern
 
-| Need | Starting samples |
-|------|------------------|
+| Need | Samples |
+|------|---------|
 | Sequential or parallel work | [Function chaining](../../../samples/durable-task-sdks/go/function-chaining), [fan-out/fan-in](../../../samples/durable-task-sdks/go/fan-out-fan-in) |
 | Wait for input or time | [Human interaction](../../../samples/durable-task-sdks/go/human-interaction), [monitoring](../../../samples/durable-task-sdks/go/monitoring) |
 | Durable state | [Entities](../../../samples/durable-task-sdks/go/entities) |
 | Recurring work | [Scheduled tasks](../../../samples/durable-task-sdks/go/scheduled-tasks), [bounded coordinator](../../../samples/durable-task-sdks/go/bounded-coordinator) |
-| Reliability and evolution | [Saga](../../../samples/durable-task-sdks/go/saga), [versioning](../../../samples/durable-task-sdks/go/versioning), [testing](../../../samples/durable-task-sdks/go/testing) |
+| Reliability and change | [Saga](../../../samples/durable-task-sdks/go/saga), [versioning](../../../samples/durable-task-sdks/go/versioning), [testing](../../../samples/durable-task-sdks/go/testing) |
 | Payloads and diagnostics | [Large payload](../../../samples/durable-task-sdks/go/large-payload), [history export](../../../samples/durable-task-sdks/go/history-export), [tracing](../../../samples/durable-task-sdks/go/opentelemetry-tracing) |
 
-The [full catalog](../../../samples/README.md#go) and [pattern guide](../../../docs/patterns.md) cover the Go workflow patterns and integrations.
+See the [sample catalog](../../../samples/README.md#go) and [pattern guide](../../../docs/patterns.md).
 
 ## Tracing
 
-Configure an OpenTelemetry Go tracer provider/exporter and propagate the caller context when scheduling work. The Go SDK propagates W3C trace context; **DTS emits durable orchestration/activity/timer spans**. Do not claim the Go worker automatically exports those service spans locally. See the [observability guide](../../../docs/observability.md#go).
+Set up an OpenTelemetry Go tracer provider and pass the caller context when you schedule work. The SDK propagates W3C trace context. **DTS creates the orchestration, activity, and timer spans**; the Go worker does not export them locally. See the [observability guide](../../../docs/observability.md#go).
 
-Set optional `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` to export application spans over OTLP/HTTP to a running collector; this does not configure DTS service-side export. The integration tests separately check trace propagation and parentage.
+`OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318` exports application spans over OTLP/HTTP. It does not change DTS export.
 
 ## Validation
 
-Format changed Go files with `gofmt`. From `samples/durable-task-sdks/go`:
+Format changed files with `gofmt`. From `samples/durable-task-sdks/go`:
 
 ```bash
 go mod download
@@ -88,15 +88,15 @@ go test ./...
 go vet ./...
 ```
 
-The beta SDK has no public in-memory testing backend. `task.Executor` is exported for internal collaboration and uses `internal/protos` parameters; do not build application tests against it. Follow the testing sample's local step adapter to exercise shared business-workflow logic offline. These unit tests do not validate SDK execution or replay.
+The SDK has no public in-memory test backend. Do not build tests on `task.Executor`; it uses internal types. Use the testing sample's local step adapter for offline business-logic tests. These tests do not check replay.
 
-Ordinary tests must not contact a scheduler. Replay/integration tests require explicit `DTS_SAMPLES_E2E=1` and a real DTS emulator or Azure scheduler; never claim they passed when only offline checks ran. Read [contributor guidance](../../../CONTRIBUTING.md#go-samples) before running resource-backed tests.
+Ordinary tests must not contact a scheduler. Integration tests need `DTS_SAMPLES_E2E=1` and a real emulator or Azure scheduler. Never say they passed if only offline checks ran. See the [contributor guide](../../../CONTRIBUTING.md#go-samples).
 
-For full-suite validation, prepare an isolated task hub and Blob endpoint, then run demos and their compiled `TestIntegration` binaries sequentially through `./e2e` rather than enabling integration tests across all packages concurrently:
+For the full suite, prepare a separate task hub and Blob endpoint, then run the sequential runner:
 
 ```bash
 HISTORY_EXPORT_ISOLATED_TASKHUB=1 DTS_SAMPLES_E2E=1 \
   go test -v -count=1 -timeout 30m ./e2e
 ```
 
-Follow the [Go validation setup](../../../samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). The research demonstration uses synthetic fixtures by default, even with live DTS; these runs do not validate real model or arXiv services.
+See the [Go validation setup](../../../samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend).

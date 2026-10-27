@@ -42,7 +42,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | [✅](./durable-task-sdks/python/scheduled-tasks) | | | [✅](./durable-task-sdks/go/scheduled-tasks) |
 | .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | | |
 | AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | | |
-| AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | | [✅](./durable-task-sdks/go/arXiv_research_agent) |
+| AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | | |
 | Agent-Directed Workflows | [✅](./durable-task-sdks/dotnet/Agents/AgentDirectedWorkflows) | [✅](./durable-task-sdks/python/agent-directed-workflows) | | | |
 | Large Payload | [✅](./durable-task-sdks/dotnet/LargePayload) | [✅](./durable-task-sdks/python/large-payload) | | | [✅](./durable-task-sdks/go/large-payload) |
 | Export History | [✅](./durable-task-sdks/dotnet/ExportHistoryWebApp) | [✅](./durable-task-sdks/python/history-export) | | | [✅](./durable-task-sdks/go/history-export) |
@@ -52,7 +52,7 @@ A quick-reference matrix showing which patterns are available in each language a
 | Testing | | [✅](./durable-task-sdks/python/testing) | | | [✅](./durable-task-sdks/go/testing) |
 | Work Item Filtering | | [✅](./durable-task-sdks/python/work-item-filtering) | | | [✅](./durable-task-sdks/go/work-item-filtering) |
 
-The [Go samples](./durable-task-sdks/go/) cover self-hosted workflows, durable entities, scheduling, and integrations using Durable Task Scheduler.
+See the [Go samples](./durable-task-sdks/go/) for setup.
 
 ### Durable Functions
 
@@ -138,7 +138,7 @@ The [Go samples](./durable-task-sdks/go/) cover self-hosted workflows, durable e
 
 ### Go
 
-**Requires:** Go **1.25.0+**, using `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**. All 20 packages share the module in [`durable-task-sdks/go`](./durable-task-sdks/go).
+**Requires:** Go **1.25.0+**. All samples share one module in [`durable-task-sdks/go`](./durable-task-sdks/go) that uses `github.com/microsoft/durabletask-go` **v1.0.0-beta3**.
 
 From the repository root, with the emulator running:
 
@@ -148,37 +148,30 @@ go mod download
 go run ./function-chaining
 ```
 
-Substitute any directory name below in `go run ./<name>`. By default, each sample starts its worker and client together, checks its result, and exits; HTTP/agent samples also document optional interactive modes. The default connection string is `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`; override it with `DTS_CONNECTION_STRING` to connect to Azure. See the [Go quickstart](../docs/quickstart.md#go) and each README for feature-specific configuration. These are runnable SDK examples, not `azd` deployment templates.
-
-Large Payload and Export History also require blob storage and default to local Azurite. Changing `DTS_CONNECTION_STRING` does not switch storage to Azure Blob Storage. History-export requires an isolated emulator or Azure task hub with no other export workers and no unrelated workloads completing during its export window; both emulator and Azure runs require `HISTORY_EXPORT_ISOLATED_TASKHUB=1` to confirm isolation. The flag does not create or isolate a hub. Review the sample READMEs before running.
-
-The AI demonstrations use explicit echo/synthetic fixtures by default on both backends; real arXiv or model calls require separate configuration. Scheduled tasks use Go-owned schedule state, not a shared cross-SDK schedule contract.
+Replace `function-chaining` with any sample name below. Each sample runs its worker and client, prints a result, and exits. To connect to Azure, set `DTS_CONNECTION_STRING`; see the [Go quickstart](../docs/quickstart.md#go). Large Payload and Export History also need Blob Storage (Azurite by default). Export History needs a separate task hub; see its README.
 
 | Sample | Pattern | Description |
 |--------|---------|-------------|
-| [Function Chaining](./durable-task-sdks/go/function-chaining) | Function Chaining | Sequential activities with result verification |
+| [Function Chaining](./durable-task-sdks/go/function-chaining) | Function Chaining | Sequential activities |
 | [Fan-out/Fan-in](./durable-task-sdks/go/fan-out-fan-in) | Fan-out/Fan-in | Parallel activities and result aggregation |
 | [Human Interaction](./durable-task-sdks/go/human-interaction) | Human Interaction | External events with an approval timeout |
 | [Async HTTP API](./durable-task-sdks/go/async-http-api) | Async HTTP API | HTTP start/status endpoints and a polling client |
 | [Monitoring](./durable-task-sdks/go/monitoring) | Monitoring | Periodic status checks with durable timers |
 | [Sub-orchestrations](./durable-task-sdks/go/sub-orchestrations) | Sub-orchestrations | Parent/child workflow composition |
-| [Eternal Orchestrations](./durable-task-sdks/go/eternal-orchestrations) | Eternal Orchestrations | Continue-as-new with a bounded demonstration run |
+| [Eternal Orchestrations](./durable-task-sdks/go/eternal-orchestrations) | Eternal Orchestrations | Continue-as-new |
 | [Durable Entities](./durable-task-sdks/go/entities) | Durable Entities | Persistent entity state and operations |
 | [Orchestration Versioning](./durable-task-sdks/go/versioning) | Versioning | Register and run versioned tasks |
-| [AI Research Agent](./durable-task-sdks/go/arXiv_research_agent) | AI Agents | Durable research pipeline with synthetic fixtures and optional arXiv/Azure OpenAI mode |
 | [Saga Pattern](./durable-task-sdks/go/saga) | Saga | Compensating activities after a failed step |
-| [OpenTelemetry Tracing](./durable-task-sdks/go/opentelemetry-tracing) | Observability | Application spans and W3C trace-context propagation; durable spans are DTS-owned |
+| [OpenTelemetry Tracing](./durable-task-sdks/go/opentelemetry-tracing) | Observability | Application spans and W3C trace context |
 | [Bounded Coordinator](./durable-task-sdks/go/bounded-coordinator) | Bounded Coordinator | Bounded child batches with continue-as-new |
 | [Large Payload](./durable-task-sdks/go/large-payload) | Large Payload | Externalize inputs and outputs with the payload extension |
 | [Export History](./durable-task-sdks/go/history-export) | History Export (preview) | Export terminal orchestration histories with the history extension |
 | [Scheduled Tasks](./durable-task-sdks/go/scheduled-tasks) | Scheduled Tasks | Recurring interval schedules and lifecycle management |
 | [Orchestration Management](./durable-task-sdks/go/orchestration-management) | Management | Query and manage orchestration lifecycle |
-| [Testing](./durable-task-sdks/go/testing) | Testing | Local step-adapter tests and opt-in DTS replay/integration checks |
+| [Testing](./durable-task-sdks/go/testing) | Testing | Offline business-logic tests and DTS integration tests |
 | [Work Item Filtering](./durable-task-sdks/go/work-item-filtering) | Worker Routing | Route work to matching worker registrations |
 
-Run `go build ./...`, `go test ./...`, and `go vet ./...` from the Go module without starting a scheduler. Scheduler-backed tests require explicit `DTS_SAMPLES_E2E=1` opt-in; see [contributor validation instructions](../CONTRIBUTING.md#go-samples).
-
-The Go testing sample exercises a shared order workflow offline through a local step adapter. This is not an SDK in-memory backend, and those unit tests do not validate Durable Task replay. Replay and SDK integration require the opt-in tests against a real DTS emulator or Azure scheduler.
+Run `go build ./...`, `go test ./...`, and `go vet ./...` from the Go module. These need no scheduler. Integration tests need `DTS_SAMPLES_E2E=1`; see the [contributor guide](../CONTRIBUTING.md#go-samples).
 
 ---
 

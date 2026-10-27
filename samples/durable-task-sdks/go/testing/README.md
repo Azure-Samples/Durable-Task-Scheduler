@@ -1,39 +1,28 @@
 # Testing Go workflows
 
-Process an order through validation, payment, and shipping. The application
-runs the workflow with durable activities. Unit tests use local steps to test
-the same business logic. Money is stored as whole cents to avoid rounding errors.
+An order goes through validation, payment, and shipping. The app runs this
+logic as a durable orchestration. Unit tests run the same business logic with
+local steps, without DTS. Money is stored in whole cents.
 
-## Code map
-
-Start with `processOrder` in [workflow.go](workflow.go).
-
-| File | Responsibility |
-| --- | --- |
-| [workflow.go](workflow.go) | Order data, business workflow, and calls to durable activities |
-| [activities.go](activities.go) | Validation and simulated payment/shipping operations |
-| [worker.go](worker.go) | Register the orchestration and activities |
-| [client.go](client.go) | Start the worker, submit one order, and print its result |
-| [main.go](main.go) | Starts the command-line program |
-| [workflow_test.go](workflow_test.go) | Offline tests for business logic and errors |
-| [integration_test.go](integration_test.go) | Real DTS success/failure verification |
+The Go beta SDK has no public in-memory orchestration backend. The unit tests
+check business logic only. They do not check replay or DTS behavior. Use the
+integration test for that.
 
 ## Prerequisites
 
-- Go 1.25 or later.
-- No services for unit tests.
-- The DTS emulator or an authorized live task hub for the demo and integration
-  tests; see the [shared setup](../README.md).
+- Go 1.25 or later. Unit tests need no services.
+- For the demo and integration test, the emulator or an Azure task hub. See the
+  [shared Go README](../README.md).
 
 ## Run the demo
 
-From this sample directory:
+From this directory:
 
 ```bash
 go run .
 ```
 
-The demo submits one order and prints its completed result:
+Expected output:
 
 ```json
 {
@@ -44,30 +33,29 @@ The demo submits one order and prints its completed result:
 }
 ```
 
-The worker and client shut down afterward. `DTS_CONNECTION_STRING` selects the
-backend without code changes. Payment and shipping are simulations, not external
-service calls.
+Payment and shipping are simulations.
 
 ## Run tests
 
-Offline tests check activity order, results, input rules, and amounts that are
-too large. They also check that payment and shipping errors reach the caller:
-
 ```bash
 go test -v .
-```
-
-The Go beta has no public in-memory orchestration backend. Local tests check
-business logic. They do not check replay, saved workflow state, or communication
-with DTS.
-
-With a configured DTS backend, run the integration test:
-
-```bash
 DTS_SAMPLES_E2E=1 go test -v -run '^TestIntegration$' .
 ```
 
-It uses the registered production workflow to process two valid and three invalid
-orders. It checks exact outputs and saved failure details. Failed instances
-are intentional and remain visible in the dashboard. Verification logic lives
-in test files, not in the demo.
+Unit tests check step order, results, input rules, and error handling. The
+integration test runs two valid and three invalid orders through the real
+orchestration. The failed instances are expected and stay in the dashboard.
+
+## Code map
+
+Start with `processOrder` in [workflow.go](workflow.go).
+
+| File | Purpose |
+| --- | --- |
+| [workflow.go](workflow.go) | Order data, business logic, and activity calls |
+| [activities.go](activities.go) | Validation and simulated payment and shipping |
+| [worker.go](worker.go) | Registers the orchestration and activities |
+| [client.go](client.go) | Starts the worker, submits one order, and prints the result |
+| [main.go](main.go) | Command-line entry point |
+| [workflow_test.go](workflow_test.go) | Offline business-logic tests |
+| [integration_test.go](integration_test.go) | DTS success and failure tests |

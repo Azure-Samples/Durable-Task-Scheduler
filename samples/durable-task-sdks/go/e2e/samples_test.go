@@ -30,7 +30,6 @@ var samples = []string{
 	"large-payload",
 	"history-export",
 	"opentelemetry-tracing",
-	"arXiv_research_agent",
 	"testing",
 }
 

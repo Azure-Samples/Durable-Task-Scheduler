@@ -77,7 +77,7 @@ cd samples/durable-task-sdks/java/function-chaining
 
 ### Go
 
-**Requires:** [Go 1.25.0 or later](https://go.dev/dl/). The samples share one module using `github.com/microsoft/durabletask-go` **v1.0.0-beta.1**.
+**Requires:** [Go 1.25.0 or later](https://go.dev/dl/). The samples share one module that uses `github.com/microsoft/durabletask-go` **v1.0.0-beta3**.
 
 ```bash
 # Clone the repo (skip if already cloned)
@@ -92,9 +92,9 @@ go mod download
 go run ./function-chaining
 ```
 
-No second terminal or Azure account is needed. The default connection is `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. If `DTS_CONNECTION_STRING` is already set, unset it or set it to that emulator connection string before running.
+You need only one terminal. The default connection is `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. If `DTS_CONNECTION_STRING` is set, unset it first.
 
-Run any of the [Go samples](../samples/durable-task-sdks/go) from the same module with `go run ./<sample-name>`, or from its directory with `go run .`. Check each README for additional feature-specific prerequisites. Go support is for the standalone SDK, not Durable Functions or Microsoft Agent Framework.
+Run any of the [Go samples](../samples/durable-task-sdks/go) with `go run ./<sample-name>`. Some samples have extra prerequisites; see their READMEs.
 
 ## Step 3: View in the Dashboard
 
@@ -115,11 +115,9 @@ The orchestration is **durable** — if the process had crashed at any point, it
 
 ## Connect the Go Samples to Azure
 
-Use an existing Azure Durable Task Scheduler and task hub, or provision them by following the [scheduler setup guide](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler). Grant the identity used by your application the **Durable Task Data Contributor** role at the appropriate scheduler or task-hub scope; see [identity-based access](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity).
+Use an existing scheduler and task hub, or create them with the [scheduler setup guide](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler). Give your identity the **Durable Task Data Contributor** role; see [identity-based access](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity). Use a separate task hub for the Go samples. Do not let workers from other SDKs manage the same schedules.
 
-Use a dedicated Go test hub when validating the full suite. The scheduled-tasks sample uses Go-owned system state; do not run Python/.NET schedule workers against the same schedule entities or assume cross-SDK schedule interoperability.
-
-From `samples/durable-task-sdks/go`, authenticate and set the connection string:
+From `samples/durable-task-sdks/go`:
 
 ```bash
 az login
@@ -127,17 +125,13 @@ export DTS_CONNECTION_STRING='Endpoint=https://<scheduler-host>;TaskHub=<hub>;Au
 go run ./function-chaining
 ```
 
-Replace the placeholders with your scheduler endpoint host and task hub. `DefaultAzure` uses the Azure Identity default credential chain; use `Authentication=AzureCLI` to explicitly select the signed-in CLI identity. Production hosts can use managed or workload identity as described in the [Go SDK connection guide](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta.1/durabletaskscheduler/README.md#configuration).
+`DefaultAzure` uses the Azure Identity default credential chain. Use `Authentication=AzureCLI` to use your CLI sign-in. For managed or workload identity, see the [Go SDK connection guide](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta3/durabletaskscheduler/README.md#configuration).
 
-Scheduler and blob-storage configuration are independent. The Go large-payload and history-export samples default to local **Azurite**, even when `DTS_CONNECTION_STRING` points to Azure. A live scheduler with Azurite validates worker-side storage integration, not Azure Blob Storage. Follow the sample READMEs for storage configuration.
+Notes:
 
-**History export requires an isolated task hub**, in the emulator or Azure, with no other export workers and no unrelated workloads completing during the sample's export window. The export query supports completion-time/status filters, not instance-ID prefix, name, or tag filters. For both emulator and Azure runs, set `HISTORY_EXPORT_ISOLATED_TASKHUB=1` only after confirming that the configured hub is isolated. This flag acknowledges isolation; it does not create a hub or isolate an existing one. Do not run history-export alongside other samples on a shared hub. Sample cleanup retains source histories and exported blobs.
-
-The sample's [implemented ownership guards](../samples/durable-task-sdks/go/history-export/ownership.go) reject pages containing unowned instance IDs, direct unowned metadata/history reads, and writes outside the owned instance/container/prefix. The entire completion window is preflighted through the source guard before job creation. [Offline unit tests](../samples/durable-task-sdks/go/history-export/main_test.go), including `TestOwnershipGuardNeverReadsUnrelatedHistory` and `TestStorageOwnershipGuard`, verify these protections. Unit-test success does not establish emulator or live Azure backend validation.
-
-These steps connect a locally running Go process to Azure. They do **not** deploy the worker. The Go samples do not include Azure Developer CLI (`azd`) templates or automated Container Apps/AKS deployment; choose and configure your hosting environment separately.
-
-Connecting to Azure DTS also does not enable real AI providers. The Go research agent uses synthetic fixtures by default; follow its README for optional real-provider configuration and verification boundaries.
+- The large-payload and history-export samples use local **Azurite** for Blob Storage, even when DTS is in Azure. See their READMEs to use Azure Blob Storage.
+- **History export needs a separate task hub** with no other export workers and no unrelated work. Set `HISTORY_EXPORT_ISOLATED_TASKHUB=1` only after you confirm this. The flag does not isolate the hub. The sample's [ownership checks](../samples/durable-task-sdks/go/history-export/ownership.go) block access to other instances and are covered by [unit tests](../samples/durable-task-sdks/go/history-export/main_test.go).
+- These steps connect a local Go process to Azure. They do not deploy it. The Go samples have no `azd` templates.
 
 ## Next Steps
 

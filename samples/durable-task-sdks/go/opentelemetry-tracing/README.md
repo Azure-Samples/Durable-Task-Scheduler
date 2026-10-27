@@ -1,18 +1,14 @@
-# OpenTelemetry distributed tracing
+# OpenTelemetry distributed tracing (Go)
 
-Go | Durable Task SDK
-
-Trace a sample order through validation, payment, shipping, and notification.
-The notification step calls a local HTTP test service, not a customer service.
-The demo prints the result and trace ID. You can also use an OTLP/HTTP exporter
-to send application spans to Jaeger or another collector.
-A span records one operation within a trace.
+A sample order goes through validation, payment, shipping, and notification.
+The notification step calls a local HTTP test service. The demo prints the
+result and the trace ID. You can send application spans to Jaeger or another
+OTLP/HTTP collector. (A span is one operation in a trace.)
 
 ## Prerequisites
 
-- Go 1.25+ and the [shared emulator/live DTS setup](../README.md).
-- No Blob storage, external notification service, or collector is required for
-  the default demo.
+See the [shared Go README](../README.md) for Go, emulator, and Azure setup. No
+collector is needed for the default demo.
 
 ## Run
 
@@ -22,9 +18,7 @@ From this directory:
 go run . -timeout 3m
 ```
 
-From the shared module root, use `go run ./opentelemetry-tracing -timeout 3m`.
-All sample data is in the code. You can also run the compiled program from
-either directory.
+Or, from the Go samples directory: `go run ./opentelemetry-tracing -timeout 3m`.
 
 Example output:
 
@@ -36,10 +30,9 @@ Instance: go-tracing-...
 Set OTEL_EXPORTER_OTLP_ENDPOINT to visualize application spans.
 ```
 
-### Optional Jaeger
+### Optional: view spans in Jaeger
 
-The [compose file](docker-compose.yml) starts **only Jaeger**, leaving your DTS
-configuration unchanged:
+The [compose file](docker-compose.yml) starts **only Jaeger**:
 
 ```bash
 docker compose up -d
@@ -47,76 +40,49 @@ export OTEL_EXPORTER_OTLP_ENDPOINT='http://localhost:4318'
 go run . -timeout 3m
 ```
 
-Open <http://localhost:16686> and select **GoOrderProcessingSample**, or search for
-the printed trace ID. Port **4318** is OTLP/HTTP, not OTLP/gRPC.
+Open <http://localhost:16686> and select **GoOrderProcessingSample**, or search
+for the trace ID. Use port **4318** (OTLP/HTTP), not 4317 (OTLP/gRPC).
 
 | Variable | Behavior |
 | --- | --- |
-| Neither endpoint set | Trace context and spans are created but are not sent to a collector |
-| `OTEL_EXPORTER_OTLP_ENDPOINT` | Base URL; the exporter appends `/v1/traces` |
+| Neither endpoint set | Spans are created but not exported |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Base URL; the exporter adds `/v1/traces` |
 | `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` | Full traces URL; overrides the base URL |
 
-Use HTTPS when connecting to a remote collector. The exporter supports the
-standard OTLP environment settings for headers and certificates.
-The command reports exporter errors when it sends remaining spans or shuts down.
-This includes errors from earlier background exports. Such errors cause a
-nonzero exit status. A collector accepting spans does not prove that they are
-stored or visible in a tracing tool.
+Use HTTPS for a remote collector. Export errors cause a nonzero exit code.
+Stop Jaeger with `docker compose down`.
 
 ## How spans are connected
 
-The client gives DTS a trace context marked for recording.
-**DTS creates the durable orchestration, activity, and timer spans.**
-The Go SDK restores their context in `ActivityContext.Context()` without creating
-local copies of those service spans. The application creates a child span
-around each activity and passes trace information through W3C HTTP headers.
-
-The code passes tracing providers and context handlers as arguments instead of
-using global settings. The orchestrator creates no spans during replay.
-To view DTS service spans too, set up the service's tracing support separately.
-Without this setup, some parent spans will not appear in Jaeger.
-The sample does not change the scheduler's tracing settings.
+The client starts a span and passes its trace context to DTS. **DTS creates the
+orchestration, activity, and timer spans.** The Go SDK gives that context to
+activities through `ActivityContext.Context()`, but it does not export the DTS
+spans locally. The app creates a child span for each activity and sends the
+trace context to the HTTP service with W3C headers. Because DTS spans are not
+exported locally, some parent spans do not appear in Jaeger.
 
 ## Code map
 
-| File | Responsibility |
+| File | Purpose |
 | --- | --- |
-| [main.go](main.go) | Starts the command-line program and sets its timeout |
-| [workflow.go](workflow.go) | The four-step durable order chain |
-| [activities.go](activities.go) | Synthetic order stages |
-| [client.go](client.go) | Schedule under a caller span and display the result |
-| [worker.go](worker.go) | Register the workflow and instrumented activities |
-| [telemetry.go](telemetry.go) | Sets up tracing, optional OTLP export, and safe shutdown |
-| [notification.go](notification.go) | Local HTTP test service and trace-context handling |
-| [integration_test.go](integration_test.go), [verify_test.go](verify_test.go) | Checks history for specific executions, results, and spans |
-| [observations_test.go](observations_test.go) | Records trace contexts for tests |
+| [main.go](main.go) | Command-line entry point |
+| [workflow.go](workflow.go) | The four-step order orchestration |
+| [activities.go](activities.go) | Order steps |
+| [client.go](client.go) | Schedules the orchestration under a caller span |
+| [worker.go](worker.go) | Registers the orchestration and traced activities |
+| [telemetry.go](telemetry.go) | Tracer setup, optional OTLP export, and shutdown |
+| [notification.go](notification.go) | Local HTTP service and trace headers |
+| [integration_test.go](integration_test.go), [verify_test.go](verify_test.go), [observations_test.go](observations_test.go) | Span and history checks |
 
-## Testing
-
-Offline tests use a local HTTP test service and an in-memory exporter:
+## Tests
 
 ```bash
 go test -mod=readonly .
-```
-
-With the configured DTS backend available:
-
-```bash
 DTS_SAMPLES_E2E=1 go test -run '^TestIntegration$' -v .
 ```
 
-The integration test adds an in-memory exporter to the application's provider.
-It runs the same workflow, activities, and HTTP handler as the demo.
-The test checks each step's result and the history for the expected execution ID.
-It also checks trace IDs, recording flags, remote contexts, and parent-child
-links between application and HTTP spans.
-The in-memory exporter and detailed checks are **not part of the runnable demo**.
+The integration test adds an in-memory exporter. It checks results, trace IDs,
+and parent-child links between spans.
 
-## Cleanup
-
-The worker, client, local HTTP service, and tracer provider close automatically. The
-completed orchestration remains in the DTS dashboard. Stop the optional Jaeger
-compose project with `docker compose down` when finished.
-
-[Go tracing sample](https://github.com/microsoft/durabletask-go/tree/v1.0.0-beta.1/samples/distributedtracing)
-and [OpenTelemetry Go documentation](https://opentelemetry.io/docs/languages/go/).
+See the [SDK tracing sample](https://github.com/microsoft/durabletask-go/tree/v1.0.0-beta3/samples/distributedtracing)
+and the [OpenTelemetry Go documentation](https://opentelemetry.io/docs/languages/go/).

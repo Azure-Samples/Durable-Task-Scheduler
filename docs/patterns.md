@@ -2,7 +2,7 @@
 
 This guide maps each common orchestration pattern to available samples and documentation. All patterns can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler).
 
-Go samples require Go 1.25.0+ and use the beta standalone Durable Task SDK. They are not Durable Functions samples. See the [Go quickstart](./quickstart.md#go) for the shared module and connection setup.
+Go samples need Go 1.25.0+ and use the Durable Task SDK (beta), not Durable Functions. See the [Go quickstart](./quickstart.md#go) for setup.
 
 ---
 
@@ -249,12 +249,12 @@ Schedule (every 5s) → Start orchestration → ... → Start orchestration
 
 ## Additional Patterns and SDK Features
 
-Explore these SDK features and integrations. See each README for prerequisites and usage.
+See each README for prerequisites and usage.
 
 | Pattern or Feature | Python | Go |
 |--------------------|--------|----|
 | Agent-directed workflows | [Sample](../samples/durable-task-sdks/python/agent-directed-workflows) | |
-| AI research agent | [Sample](../samples/durable-task-sdks/python/arXiv_research_agent) | [Sample](../samples/durable-task-sdks/go/arXiv_research_agent) |
+| AI research agent | [Sample](../samples/durable-task-sdks/python/arXiv_research_agent) | |
 | Large payload externalization | [Sample](../samples/durable-task-sdks/python/large-payload) | [Sample](../samples/durable-task-sdks/go/large-payload) |
 | History export | [Sample](../samples/durable-task-sdks/python/history-export) | [Sample](../samples/durable-task-sdks/go/history-export) |
 | Orchestration management | [Sample](../samples/durable-task-sdks/python/orchestration-management) | [Sample](../samples/durable-task-sdks/go/orchestration-management) |
@@ -262,9 +262,7 @@ Explore these SDK features and integrations. See each README for prerequisites a
 | Testing | [Sample](../samples/durable-task-sdks/python/testing) | [Sample](../samples/durable-task-sdks/go/testing) |
 | OpenTelemetry tracing | [Sample](../samples/durable-task-sdks/python/opentelemetry-tracing) | [Sample](../samples/durable-task-sdks/go/opentelemetry-tracing) |
 
-The Go testing sample uses a local step adapter for offline business-logic tests, not an SDK in-memory backend. Replay verification requires its opt-in integration tests against a real DTS emulator or Azure scheduler.
-
-For Go tracing, application spans and propagated trace context are distinct from the durable-operation spans emitted by DTS; see the [observability guide](./observability.md#go).
+The Go testing sample tests business logic offline. To test replay, run its integration tests against DTS. For Go tracing, see the [observability guide](./observability.md#go).
 
 ---
 

@@ -35,7 +35,7 @@
    [command]
    ```
 
-For Go SDK samples, use the shared module at `samples/durable-task-sdks/go`: run `go mod download`, then `go run ./<sample-name>`. Do not create a nested module. Keep `main.go` small, put workflow/activity/client code in focused files, and include a code map. The default command should run a short demonstration and exit. Put comprehensive verification in an opt-in `TestIntegration`, separate from application code. Go is not a Durable Functions language.
+For Go SDK samples, use the shared module at `samples/durable-task-sdks/go`: run `go mod download`, then `go run ./<sample-name>`. Do not create a nested module. Keep `main.go` small and include a code map. The default command should run a short demo and exit. Put detailed checks in an opt-in `TestIntegration`.
 
 ## Expected Output
 
@@ -51,7 +51,7 @@ Orchestration completed: [result]
 
 To use a Durable Task Scheduler in Azure instead of the emulator:
 
-1. Set the environment variables that the sample actually reads. For samples using separate endpoint and task-hub variables:
+1. Set the environment variables that the sample reads. For samples with separate endpoint and task hub variables:
    ```bash
    export ENDPOINT=<your-scheduler-endpoint>
    export TASKHUB=<your-taskhub-name>
@@ -61,11 +61,11 @@ To use a Durable Task Scheduler in Azure instead of the emulator:
    ```bash
    export DTS_CONNECTION_STRING='Endpoint=https://<scheduler-host>;TaskHub=<hub>;Authentication=DefaultAzure'
    ```
-   Authenticate with `az login` for local development and grant the identity the Durable Task Data Contributor role. Use `Authentication=AzureCLI` to explicitly select CLI authentication. See the [Go Azure connection instructions](./quickstart.md#connect-the-go-samples-to-azure).
+   Sign in with `az login` and give the identity the Durable Task Data Contributor role. Use `Authentication=AzureCLI` to select CLI sign-in. See [Connect the Go samples to Azure](./quickstart.md#connect-the-go-samples-to-azure).
 
 2. Run the sample using the same commands as above.
 
-Document resource provisioning separately from connecting to an existing scheduler. Only advertise deployment templates or `azd up` when that sample actually includes them.
+Describe resource creation separately from connecting to an existing scheduler. Mention `azd up` only if the sample includes deployment templates.
 
 See the [Durable Task Scheduler documentation](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler) for setup instructions.
 
