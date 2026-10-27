@@ -4,4 +4,4 @@ fastapi>=0.136.1
 uvicorn>=0.52.4
 redis>=8.1.0
 openai>=3.28.0
-azure-identity>=1.25.3
+azure-identity>=1.26.0
