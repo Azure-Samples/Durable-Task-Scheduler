@@ -98,7 +98,21 @@ cd samples/durable-task-sdks/javascript/function-chaining
 npm run client
 ```
 
-Go samples in this repository are coming soon. See the [Go SDK repository](https://github.com/microsoft/durabletask-go) for the beta SDK and its own samples.
+### Go
+
+**Requires:** [Go 1.25.0 or later](https://go.dev/dl/). The samples share one module that uses `github.com/microsoft/durabletask-go` **v1.0.0-beta3**.
+
+This sample starts the worker and client in the same process:
+
+```bash
+cd samples/durable-task-sdks/go
+go mod download
+go run ./function-chaining
+```
+
+The default connection is `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. If `DTS_CONNECTION_STRING` is set, unset it first.
+
+Run any of the [Go samples](../samples/durable-task-sdks/go) with `go run ./<sample-name>`. Some samples have extra prerequisites; see their READMEs.
 
 ## Step 3: View in the Dashboard
 
@@ -117,12 +131,33 @@ You ran a **function chaining** orchestration, a sequential workflow where:
 
 The orchestration is **durable**: if the process had crashed at any point, it would have automatically resumed from where it left off.
 
+## Connect the Go Samples to Azure
+
+Use an existing scheduler and task hub, or create them with the [scheduler setup guide](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/develop-with-durable-task-scheduler). Give your identity the **Durable Task Data Contributor** role; see [identity-based access](https://learn.microsoft.com/azure/azure-functions/durable/durable-task-scheduler/durable-task-scheduler-identity). Use a separate task hub for the Go samples. Do not let workers from other SDKs manage the same schedules.
+
+From `samples/durable-task-sdks/go`:
+
+```bash
+az login
+export DTS_CONNECTION_STRING='Endpoint=https://<scheduler-host>;TaskHub=<hub>;Authentication=DefaultAzure'
+go run ./function-chaining
+```
+
+`DefaultAzure` uses the Azure Identity default credential chain. Use `Authentication=AzureCLI` to use your CLI sign-in. For managed or workload identity, see the [Go SDK connection guide](https://github.com/microsoft/durabletask-go/blob/v1.0.0-beta3/durabletaskscheduler/README.md#configuration).
+
+Notes:
+
+- The large-payload and history-export samples use local **Azurite** for Blob Storage, even when DTS is in Azure. See their READMEs to use Azure Blob Storage.
+- **History export needs its own task hub.** Export selects instances by completion time, not instance ID, so other work in the hub would be exported too.
+- These steps connect a local Go process to Azure. They do not deploy it. The Go samples have no `azd` templates.
+
 ## Next Steps
 
 | What to do | Link |
 |-----------|------|
 | Explore all patterns | [Orchestration Patterns Guide](./patterns.md) |
 | Browse all samples | [Sample Catalog](../samples/README.md) |
+| Explore the Go SDK | [Go Samples](../samples/durable-task-sdks/go) |
 | Learn about the Durable Task Scheduler | [Official Documentation](https://aka.ms/dts-documentation) |
 | Add OpenTelemetry tracing | [Observability Guide](./observability.md) |
 | Deploy to Azure | [Azure deployment guide](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler) |

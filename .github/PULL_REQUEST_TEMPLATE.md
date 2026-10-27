@@ -29,11 +29,12 @@ What kind of change does this Pull Request introduce?
 git clone [repo-address]
 cd [repo-name]
 git checkout [branch-name]
-npm install
+# Follow the sample README for language-specific setup.
 ```
 
 * Test the code
 <!-- Add steps to run the tests suite and/or manually test -->
+<!-- For Go, run go mod download, go build ./..., go test ./..., and go vet ./... from samples/durable-task-sdks/go. Say whether you also ran the ./e2e runner (see CONTRIBUTING.md). -->
 ```
 ```
 

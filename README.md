@@ -71,9 +71,9 @@ docker run -d -p 8080:8080 -p 8082:8082 mcr.microsoft.com/dts/dts-emulator:lates
 
 ### Step 2: Pick your language and run a sample
 
-Run the worker first, then run the client in a separate terminal to schedule orchestrations. Start each command at the repository root. The Java sample runs both in one process.
+Run the worker first, then run the client in a separate terminal to schedule orchestrations. Start each command at the repository root. The Java and Go samples run both in one process.
 
-See the [quickstart guide](./docs/quickstart.md) for runtime prerequisites (.NET 10, Python 3.9+, Java 21, or Node.js 22+) and Python virtual environment setup.
+See the [quickstart guide](./docs/quickstart.md) for runtime prerequisites (.NET 10, Python 3.9+, Java 21, Node.js 22+, or Go 1.25+) and Python virtual environment setup.
 
 | Language | Quickstart Sample | Worker Command | Client Command |
 |----------|-------------------|----------------|----------------|
@@ -81,6 +81,7 @@ See the [quickstart guide](./docs/quickstart.md) for runtime prerequisites (.NET
 | Python | [Function Chaining](./samples/durable-task-sdks/python/function-chaining) | `cd samples/durable-task-sdks/python/function-chaining && pip install -r requirements.txt && python worker.py` | `cd samples/durable-task-sdks/python/function-chaining && python client.py` |
 | Java | [Function Chaining](./samples/durable-task-sdks/java/function-chaining) | `cd samples/durable-task-sdks/java/function-chaining && ./gradlew runChainingPattern` | Included in the same process |
 | JavaScript (preview) | [Function Chaining](./samples/durable-task-sdks/javascript/function-chaining) | `cd samples/durable-task-sdks/javascript/function-chaining && npm install && npm run worker` | `cd samples/durable-task-sdks/javascript/function-chaining && npm run client` |
+| Go (beta) | [Function Chaining](./samples/durable-task-sdks/go/function-chaining) | `cd samples/durable-task-sdks/go && go mod download && go run ./function-chaining` | Included in the same process |
 
 ### Step 3: Open the dashboard
 
@@ -98,7 +99,7 @@ Navigate to **[http://localhost:8082](http://localhost:8082)** to view orchestra
 | **Scaling** | Built-in auto-scale | Bring your own scaling |
 | **Languages** | .NET, Python, Java, JavaScript/TypeScript, PowerShell | .NET, Python, Java, JavaScript/TypeScript (preview), Go (beta) |
 
-Go samples in this repository are coming soon. The [Go SDK repository](https://github.com/microsoft/durabletask-go) contains the beta SDK and its own samples.
+Go is supported only through the Durable Task SDK, not Durable Functions or Microsoft Agent Framework.
 
 📖 [Choosing an orchestration framework →](https://learn.microsoft.com/azure/durable-task/common/choose-orchestration-framework)
 
@@ -106,7 +107,7 @@ Go samples in this repository are coming soon. The [Go SDK repository](https://g
 
 ## Samples
 
-Explore examples across languages and frameworks.
+Explore runnable examples across languages and frameworks, including [Go SDK samples](./samples/durable-task-sdks/go).
 
 📂 [**Full Sample Catalog →**](./samples/README.md)
 
@@ -138,7 +139,7 @@ The Durable Task Scheduler provides a **built-in dashboard** for monitoring orch
 - [Python](https://github.com/microsoft/durabletask-python)
 - [Java](https://learn.microsoft.com/java/api/com.microsoft.durabletask?view=durabletask-java-1.x)
 - [JavaScript / TypeScript (preview)](https://github.com/microsoft/durabletask-js) - [JavaScript samples](./samples/durable-task-sdks/javascript/)
-- [Go (beta)](https://github.com/microsoft/durabletask-go) - samples in this repository coming soon
+- [Go (beta)](https://github.com/microsoft/durabletask-go) - [Go samples](./samples/durable-task-sdks/go/)
 
 ### Durable Functions
 
@@ -160,6 +161,7 @@ This repository includes specialized skills for AI coding assistants ([GitHub Co
 | **durable-task-java** | Durable Task SDK for Java - orchestrations, activities, and common workflow patterns | [Skill →](.github/skills/durable-task-java/SKILL.md) |
 | **durable-task-js** | Durable Task SDK for JavaScript/TypeScript - orchestrations, activities, entities, and common workflow patterns | [Skill →](.github/skills/durable-task-js/SKILL.md) |
 | **durable-task-python** | Durable Task SDK for Python - orchestrations, activities, entities, and stateful agents | [Skill →](.github/skills/durable-task-python/SKILL.md) |
+| **durable-task-go** | Durable Task SDK for Go (beta) - orchestrations, activities, entities, and sample validation | [Skill →](.github/skills/durable-task-go/SKILL.md) |
 | **migrate-backend-to-dts** | Migrate Durable Functions apps from Azure Storage, Netherite, or MSSQL to Durable Task Scheduler | [Skill →](.github/skills/migrate-backend-to-dts/SKILL.md) |
 
 **Usage:** Reference a skill file in your AI assistant (e.g., `#file:.github/skills/durable-task-dotnet/SKILL.md` in Copilot Chat) or ask it to read the skill before generating code. Skills are automatically detected by Claude Code when working on relevant files.

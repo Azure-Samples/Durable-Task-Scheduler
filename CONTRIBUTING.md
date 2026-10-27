@@ -80,5 +80,34 @@ That's it! Thank you for your contribution!
 - Each sample should have its own directory under the appropriate framework/language folder.
 - Include a `README.md` following a consistent structure: description, prerequisites, how to run, and expected output.
 - Use the Durable Task Scheduler emulator as the default development experience.
-- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java, `package.json` for JavaScript/TypeScript).
+- Include a `requirements.txt` (Python) or project file (`.csproj`/`.sln` for .NET, `build.gradle` for Java, `package.json` for JavaScript/TypeScript). Go samples share one `go.mod` in `samples/durable-task-sdks/go`; do not create nested modules.
 - Test your sample with the emulator before submitting.
+- Add the sample to the [catalog](./samples/README.md) and relevant [pattern documentation](./docs/patterns.md).
+
+### Go samples
+
+Use Go **1.25.0 or later** and the SDK version in the shared module (currently `github.com/microsoft/durabletask-go` **v1.0.0-beta3**). Put each sample in its own package under `samples/durable-task-sdks/go`. The default command should start the worker and client, show the pattern, print a result, and exit.
+
+Keep `main.go` small (entry point and CLI flags). Put orchestrations, activities, worker setup, and client code in separate files in the same package. Put assertions and test-only helpers in `*_test.go`. Each sample needs an opt-in `TestIntegration` in `integration_test.go` that uses `testutil.IntegrationContext(t)`. Each README needs a short code map.
+
+Format changed files with `gofmt`, then run the same offline checks as CI:
+
+```bash
+cd samples/durable-task-sdks/go
+go mod download
+go build ./...
+go test ./...
+go vet ./...
+```
+
+Ordinary tests must not need an emulator, Azure credentials, or cloud resources. The Go beta SDK has no public in-memory test backend, so offline tests do not check replay. Follow the testing sample's local step adapter.
+
+Integration tests against real DTS run only with `DTS_SAMPLES_E2E=1`. To run all demos and integration tests, first prepare a separate task hub and Blob endpoint as described in the [Go validation guide](./samples/durable-task-sdks/go/README.md#verify-every-sample-on-either-backend). Then use the sequential runner from the Go module:
+
+```bash
+DTS_SAMPLES_E2E=1 go test -v -count=1 -timeout 30m ./e2e
+```
+
+The runner runs history export on a separate `historyexport` task hub, because export selects instances by completion time, not instance ID.
+
+Use the emulator connection string by default: `Endpoint=http://localhost:8080;TaskHub=default;Authentication=None`. Read `DTS_CONNECTION_STRING` for Azure. Use placeholders, never real resource IDs or credentials, in examples. See the [Go quickstart](./docs/quickstart.md#go) for connection setup.

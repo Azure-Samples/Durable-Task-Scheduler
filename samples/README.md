@@ -16,6 +16,7 @@ New to Durable Task Scheduler? Start with the **Function Chaining** sample in yo
 | Python | [Function Chaining](./durable-task-sdks/python/function-chaining) | Sequential workflow basics |
 | Java | [Function Chaining](./durable-task-sdks/java/function-chaining) | Sequential workflow basics |
 | JavaScript | [Function Chaining](./durable-task-sdks/javascript/function-chaining) | Sequential workflow basics |
+| Go | [Function Chaining](./durable-task-sdks/go/function-chaining) | Worker and client in one runnable package (Go 1.25+, beta SDK) |
 
 ---
 
@@ -25,31 +26,33 @@ A quick-reference matrix showing which patterns are available in each language a
 
 ### Durable Task SDKs
 
-| Pattern | .NET | Python | Java | JavaScript |
-|---------|------|--------|------|------------|
-| Function Chaining | [✅](./durable-task-sdks/dotnet/FunctionChaining) | [✅](./durable-task-sdks/python/function-chaining) | [✅](./durable-task-sdks/java/function-chaining) | [✅](./durable-task-sdks/javascript/function-chaining) |
-| Fan-out/Fan-in | [✅](./durable-task-sdks/dotnet/FanOutFanIn) | [✅](./durable-task-sdks/python/fan-out-fan-in) | [✅](./durable-task-sdks/java/fan-out-fan-in) | [✅](./durable-task-sdks/javascript/fan-out-fan-in) |
-| Human Interaction | [✅](./durable-task-sdks/dotnet/HumanInteraction) | [✅](./durable-task-sdks/python/human-interaction) | [✅](./durable-task-sdks/java/human-interaction) | |
-| Async HTTP API | | [✅](./durable-task-sdks/python/async-http-api) | [✅](./durable-task-sdks/java/async-http-api) | |
-| Monitoring | [✅](./durable-task-sdks/dotnet/Monitoring) | [✅](./durable-task-sdks/python/monitoring) | [✅](./durable-task-sdks/java/monitoring) | |
-| Sub-orchestrations | [✅](./durable-task-sdks/dotnet/SubOrchestrations) | [✅](./durable-task-sdks/python/sub-orchestrations) | [✅](./durable-task-sdks/java/sub-orchestrations) | |
-| Eternal Orchestrations | [✅](./durable-task-sdks/dotnet/EternalOrchestrations) | [✅](./durable-task-sdks/python/eternal-orchestrations) | [✅](./durable-task-sdks/java/eternal-orchestrations) | |
-| Saga Pattern | | [✅](./durable-task-sdks/python/saga) | | |
-| Durable Entities | [✅](./durable-task-sdks/dotnet/EntitiesSample) | [✅](./durable-task-sdks/python/entities) | [✅](./durable-task-sdks/java/entities) | |
-| Orchestration Versioning | [✅](./durable-task-sdks/dotnet/OrchestrationVersioning) | [✅](./durable-task-sdks/python/versioning) | | |
-| ASP.NET Web API | [✅](./durable-task-sdks/dotnet/AspNetWebApp) | | | |
-| Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | [✅](./durable-task-sdks/python/scheduled-tasks) | | |
-| .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | |
-| AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | |
-| AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | |
-| Large Payload | [✅](./durable-task-sdks/dotnet/LargePayload) | [✅](./durable-task-sdks/python/large-payload) | | |
-| Export History | [✅](./durable-task-sdks/dotnet/ExportHistoryWebApp) | [✅](./durable-task-sdks/python/history-export) | | |
-| Bounded Coordinator | [✅](./durable-task-sdks/dotnet/BoundedCoordinator) | [✅](./durable-task-sdks/python/bounded-coordinator) | | |
-| OpenTelemetry Tracing | [✅](./durable-task-sdks/dotnet/OpenTelemetryTracing) | [✅](./durable-task-sdks/python/opentelemetry-tracing) | [✅](./durable-task-sdks/java/opentelemetry-tracing) | |
-| Agent-Directed Workflows | [✅](./durable-task-sdks/dotnet/Agents/AgentDirectedWorkflows) | [✅](./durable-task-sdks/python/agent-directed-workflows) | | |
-| Orchestration Management | | [✅](./durable-task-sdks/python/orchestration-management) | | |
-| Work Item Filtering | [✅](./scenarios/WorkItemFilteringSplitActivities) | [✅](./durable-task-sdks/python/work-item-filtering) | [✅](./scenarios/WorkItemFilteringSplitActivitiesJava) | |
-| In-Memory Testing | | [✅](./durable-task-sdks/python/testing) | | |
+| Pattern | .NET | Python | Java | JavaScript | Go (beta) |
+|---------|------|--------|------|------------|-----------|
+| Function Chaining | [✅](./durable-task-sdks/dotnet/FunctionChaining) | [✅](./durable-task-sdks/python/function-chaining) | [✅](./durable-task-sdks/java/function-chaining) | [✅](./durable-task-sdks/javascript/function-chaining) | [✅](./durable-task-sdks/go/function-chaining) |
+| Fan-out/Fan-in | [✅](./durable-task-sdks/dotnet/FanOutFanIn) | [✅](./durable-task-sdks/python/fan-out-fan-in) | [✅](./durable-task-sdks/java/fan-out-fan-in) | [✅](./durable-task-sdks/javascript/fan-out-fan-in) | [✅](./durable-task-sdks/go/fan-out-fan-in) |
+| Human Interaction | [✅](./durable-task-sdks/dotnet/HumanInteraction) | [✅](./durable-task-sdks/python/human-interaction) | [✅](./durable-task-sdks/java/human-interaction) | | [✅](./durable-task-sdks/go/human-interaction) |
+| Async HTTP API | | [✅](./durable-task-sdks/python/async-http-api) | [✅](./durable-task-sdks/java/async-http-api) | | [✅](./durable-task-sdks/go/async-http-api) |
+| Monitoring | [✅](./durable-task-sdks/dotnet/Monitoring) | [✅](./durable-task-sdks/python/monitoring) | [✅](./durable-task-sdks/java/monitoring) | | [✅](./durable-task-sdks/go/monitoring) |
+| Sub-orchestrations | [✅](./durable-task-sdks/dotnet/SubOrchestrations) | [✅](./durable-task-sdks/python/sub-orchestrations) | [✅](./durable-task-sdks/java/sub-orchestrations) | | [✅](./durable-task-sdks/go/sub-orchestrations) |
+| Eternal Orchestrations | [✅](./durable-task-sdks/dotnet/EternalOrchestrations) | [✅](./durable-task-sdks/python/eternal-orchestrations) | [✅](./durable-task-sdks/java/eternal-orchestrations) | | [✅](./durable-task-sdks/go/eternal-orchestrations) |
+| Saga Pattern | | [✅](./durable-task-sdks/python/saga) | | | [✅](./durable-task-sdks/go/saga) |
+| Durable Entities | [✅](./durable-task-sdks/dotnet/EntitiesSample) | [✅](./durable-task-sdks/python/entities) | [✅](./durable-task-sdks/java/entities) | | [✅](./durable-task-sdks/go/entities) |
+| Orchestration Versioning | [✅](./durable-task-sdks/dotnet/OrchestrationVersioning) | [✅](./durable-task-sdks/python/versioning) | | | [✅](./durable-task-sdks/go/versioning) |
+| ASP.NET Web API | [✅](./durable-task-sdks/dotnet/AspNetWebApp) | | | | |
+| Scheduled Tasks | [✅](./durable-task-sdks/dotnet/ScheduleWebApp) | [✅](./durable-task-sdks/python/scheduled-tasks) | | | [✅](./durable-task-sdks/go/scheduled-tasks) |
+| .NET Aspire Integration | [✅](./durable-task-sdks/dotnet/DtsWithAspire) | | | | |
+| AI Agent Chaining | [✅](./durable-task-sdks/dotnet/Agents/PromptChaining) | | | | |
+| AI Research Agent | | [✅](./durable-task-sdks/python/arXiv_research_agent) | | | |
+| Large Payload | [✅](./durable-task-sdks/dotnet/LargePayload) | [✅](./durable-task-sdks/python/large-payload) | | | [✅](./durable-task-sdks/go/large-payload) |
+| Export History | [✅](./durable-task-sdks/dotnet/ExportHistoryWebApp) | [✅](./durable-task-sdks/python/history-export) | | | [✅](./durable-task-sdks/go/history-export) |
+| Bounded Coordinator | [✅](./durable-task-sdks/dotnet/BoundedCoordinator) | [✅](./durable-task-sdks/python/bounded-coordinator) | | | [✅](./durable-task-sdks/go/bounded-coordinator) |
+| OpenTelemetry Tracing | [✅](./durable-task-sdks/dotnet/OpenTelemetryTracing) | [✅](./durable-task-sdks/python/opentelemetry-tracing) | [✅](./durable-task-sdks/java/opentelemetry-tracing) | | [✅](./durable-task-sdks/go/opentelemetry-tracing) |
+| Agent-Directed Workflows | [✅](./durable-task-sdks/dotnet/Agents/AgentDirectedWorkflows) | [✅](./durable-task-sdks/python/agent-directed-workflows) | | | |
+| Orchestration Management | | [✅](./durable-task-sdks/python/orchestration-management) | | | [✅](./durable-task-sdks/go/orchestration-management) |
+| Work Item Filtering | [✅](./scenarios/WorkItemFilteringSplitActivities) | [✅](./durable-task-sdks/python/work-item-filtering) | [✅](./scenarios/WorkItemFilteringSplitActivitiesJava) | | [✅](./durable-task-sdks/go/work-item-filtering) |
+| In-Memory Testing | | [✅](./durable-task-sdks/python/testing) | | | [✅](./durable-task-sdks/go/testing) |
+
+See the [Go samples](./durable-task-sdks/go/) for setup.
 
 ### Durable Functions
 
@@ -144,9 +147,42 @@ The [JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) is 
 | [Function Chaining](./durable-task-sdks/javascript/function-chaining) | Function Chaining | Sequential workflow basics with JavaScript SDK |
 | [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Fan-out/Fan-in | Parallel execution and result aggregation with JavaScript SDK |
 
-### Go (samples coming soon)
+### Go
 
-Go samples in this repository are coming soon. The [official Go SDK repository](https://github.com/microsoft/durabletask-go) provides the beta SDK and its own samples for Durable Task Scheduler and the local emulator.
+**Requires:** Go **1.25.0+**. All samples share one module in [`durable-task-sdks/go`](./durable-task-sdks/go) that uses `github.com/microsoft/durabletask-go` **v1.0.0-beta3**.
+
+From the repository root, with the emulator running:
+
+```bash
+cd samples/durable-task-sdks/go
+go mod download
+go run ./function-chaining
+```
+
+Replace `function-chaining` with any sample name below. Each sample runs its worker and client, prints a result, and exits. To connect to Azure, set `DTS_CONNECTION_STRING`; see the [Go quickstart](../docs/quickstart.md#go). Large Payload and Export History also need Blob Storage (Azurite by default). Export History needs a separate task hub; see its README.
+
+| Sample | Pattern | Description |
+|--------|---------|-------------|
+| [Function Chaining](./durable-task-sdks/go/function-chaining) | Function Chaining | Sequential activities |
+| [Fan-out/Fan-in](./durable-task-sdks/go/fan-out-fan-in) | Fan-out/Fan-in | Parallel activities and result aggregation |
+| [Human Interaction](./durable-task-sdks/go/human-interaction) | Human Interaction | External events with an approval timeout |
+| [Async HTTP API](./durable-task-sdks/go/async-http-api) | Async HTTP API | HTTP start/status endpoints and a polling client |
+| [Monitoring](./durable-task-sdks/go/monitoring) | Monitoring | Periodic status checks with durable timers |
+| [Sub-orchestrations](./durable-task-sdks/go/sub-orchestrations) | Sub-orchestrations | Parent/child workflow composition |
+| [Eternal Orchestrations](./durable-task-sdks/go/eternal-orchestrations) | Eternal Orchestrations | Continue-as-new |
+| [Durable Entities](./durable-task-sdks/go/entities) | Durable Entities | Persistent entity state and operations |
+| [Orchestration Versioning](./durable-task-sdks/go/versioning) | Versioning | Register and run versioned tasks |
+| [Saga Pattern](./durable-task-sdks/go/saga) | Saga | Compensating activities after a failed step |
+| [OpenTelemetry Tracing](./durable-task-sdks/go/opentelemetry-tracing) | Observability | Application spans and W3C trace context |
+| [Bounded Coordinator](./durable-task-sdks/go/bounded-coordinator) | Bounded Coordinator | Bounded child batches with continue-as-new |
+| [Large Payload](./durable-task-sdks/go/large-payload) | Large Payload | Externalize inputs and outputs with the payload extension |
+| [Export History](./durable-task-sdks/go/history-export) | History Export (preview) | Export terminal orchestration histories with the history extension |
+| [Scheduled Tasks](./durable-task-sdks/go/scheduled-tasks) | Scheduled Tasks | Recurring interval schedules and lifecycle management |
+| [Orchestration Management](./durable-task-sdks/go/orchestration-management) | Management | Query and manage orchestration lifecycle |
+| [Testing](./durable-task-sdks/go/testing) | Testing | Offline business-logic tests and DTS integration tests |
+| [Work Item Filtering](./durable-task-sdks/go/work-item-filtering) | Worker Routing | Route work to matching worker registrations |
+
+Run `go build ./...`, `go test ./...`, and `go vet ./...` from the Go module. These need no scheduler. Integration tests need `DTS_SAMPLES_E2E=1`; see the [contributor guide](../CONTRIBUTING.md#go-samples).
 
 ---
 
