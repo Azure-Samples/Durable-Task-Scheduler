@@ -24,7 +24,7 @@ If you want the smallest possible example, start with the sibling [LargePayload]
 
 The flow is intentionally parallel:
 
-1. An HTTP trigger starts an orchestration with a payload size larger than 1 MB.
+1. An HTTP trigger starts an orchestration with a small request specifying the activity count and payload size.
 2. The orchestrator fans out to multiple activities.
 3. Each activity generates a payload larger than 1 MB and returns it to the orchestrator.
 4. The orchestrator fans in and returns a small summary proving every activity payload survived the round-trip.
@@ -42,7 +42,7 @@ The sample enables these settings in `host.json`:
     "connectionStringName": "DTS_CONNECTION_STRING",
     "payloadStorageEnabled": true,
     "payloadStorageThresholdBytes": 262144,
-    "payloadStorageMaxPayloadBytes": 15728640
+    "payloadStorageMaxSizeBytes": 15728640
   },
   "hubName": "%TASKHUB_NAME%"
 }
@@ -59,9 +59,9 @@ The sample uses **three deterministic, low-compressibility 1.5 MiB activity payl
 
 ### Maximum payload size
 
-`payloadStorageThresholdBytes` controls *when* a payload is externalized. A separate setting, `payloadStorageMaxPayloadBytes`, controls the **largest single serialized UTF-8 payload** the runtime will externalize:
+`payloadStorageThresholdBytes` controls *when* a payload is externalized. A separate setting, `payloadStorageMaxSizeBytes`, controls the **largest single serialized UTF-8 payload** the runtime will externalize:
 
-- If you don't set `payloadStorageMaxPayloadBytes`, the default maximum is **10 MB (10,485,760 bytes, shown as 10,240 KB in the error message)**.
+- If you don't set `payloadStorageMaxSizeBytes`, the default maximum is **10 MB (10,485,760 bytes, shown as 10,240 KB in the error message)**.
 - The cap applies to each **single** externalized payload (here, each activity's payload), not the combined total across all activities.
 - An activity output whose serialized payload exceeds the maximum fails when the runtime tries to externalize that result. The orchestration has already been scheduled: its input contains only the activity count and requested size, and each activity generates its payload later. The error is:
 
@@ -69,22 +69,22 @@ The sample uses **three deterministic, low-compressibility 1.5 MiB activity payl
   Payload size 10742 KB exceeds the configured maximum of 10240 KB. Reduce the payload size or increase the max payload size limit.
   ```
 
-- This is a **configurable limit, not a hard product limit**. To allow larger payloads, raise `payloadStorageMaxPayloadBytes` in `host.json`. This sample sets it to `15728640` (15 MiB) per serialized payload, including JSON serialization overhead.
+- This is a **configurable limit, not a hard product limit**. To allow larger payloads, raise `payloadStorageMaxSizeBytes` in `host.json`. This sample sets it to `15728640` (15 MiB) per serialized payload, including JSON serialization overhead.
 
-#### `PAYLOAD_SIZE_BYTES` is not `payloadStorageMaxPayloadBytes`
+#### `PAYLOAD_SIZE_BYTES` is not `payloadStorageMaxSizeBytes`
 
 These two settings are easy to confuse but do completely different things:
 
 | Setting | Where it lives | What it controls |
 |---|---|---|
 | `PAYLOAD_SIZE_BYTES` | app setting / `local.settings.json` | How many bytes of test data **each activity generates** for its demo payload. |
-| `payloadStorageMaxPayloadBytes` | `host.json` | The **maximum** size of any single payload the runtime will externalize. Larger payloads fail fast. |
+| `payloadStorageMaxSizeBytes` | `host.json` | The **maximum** size of any single payload the runtime will externalize. Larger payloads fail fast. |
 
-If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxPayloadBytes` (for example `PAYLOAD_SIZE_BYTES=11000000` against the default 10 MB cap), the run fails **by design** with the error above. Set the cap above the per-activity generated data size, leaving room for JSON string quotes. Setting the two values equal can still exceed the cap after serialization.
+If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxSizeBytes` (for example `PAYLOAD_SIZE_BYTES=11000000` against the default 10 MB cap), the run fails **by design** with the error above. Set the cap above the per-activity generated data size, leaving room for JSON string quotes. Setting the two values equal can still exceed the cap after serialization.
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 - [Docker](https://www.docker.com/products/docker-desktop/)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
@@ -160,7 +160,7 @@ The extension stores payload blobs with gzip content encoding, so Azure shows th
 | `DTS_CONNECTION_STRING` | DTS emulator or Azure connection string | `Endpoint=http://localhost:8080;Authentication=None` |
 | `TASKHUB_NAME` | Task hub name | `default` |
 | `AzureWebJobsStorage` | Storage for Functions host state and payload blobs | `UseDevelopmentStorage=true` locally |
-| `PAYLOAD_SIZE_BYTES` | Size of the test payload each activity generates. Keep it below `payloadStorageMaxPayloadBytes` (15 MiB in this sample), leaving room for JSON serialization overhead. | `1572864` |
+| `PAYLOAD_SIZE_BYTES` | Size of the test payload each activity generates. Keep it below `payloadStorageMaxSizeBytes` (15 MiB in this sample), leaving room for JSON serialization overhead. | `1572864` |
 | `ACTIVITY_COUNT` | Number of parallel activity invocations | `3` |
 
 ## Deploy to Azure with AZD
@@ -183,9 +183,10 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
    The deployment provisions:
 
    - an Azure Function App
-   - a storage account used for `AzureWebJobsStorage`
+   - a storage account used for `AzureWebJobsStorage`, with a blob private endpoint
    - a Durable Task Scheduler resource and task hub
-   - a user-assigned managed identity with the required DTS and storage permissions
+   - Application Insights and Log Analytics
+   - a user-assigned managed identity with the required DTS, storage, and monitoring permissions
 
 3. Load the environment values:
 
@@ -199,7 +200,7 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
    curl -X POST "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/StartLargePayload"
    ```
 
-5. Verify payload blobs in Azure storage:
+5. Verify payload blobs in Azure storage. The storage firewall denies public access by default; the deployment script allows the deploying machine's IP so this command can run from there:
 
    ```bash
    az storage blob list \
@@ -210,6 +211,14 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
    ```
 
 6. Open the DTS dashboard URL in the Azure portal to inspect the orchestration history.
+
+## Telemetry
+
+The Functions host uses OpenTelemetry (`telemetryMode` in `host.json`).
+
+When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker registers OpenTelemetry and exports to Azure Monitor. The exporter authenticates with the app's managed identity through the dedicated `AzureMonitorExporter` settings (`AzureMonitorExporter__credential` and `AzureMonitorExporter__clientId`), so Application Insights local authentication can stay disabled. Without that connection string, as in local emulator runs, the worker does not export.
+
+In Application Insights, inspect `requests`, `dependencies`, and `traces` for exported telemetry. Payload contents are not logged.
 
 ## Files to look at
 
