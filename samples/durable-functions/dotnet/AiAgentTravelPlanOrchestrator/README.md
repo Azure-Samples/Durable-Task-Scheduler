@@ -66,6 +66,12 @@ The complete travel plan is saved to Azure Blob Storage, and a document URL is g
 
 The travel plan is presented to the user for approval via the frontend interface.
 
+### Travel-plan blob retention
+
+The sample writes documents to the private `travel-plans` container and configures no automatic expiry or cleanup job. Treat the returned blob URL as a location, not a public download link or a retention guarantee. Reading it still requires authorized storage access.
+
+Retain documents throughout the approval wait (up to seven days), booking/recovery, and the period during which users need to retrieve the plan or retained orchestration output. For production, choose an explicit business/privacy retention period, then delete eligible documents after those requirements end; coordinate this with durable history retention so saved URLs do not unexpectedly point to deleted plans. A lifecycle rule based only on blob age can delete a plan while approval or recovery is still pending. Account for soft-delete and version retention, which can retain data and incur charges after deletion. Deleting the dedicated sample environment removes its storage; do not delete a shared storage account to clean up travel plans.
+
 ### Step 8: Booking Process (Conditional)
 
 If approved, the orchestrator proceeds with the booking process. If rejected, it can either terminate or restart with modified preferences.
@@ -77,7 +83,7 @@ Upon successful booking, the user receives a final confirmation with all travel 
 ## Prerequisites
 
 - Docker
-- .NET 8 SDK
+- .NET 10 SDK
 - Azure Functions Core Tools v4
 - Node.js 22.12+ and npm (required by the frontend's Azure Storage and Vite dependencies)
 - Azure Developer CLI (azd)
@@ -86,6 +92,10 @@ Upon successful booking, the user receives a final confirmation with all travel 
   - Azure Storage Account
   - Azure Durable Task resource
   - Microsoft Foundry project with configured agents
+
+## Telemetry
+
+The Functions host uses OpenTelemetry. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports to Azure Monitor using the app's managed identity through `AzureMonitorExporter__credential` and `AzureMonitorExporter__clientId`. Without that connection string, the worker does not export. `AZURE_CLIENT_ID` is still required by the agent and storage clients.
 
 ## Setting Up Locally
 
@@ -227,6 +237,8 @@ This command will:
 > [!IMPORTANT]
 > By default, the Foundry resource allows public network access so that the function app can reach it. The template doesn't create a private endpoint for Foundry. To block public access, run `azd env set AI_PUBLIC_NETWORK_ACCESS Disabled` before `azd up`, and provide your own private endpoint and virtual network integration so the function app can still reach the Foundry project.
 >
+> The default `skipVnet=true` deployment is not a private deployment. Private Function App ingress also requires a private endpoint. The Static Web App linked backend configures Function App authentication; direct API calls must satisfy that authentication and may return 401 without it.
+
 ### 4. Configure AI Agents
 
 After deployment, create the three agents in the Foundry project. You can create them in the [Foundry portal](https://ai.azure.com) or by calling the Agent Service REST API with the deployed model. The deploying user is granted the **Foundry User** role on the Foundry resource, which is required to create agents. Role assignments can take a few minutes to take effect.
