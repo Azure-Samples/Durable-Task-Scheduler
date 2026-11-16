@@ -5,8 +5,8 @@ targetScope = 'subscription'
 param environmentName string
 
 @minLength(1)
-@description('Primary location for all resources. Must support both Durable Task Scheduler and the agent model deployment.')
-@allowed(['eastus2', 'swedencentral'])
+@description('Primary location for all resources')
+@allowed(['westus2', 'eastus', 'eastus2'])
 @metadata({
   azd: {
     type: 'location'
@@ -47,30 +47,41 @@ param disableLocalAuth bool = true
 @description('Id of the user or app to assign application roles')
 param principalId string = ''
 
-@description('Name of the Microsoft Foundry resource (AIServices account). Leave empty to generate a unique name.')
-param aiFoundryName string = ''
+@description('Name for the AI resource and used to derive name of dependent resources.')
+param aiHubName string = 'hub-demo'
 
-@description('Name of the Microsoft Foundry project.')
-param aiProjectName string = 'travel-planner'
+@description('Friendly name for your Hub resource')
+param aiHubFriendlyName string = 'Agents Hub resource'
 
-@description('Display name of the Microsoft Foundry project')
-param aiProjectFriendlyName string = 'Travel Planner Agents'
+@description('Description of your Azure AI resource displayed in AI studio')
+param aiHubDescription string = 'This is an example AI resource for use in Azure AI Studio.'
 
-@description('Description of the Microsoft Foundry project')
-param aiProjectDescription string = 'Foundry project hosting the travel planner agents.'
+@description('Name for the AI project resources.')
+param aiProjectName string = 'project-demo'
 
-@description('Whether the Microsoft Foundry resource accepts traffic from public networks')
-@allowed(['Enabled', 'Disabled'])
-param aiPublicNetworkAccess string = 'Enabled'
+@description('Friendly name for your Azure AI resource')
+param aiProjectFriendlyName string = 'Agents Project resource'
+
+@description('Description of your Azure AI resource displayed in AI studio')
+param aiProjectDescription string = 'This is an example AI Project resource for use in Azure AI Studio.'
+
+@description('Name of the Azure AI Search account')
+param aiSearchName string = 'agentaisearch'
+
+@description('Name for capabilityHost.')
+param capabilityHostName string = 'caphost1'
+
+@description('Name of the Azure AI Services account')
+param aiServicesName string = 'agentaiservices'
 
 @description('Model name for deployment')
-param modelName string = 'gpt-5-mini'
+param modelName string = 'gpt-4o-mini'
 
 @description('Model format for deployment')
 param modelFormat string = 'OpenAI'
 
 @description('Model version for deployment')
-param modelVersion string = '2025-08-07'
+param modelVersion string = '2024-07-18'
 
 @description('Model deployment SKU name')
 param modelSkuName string = 'GlobalStandard'
@@ -78,8 +89,17 @@ param modelSkuName string = 'GlobalStandard'
 @description('Model deployment capacity')
 param modelCapacity int = 50
 
-@description('Location of the Microsoft Foundry resource and model deployment, if it should differ from the rest of the resources.')
+@description('Model deployment location. If you want to deploy an Azure AI resource/model in different location than the rest of the resources created.')
 param modelLocation string = location
+
+@description('The AI Service Account full ARM Resource ID. This is an optional field, and if not provided, the resource will be created.')
+param aiServiceAccountResourceId string = ''
+
+@description('The Ai Search Service full ARM Resource ID. This is an optional field, and if not provided, the resource will be created.')
+param aiSearchServiceResourceId string = ''
+
+@description('The Ai Storage Account full ARM Resource ID. This is an optional field, and if not provided, the resource will be created.')
+param aiStorageAccountResourceId string = ''
 
 @description('The agent ID of the destination recommender agent')
 param destinationRecommenderAgentId string = 'agent-destination-recommender-agent'
@@ -96,7 +116,8 @@ var resourceToken = toLower(uniqueString(subscription().id, rg.id, environmentNa
 var tags = { 'azd-env-name': environmentName }
 var functionAppName = !empty(apiServiceName) ? apiServiceName : '${abbrs.webSitesFunctions}api-${resourceToken}'
 var deploymentStorageContainerName = 'app-package-${take(functionAppName, 32)}-${take(toLower(uniqueString(functionAppName, resourceToken)), 7)}'
-var foundryName = !empty(aiFoundryName) ? aiFoundryName : 'aif-${resourceToken}'
+var name = toLower('${aiHubName}')
+var projectName = toLower('${aiProjectName}')
 param dtsSkuName string = 'Consumption'
 param dtsCapacity int = 1
 param dtsName string = ''
@@ -106,6 +127,9 @@ var webAppName = !empty(webServiceName) ? webServiceName : '${abbrs.webStaticSit
 // Pre-compute the expected web URI for CORS settings
 var webUri = 'https://${webAppName}.azurestaticapps.net'
 param webServiceName string = ''
+
+// Create a short, unique suffix, that will be unique to each resource group
+var uniqueSuffix = toLower(uniqueString(subscription().id, rg.id, location))
 
 // Organize resources in a resource group
 resource rg 'Microsoft.Resources/resourceGroups@2025-04-01' = {
@@ -194,9 +218,9 @@ module api './app/api.bicep' = {
       AZURE_CLIENT_ID: apiUserAssignedIdentity.outputs.identityClientId
       DURABLE_TASK_SCHEDULER_CONNECTION_STRING: 'Endpoint=${dts.outputs.dts_URL};Authentication=ManagedIdentity;ClientID=${apiUserAssignedIdentity.outputs.identityClientId}'
       TASKHUB_NAME: dts.outputs.TASKHUB_NAME
-      DESTINATION_RECOMMENDER_CONNECTION: aiFoundry.outputs.projectEndpoint
-      ITINERARY_PLANNER_CONNECTION: aiFoundry.outputs.projectEndpoint
-      LOCAL_RECOMMENDATIONS_CONNECTION: aiFoundry.outputs.projectEndpoint
+      DESTINATION_RECOMMENDER_CONNECTION: aiProject.outputs.projectConnectionString 
+      ITINERARY_PLANNER_CONNECTION: aiProject.outputs.projectConnectionString
+      LOCAL_RECOMMENDATIONS_CONNECTION: aiProject.outputs.projectConnectionString
       DESTINATION_RECOMMENDER_AGENT_ID: destinationRecommenderAgentId
       ITINERARY_PLANNER_AGENT_ID: itineraryPlannerAgentId
       LOCAL_RECOMMENDATIONS_AGENT_ID: localRecommendationsAgentId
@@ -210,49 +234,104 @@ module api './app/api.bicep' = {
   ]
 }
 
-// Microsoft Foundry resource, project, and model deployment used by the agents
-module aiFoundry './agent/ai-foundry.bicep' = {
+// Dependent resources for the Azure Machine Learning workspace
+module aiDependencies './agent/standard-dependent-resources.bicep' = {
   scope: rg
-  name: 'aiFoundry-${resourceToken}'
+  name: 'dependencies-${name}-${resourceToken}'
   params: {
-    location: modelLocation
+    location: location
+    storageName: 'st${resourceToken}'
+    keyvaultName: 'kv-${name}${resourceToken}'
+    aiServicesName: '${aiServicesName}${resourceToken}'
+    aiSearchName: '${aiSearchName}${resourceToken}'
     tags: tags
-    aiFoundryName: foundryName
-    aiProjectName: toLower(aiProjectName)
-    aiProjectFriendlyName: aiProjectFriendlyName
-    aiProjectDescription: aiProjectDescription
+
+    // Model deployment parameters
     modelName: modelName
     modelFormat: modelFormat
     modelVersion: modelVersion
     modelSkuName: modelSkuName
-    modelCapacity: modelCapacity
-    publicNetworkAccess: aiPublicNetworkAccess
+    modelCapacity: modelCapacity  
+    modelLocation: modelLocation
+
+    aiServiceAccountResourceId: aiServiceAccountResourceId
+    aiSearchServiceResourceId: aiSearchServiceResourceId
+    aiStorageAccountResourceId: aiStorageAccountResourceId
+    }
+
+  dependsOn: [
+    storage
+  ]
+}
+
+module aiHub './agent/standard-ai-hub.bicep' = {
+  scope: rg
+  name: '${name}-${resourceToken}'
+  params: {
+    // workspace organization
+    aiHubName: '${name}${uniqueSuffix}'
+    aiHubFriendlyName: aiHubFriendlyName
+    aiHubDescription: aiHubDescription
+    location: location
+    tags: tags
+    capabilityHostName: '${name}${uniqueSuffix}${capabilityHostName}'
+
+    aiSearchName: aiDependencies.outputs.aiSearchName
+    aiSearchId: aiDependencies.outputs.aisearchID
+
+    aiServicesName: aiDependencies.outputs.aiServicesName
+    aiServicesId: aiDependencies.outputs.aiservicesID
+    aiServicesTarget: aiDependencies.outputs.aiservicesTarget
+    
+    keyVaultId: aiDependencies.outputs.keyvaultId
+    storageAccountId: aiDependencies.outputs.storageId
+  }
+  dependsOn: [
+    storage
+    aiDependencies
+  ]
+}
+
+module aiProject './agent/standard-ai-project.bicep' = {
+  scope: rg
+  name: '${projectName}-${resourceToken}-deployment'
+  params: {
+    // workspace organization
+    aiProjectName: '${projectName}${uniqueSuffix}'
+    aiProjectFriendlyName: aiProjectFriendlyName
+    aiProjectDescription: aiProjectDescription
+    location: location
+    tags: tags
+    
+    // dependent resources
+    capabilityHostName: '${projectName}${uniqueSuffix}${capabilityHostName}'
+
+    aiHubId: aiHub.outputs.aiHubID
+    acsConnectionName: aiHub.outputs.acsConnectionName
+    aoaiConnectionName: aiHub.outputs.aoaiConnectionName
+  }
+  dependsOn:[
+    storage
+  ]
+}
+
+module aiServiceRoleAssignments './agent/ai-service-role-assignments.bicep' = {
+  scope: rg
+  name: 'aiserviceroleassignments${projectName}-${resourceToken}'
+  params: {
+    aiServicesName: aiDependencies.outputs.aiServicesName
+    aiProjectPrincipalId: aiProject.outputs.aiProjectPrincipalId
+    aiProjectId: aiProject.outputs.aiProjectResourceId
   }
 }
 
-var azureAiUserRoleId = '53ca6127-db72-4b80-b1b0-d745d6d5456d' // Foundry User (formerly Azure AI User)
-
-// Allow the function app identity to call the Foundry Agent Service
-module aiFoundryRoleAssignmentApi './agent/ai-foundry-access.bicep' = {
+module aiSearchRoleAssignments './agent/ai-search-role-assignments.bicep' = {
   scope: rg
-  name: 'aiFoundryRoleAssignmentApi-${resourceToken}'
+  name: 'aisearchroleassignments${projectName}-${resourceToken}'
   params: {
-    aiFoundryName: aiFoundry.outputs.aiFoundryName
-    roleDefinitionID: azureAiUserRoleId
-    principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
-    principalType: 'ServicePrincipal'
-  }
-}
-
-// Allow the deploying user to create and test agents in the Foundry project
-module aiFoundryRoleAssignmentUser './agent/ai-foundry-access.bicep' = if (!empty(principalId)) {
-  scope: rg
-  name: 'aiFoundryRoleAssignmentUser-${resourceToken}'
-  params: {
-    aiFoundryName: aiFoundry.outputs.aiFoundryName
-    roleDefinitionID: azureAiUserRoleId
-    principalID: principalId
-    principalType: 'User'
+    aiSearchName: aiDependencies.outputs.aiSearchName
+    aiProjectPrincipalId: aiProject.outputs.aiProjectPrincipalId
+    aiProjectId: aiProject.outputs.aiProjectResourceId
   }
 }
 
@@ -291,6 +370,18 @@ module storageQueueDataContributorRoleAssignmentprocessor 'app/storage-Access.bi
     storageAccountName: storage.outputs.name
     roleDefinitionID: storageQueueDataContributorRoleDefinitionId
     principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Allow access from AI project to storage account using a managed identity
+module storageQueueDataContributorRoleAssignmentAIProject 'app/storage-Access.bicep' = {
+  scope: rg
+  name: 'storageQueueDataContributorRoleAssignmentAIProject-${resourceToken}'
+  params: {
+    storageAccountName: storage.outputs.name
+    roleDefinitionID: storageQueueDataContributorRoleDefinitionId
+    principalID: aiProject.outputs.aiProjectPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
@@ -371,10 +462,24 @@ module appInsightsRoleAssignmentApi './core/monitor/appinsights-access.bicep' = 
   ]
 }
 
+var azureAiDeveloperRoleId = '64702f94-c441-49e6-a78b-ef80e0188fee' // Azure AI Developer role ID
+// Enable access to AI Project from the Azure Function user assigned identity
+resource AIProjectRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(azureAiDeveloperRoleId, aiProjectName, resourceId('Microsoft.MachineLearningServices/workspaces', aiProjectName), resourceToken)
+  properties: {
+    roleDefinitionId: resourceId('Microsoft.Authorization/roleDefinitions', azureAiDeveloperRoleId)
+    principalId: apiUserAssignedIdentity.outputs.identityPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+  dependsOn: [
+    apiUserAssignedIdentity
+  ]
+}
+
 var durableTaskDataContributorRoleDefinitionId = '0ad04412-c4d5-4796-b79c-f76d14c8d402'
 
 // Allow access from durable function to storage account using a user assigned managed identity
-module dtsRoleAssignment 'app/dts-Access.bicep' = {
+module dtsRoleAssignment 'app/dts-access.bicep' = {
   name: 'dtsRoleAssignment-${resourceToken}'
   scope: rg
   params: {
@@ -390,7 +495,7 @@ module dtsRoleAssignment 'app/dts-Access.bicep' = {
   ]
 }
 
-module dtsDashboardRoleAssignment 'app/dts-Access.bicep' = {
+module dtsDashboardRoleAssignment 'app/dts-access.bicep' = {
   name: 'dtsDashboardRoleAssignment-${resourceToken}'
   scope: rg
   params: {
@@ -435,14 +540,11 @@ output STATIC_WEB_APP_NAME string = webapp.outputs.name
 output STATIC_WEB_APP_URI string = webapp.outputs.uri
 output PRE_STATIC_WEB_APP_URI string = webAppName
 output RESOURCE_GROUP string = rg.name
-output AI_FOUNDRY_NAME string = aiFoundry.outputs.aiFoundryName
-output AI_PROJECT_NAME string = aiFoundry.outputs.aiProjectName
-output AI_MODEL_DEPLOYMENT_NAME string = aiFoundry.outputs.modelDeploymentName
-output PROJECT_ENDPOINT string = aiFoundry.outputs.projectEndpoint
+output PROJECT_CONNECTION_STRING string = aiProject.outputs.projectConnectionString
 output STORAGE_CONNECTION__queueServiceUri string = 'https://${storage.outputs.name}.queue.${environment().suffixes.storage}'
 
 // Agent outputs
 output DESTINATION_RECOMMENDER_AGENT_ID string = destinationRecommenderAgentId
 output ITINERARY_PLANNER_AGENT_ID string = itineraryPlannerAgentId
 output LOCAL_RECOMMENDATIONS_AGENT_ID string = localRecommendationsAgentId
-output AGENT_CONNECTION_STRING string = aiFoundry.outputs.projectEndpoint
+output AGENT_CONNECTION_STRING string = aiProject.outputs.projectConnectionString

@@ -79,9 +79,6 @@
       },
       "localRecommendationsAgentId": {
         "value": "${LOCAL_RECOMMENDATIONS_AGENT_ID}"
-      },
-      "aiPublicNetworkAccess": {
-        "value": "${AI_PUBLIC_NETWORK_ACCESS=Enabled}"
       }
     }
   }

@@ -20,7 +20,7 @@ param kind string = 'functionapp,linux'
 param appSettings object = {}
 param allowedOrigins array = []
 
-var linuxFxVersion string = 'DOTNET-ISOLATED|10.0'
+var linuxFxVersion string = 'DOTNET-ISOLATED|8.0'
 
 resource storageAccount 'Microsoft.Storage/storageAccounts@2024-01-01' existing = {
   name: storageAccountName
@@ -42,7 +42,7 @@ module functions 'br/public:avm/res/web/site:0.16.0' = {
       userAssignedResourceIds: [identityId]
     }
     siteConfig: {
-      netFrameworkVersion: 'v10.0'
+      netFrameworkVersion: 'v8.0'
       linuxFxVersion: linuxFxVersion
       cors: {
         allowedOrigins: union([ 'https://portal.azure.com', 'https://ms.portal.azure.com' ], allowedOrigins)
