@@ -16,7 +16,7 @@ public static class LargePayloadOrchestration
 
     [Function("StartLargePayload")]
     public static async Task<HttpResponseData> HttpStart(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
         [DurableClient] DurableTaskClient client,
         FunctionContext executionContext)
     {
@@ -43,29 +43,39 @@ public static class LargePayloadOrchestration
         LargePayloadFanOutRequest request = context.GetInput<LargePayloadFanOutRequest>()
             ?? throw new InvalidOperationException("The orchestration input payload was not provided.");
 
-        List<Task<string>> tasks = new(request.ActivityCount);
+        List<Task<LargePayloadActivitySummary>> tasks = new(request.ActivityCount);
         for (int i = 0; i < request.ActivityCount; i++)
         {
-            tasks.Add(context.CallActivityAsync<string>(
-                nameof(GenerateLargePayload),
+            tasks.Add(context.CallSubOrchestratorAsync<LargePayloadActivitySummary>(
+                nameof(GenerateAndValidatePayload),
                 new LargePayloadActivityRequest(i + 1, request.RequestedPayloadBytes)));
         }
 
-        string[] payloads = await Task.WhenAll(tasks);
-        if (payloads.Any(payload => payload.StartsWith("blob:v1:", StringComparison.Ordinal)))
-        {
-            throw new InvalidOperationException("The orchestrator received a payload token instead of the resolved payload.");
-        }
-
-        int[] individualPayloadBytes = payloads.Select(GetUtf8ByteCount).ToArray();
+        LargePayloadActivitySummary[] summaries = await Task.WhenAll(tasks);
+        int[] individualPayloadBytes = summaries.Select(summary => summary.PayloadBytes).ToArray();
 
         return new LargePayloadFanOutSummary(
-            ActivityCount: payloads.Length,
+            ActivityCount: summaries.Length,
             RequestedPayloadBytesPerActivity: request.RequestedPayloadBytes,
             IndividualPayloadBytes: individualPayloadBytes,
-            TotalPayloadBytes: individualPayloadBytes.Sum(),
+            TotalPayloadBytes: individualPayloadBytes.Sum(bytes => (long)bytes),
             AllPayloadsExceededOneMiB: individualPayloadBytes.All(bytes => bytes > OneMiB),
-            AllPayloadsMatchRequestedSize: individualPayloadBytes.All(bytes => bytes == request.RequestedPayloadBytes));
+            AllPayloadsMatchRequestedSize: individualPayloadBytes.All(bytes => bytes == request.RequestedPayloadBytes),
+            AllPayloadsMatchExpectedContent: summaries.All(summary => summary.ContentMatches));
+    }
+
+    [Function(nameof(GenerateAndValidatePayload))]
+    public static async Task<LargePayloadActivitySummary> GenerateAndValidatePayload(
+        [OrchestrationTrigger] TaskOrchestrationContext context)
+    {
+        LargePayloadActivityRequest request = context.GetInput<LargePayloadActivityRequest>()
+            ?? throw new InvalidOperationException("The activity request was not provided.");
+
+        // Keep large results in separate histories; the parent only receives small summaries.
+        string payload = await context.CallActivityAsync<string>(nameof(GenerateLargePayload), request)
+            ?? throw new InvalidOperationException("The activity did not return a payload.");
+        ValidatePayload(payload, request.ActivityNumber, request.RequestedPayloadBytes);
+        return new LargePayloadActivitySummary(GetUtf8ByteCount(payload), ContentMatches: true);
     }
 
     [Function(nameof(GenerateLargePayload))]
@@ -87,7 +97,7 @@ public static class LargePayloadOrchestration
 
     [Function("Hello")]
     public static async Task<HttpResponseData> Hello(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
     {
         HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteStringAsync("LargePayloadFanOutFanIn sample is running. POST /api/StartLargePayload to start parallel >1 MB activities.");
@@ -108,6 +118,25 @@ public static class LargePayloadOrchestration
                 span[i] = Alphabet[(int)(state >> 26)];
             }
         });
+    }
+
+    private static void ValidatePayload(string payload, int activityNumber, int expectedSizeBytes)
+    {
+        if (payload.Length != expectedSizeBytes)
+        {
+            throw new InvalidOperationException($"Activity {activityNumber} returned an unexpected payload size.");
+        }
+
+        const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        uint state = 0x00C0FFEEu + (uint)activityNumber;
+        for (int i = 0; i < payload.Length; i++)
+        {
+            state = (state * 1664525) + 1013904223;
+            if (payload[i] != Alphabet[(int)(state >> 26)])
+            {
+                throw new InvalidOperationException($"Activity {activityNumber} returned invalid payload content at offset {i}.");
+            }
+        }
     }
 
     private static int GetPositiveIntSetting(string key, int defaultValue)
@@ -133,10 +162,13 @@ public sealed record LargePayloadFanOutRequest(int ActivityCount, int RequestedP
 
 public sealed record LargePayloadActivityRequest(int ActivityNumber, int RequestedPayloadBytes);
 
+public sealed record LargePayloadActivitySummary(int PayloadBytes, bool ContentMatches);
+
 public sealed record LargePayloadFanOutSummary(
     int ActivityCount,
     int RequestedPayloadBytesPerActivity,
     int[] IndividualPayloadBytes,
-    int TotalPayloadBytes,
+    long TotalPayloadBytes,
     bool AllPayloadsExceededOneMiB,
-    bool AllPayloadsMatchRequestedSize);
+    bool AllPayloadsMatchRequestedSize,
+    bool AllPayloadsMatchExpectedContent);

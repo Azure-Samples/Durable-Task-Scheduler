@@ -31,9 +31,10 @@ module durableFunction '../core/host/functions.bicep' = {
         AzureWebJobsStorage__clientId : identityClientId
         AzureWebJobsStorage__credential : 'managedidentity'
         APPLICATIONINSIGHTS_AUTHENTICATION_STRING: applicationInsightsIdentity
+        AzureMonitorExporter__credential: 'managedidentity'
+        AzureMonitorExporter__clientId: identityClientId
         DTS_CONNECTION_STRING: 'Endpoint=${dtsURL};Authentication=ManagedIdentity;ClientID=${identityClientId}'
         TASKHUB_NAME: taskHubName
-        AZURE_CLIENT_ID: identityClientId
       })
     applicationInsightsName: applicationInsightsName
     appServicePlanId: appServicePlanId

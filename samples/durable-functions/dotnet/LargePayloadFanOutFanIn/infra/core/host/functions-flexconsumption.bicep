@@ -14,10 +14,10 @@ param identityId string
 
 // Runtime Properties
 @allowed([
-  'dotnet-isolated', 'node', 'python', 'java', 'powershell', 'custom'
+  'dotnet-isolated'
 ])
 param runtimeName string
-@allowed(['3.10', '3.11', '7.4', '8.0', '10', '11', '17', '20'])
+@allowed(['10.0', '11.0'])
 param runtimeVersion string
 param kind string = 'functionapp,linux'
 

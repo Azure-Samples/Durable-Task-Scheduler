@@ -1,6 +1,11 @@
+# For Azure or Core Tools --enableAuth, set this to a non-admin host key.
+# Leave empty for the default local Core Tools host. Do not commit real keys.
+@functionKey =
+
 # Start a new order processing workflow 
 # This will trigger the Saga pattern and show compensation in action
 POST http://localhost:7071/api/orders
+x-functions-key: {{functionKey}}
 Content-Type: application/json
 
 {
@@ -15,6 +20,8 @@ Content-Type: application/json
 
 ### Check the status of an order
 GET http://localhost:7071/api/orders/{{instanceId}}
+x-functions-key: {{functionKey}}
 
 ### Terminate a running workflow if needed
 POST http://localhost:7071/api/orders/{{instanceId}}/terminate
+x-functions-key: {{functionKey}}

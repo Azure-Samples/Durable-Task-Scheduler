@@ -27,7 +27,9 @@ The flow is intentionally simple:
 1. An HTTP trigger starts an orchestration with a payload larger than 1 MB.
 2. The orchestrator sends that payload to a single activity.
 3. The activity echoes the payload back.
-4. The orchestration returns a small summary proving the payload survived the round-trip.
+4. The orchestrator checks both its input and the activity output character by character against the expected deterministic content, without allocating another full payload, then returns a small summary.
+
+An equal byte count is not enough: same-length corruption, an unresolved blob reference, or a truncated payload fails the orchestration. `PayloadsMatch` also compares the full input and output, not just their lengths.
 
 This is exactly why large payload support exists: without blob offload, a payload this size would be too large to flow through DTS messages directly.
 
@@ -42,7 +44,7 @@ The sample enables these settings in `host.json`:
     "connectionStringName": "DTS_CONNECTION_STRING",
     "payloadStorageEnabled": true,
     "payloadStorageThresholdBytes": 262144,
-    "payloadStorageMaxPayloadBytes": 15728640
+    "payloadStorageMaxSizeBytes": 15728640
   },
   "hubName": "%TASKHUB_NAME%"
 }
@@ -59,31 +61,31 @@ The sample uses a deterministic, low-compressibility **1.5 MiB** payload by defa
 
 ### Maximum payload size
 
-`payloadStorageThresholdBytes` controls *when* a payload is externalized. A separate setting, `payloadStorageMaxPayloadBytes`, controls the **largest single serialized UTF-8 payload** the runtime will externalize:
+`payloadStorageThresholdBytes` controls *when* a payload is externalized. A separate setting, `payloadStorageMaxSizeBytes`, controls the **largest single serialized UTF-8 payload** the runtime will externalize:
 
-- If you don't set `payloadStorageMaxPayloadBytes`, the default maximum is **10 MB (10,485,760 bytes, shown as 10,240 KB in the error message)**.
+- If you don't set `payloadStorageMaxSizeBytes`, the default maximum is **10 MB (10,485,760 bytes, shown as 10,240 KB in the error message)**.
 - A request whose payload exceeds the maximum **fails fast** — before the orchestration is scheduled — with an error like:
 
   ```text
   Payload size 10742 KB exceeds the configured maximum of 10240 KB. Reduce the payload size or increase the max payload size limit.
   ```
 
-- This is a **configurable limit, not a hard product limit**. To allow larger payloads, raise `payloadStorageMaxPayloadBytes` in `host.json`. This sample sets it to `15728640` (15 MiB), including JSON serialization overhead.
+- This is a **configurable limit, not a hard product limit**. To allow larger payloads, raise `payloadStorageMaxSizeBytes` in `host.json`. This sample sets it to `15728640` (15 MiB), including JSON serialization overhead.
 
-#### `PAYLOAD_SIZE_BYTES` is not `payloadStorageMaxPayloadBytes`
+#### `PAYLOAD_SIZE_BYTES` is not `payloadStorageMaxSizeBytes`
 
 These two settings are easy to confuse but do completely different things:
 
 | Setting | Where it lives | What it controls |
 |---|---|---|
 | `PAYLOAD_SIZE_BYTES` | app setting / `local.settings.json` | How many bytes of test data **this sample generates** for its demo payload. |
-| `payloadStorageMaxPayloadBytes` | `host.json` | The **maximum** size the runtime will externalize. Payloads larger than this fail fast. |
+| `payloadStorageMaxSizeBytes` | `host.json` | The **maximum** size the runtime will externalize. Payloads larger than this fail fast. |
 
-If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxPayloadBytes` (for example `PAYLOAD_SIZE_BYTES=11000000` against the default 10 MB cap), the run fails **by design** with the error above. Set the cap above the generated data size, leaving room for the JSON string quotes and request fields. Setting the two values equal can still exceed the cap after serialization.
+If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxSizeBytes` (for example `PAYLOAD_SIZE_BYTES=11000000` against the default 10 MB cap), the run fails **by design** with the error above. Set the cap above the generated data size, leaving room for the JSON string quotes and request fields. Setting the two values equal can still exceed the cap after serialization.
 
 ## Prerequisites
 
-- [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+- [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 - [Azure Functions Core Tools v4](https://learn.microsoft.com/azure/azure-functions/functions-run-local)
 - [Docker](https://www.docker.com/products/docker-desktop/)
 - [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli)
@@ -150,6 +152,12 @@ If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxPayloadBytes` (for exa
 
 The extension stores payload blobs with gzip content encoding, so Azure shows the compressed on-disk size. Because this sample uses low-compressibility payload content, the stored blob sizes should stay reasonably close to the logical 1.5 MiB payload instead of collapsing to a tiny repetitive-text blob.
 
+### Blob retention policy
+
+This sample configures no time-based Blob Storage lifecycle rule or scheduled cleanup. Do not treat orchestration completion as a guarantee that payload blobs have been deleted. Keep `durabletask-payloads` available while any referencing instance can run, retry, replay, or be inspected with inputs/outputs.
+
+For a retained environment, define an operational retention period covering the longest orchestration lifetime, recovery window, and history-access requirements. After all referencing instances are terminal and that period has elapsed, purge their durable histories and verify payload cleanup for the deployed extension version; remove remaining unreferenced blobs with an instance-aware cleanup process. Do not apply a blanket age-based deletion rule to live payloads: deleting a still-referenced blob breaks replay and status retrieval. Soft-deleted blobs and versions may remain billable under the storage account's retention settings. For this disposable sample, deleting the dedicated environment under **Clean up** also removes its storage.
+
 ## Local settings
 
 | Setting | Description | Default |
@@ -157,7 +165,7 @@ The extension stores payload blobs with gzip content encoding, so Azure shows th
 | `DTS_CONNECTION_STRING` | DTS emulator or Azure connection string | `Endpoint=http://localhost:8080;Authentication=None` |
 | `TASKHUB_NAME` | Task hub name | `default` |
 | `AzureWebJobsStorage` | Storage for Functions host state and payload blobs | `UseDevelopmentStorage=true` locally |
-| `PAYLOAD_SIZE_BYTES` | Size of the test payload this sample generates. Keep it below `payloadStorageMaxPayloadBytes` (15 MiB in this sample), leaving room for JSON serialization overhead. | `1572864` |
+| `PAYLOAD_SIZE_BYTES` | Size of the test payload this sample generates. Keep it below `payloadStorageMaxSizeBytes` (15 MiB in this sample), leaving room for JSON serialization overhead. | `1572864` |
 
 ## Deploy to Azure with AZD
 
@@ -179,9 +187,10 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
    The deployment provisions:
 
    - an Azure Function App
-   - a storage account used for `AzureWebJobsStorage`
+   - a storage account used for `AzureWebJobsStorage`, with a blob private endpoint
    - a Durable Task Scheduler resource and task hub
-   - a user-assigned managed identity with the required DTS and storage permissions
+   - Application Insights and Log Analytics
+   - a user-assigned managed identity with the required DTS, storage, and monitoring permissions
 
 3. Load the environment values:
 
@@ -192,10 +201,14 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
 4. Start the orchestration in Azure:
 
    ```bash
-   curl -X POST "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/StartLargePayload"
+   FUNCTION_KEY=$(az functionapp keys list \
+     --resource-group "$AZURE_RESOURCE_GROUP" \
+     --name "$AZURE_FUNCTION_NAME" --query functionKeys.default --output tsv)
+   curl -X POST -H "x-functions-key: ${FUNCTION_KEY}" \
+     "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/StartLargePayload"
    ```
 
-5. Verify payload blobs in Azure storage:
+5. Verify payload blobs in Azure storage. The storage firewall denies public access by default; the deployment script allows the deploying machine's IP so this command can run from there:
 
    ```bash
    az storage blob list \
@@ -206,6 +219,20 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
    ```
 
 6. Open the DTS dashboard URL in the Azure portal to inspect the orchestration history.
+
+## HTTP authentication
+
+All HTTP triggers, including `Hello`, require a function or host key in Azure. The example uses a non-admin host key; never use the master key for application requests. Keep keys out of source control, logs, shared command output, and browser bundles; rotate them if exposed. Keys grant access, not per-user or per-instance authorization. Managed identity for DTS and Storage is unchanged.
+
+Core Tools normally skips HTTP key enforcement locally, so the local examples need no key. Use `func start --enableAuth` to exercise key enforcement. The returned Durable management URLs carry a system key in their query string: treat the entire URLs as secrets and poll them as returned, without replacing their key with the starter key.
+
+## Telemetry
+
+The Functions host uses OpenTelemetry (`telemetryMode` in `host.json`).
+
+When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker registers OpenTelemetry and exports to Azure Monitor. The exporter authenticates with the app's managed identity through the dedicated `AzureMonitorExporter` settings (`AzureMonitorExporter__credential` and `AzureMonitorExporter__clientId`), so Application Insights local authentication can stay disabled. Unless `AzureMonitorExporter__credential` is explicitly set, the exporter uses connection-string authentication. Without that connection string, as in local emulator runs, the worker does not export.
+
+In Application Insights, inspect `requests`, `dependencies`, and `traces` for exported telemetry. Payload contents are not logged.
 
 ## Files to look at
 

@@ -8,23 +8,26 @@ This sample demonstrates how to enable distributed tracing in Durable Functions 
 
 ## Prerequisites
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) or later
 2. [Docker](https://www.docker.com/products/docker-desktop/)
 3. [Azure Functions Core Tools](https://learn.microsoft.com/azure/azure-functions/functions-run-local) v4+
 
 ## Quick Run (Local with Jaeger)
 
 1. Start the infrastructure:
+
    ```bash
    docker compose up -d
    ```
 
 2. Run the function app:
+
    ```bash
    func start
    ```
 
 3. Trigger an orchestration:
+
    ```bash
    curl -X POST http://localhost:7071/api/StartOrchestration
    ```
@@ -33,7 +36,27 @@ This sample demonstrates how to enable distributed tracing in Durable Functions 
    - **Jaeger UI:** http://localhost:16686
    - **DTS Dashboard:** http://localhost:8082
 
+The compose file starts Jaeger but does not configure the Functions host or worker to export telemetry to it. An OTLP exporter and endpoint configuration are also needed; starting Jaeger alone does not send it traces.
+
 ## Key Configuration
+
+### HTTP authentication
+
+`StartOrchestration` requires a function or host key in Azure. Core Tools skips key enforcement locally by default; use `func start --enableAuth` to exercise it locally.
+
+For a deployed app, retrieve a non-admin host key into a shell variable and send it in a header:
+
+```bash
+FUNCTION_KEY=$(az functionapp keys list \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$AZURE_FUNCTION_NAME" --query functionKeys.default --output tsv)
+curl -X POST -H "x-functions-key: ${FUNCTION_KEY}" \
+  "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/StartOrchestration"
+```
+
+Do not use the master key or expose keys in source control, logs, or browser code. Keys do not provide per-user or per-instance authorization; managed identity for backend services is unchanged. The returned Durable management URLs contain a system key: keep those URLs secret and poll them as returned.
+
+### Durable tracing
 
 Distributed tracing is enabled in `host.json`:
 
@@ -53,6 +76,8 @@ Distributed tracing is enabled in `host.json`:
 ## Using with Application Insights (Azure)
 
 When deployed to Azure with Application Insights configured:
+
+The Functions host uses OpenTelemetry and the Durable Task distributed tracing configuration above. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports telemetry to Azure Monitor and captures the `Microsoft.DurableTask` activity source to connect the starter to the orchestration trace. For user-assigned managed identity authentication, set `AzureMonitorExporter__credential` to `managedidentity` and `AzureMonitorExporter__clientId` to the identity's client ID, and grant that identity the Monitoring Metrics Publisher role on Application Insights. If `AzureMonitorExporter__credential` is not set, the exporter uses connection-string authentication.
 
 1. Navigate to your Application Insights resource
 2. Go to **Transaction Search**
