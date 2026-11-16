@@ -21,7 +21,7 @@ namespace DurableFunctionsSaga.Functions
 
         [Function("StartOrderProcessing")]
         public async Task<HttpResponseData> StartOrderProcessing(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "orders")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "orders")] HttpRequestData req,
             [DurableClient] DurableTaskClient client)
         {
             _logger.LogInformation("Processing order request");
@@ -72,7 +72,7 @@ namespace DurableFunctionsSaga.Functions
 
         [Function("GetOrderStatus")]
         public async Task<HttpResponseData> GetOrderStatus(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "get", Route = "orders/{instanceId}")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Function, "get", Route = "orders/{instanceId}")] HttpRequestData req,
             string instanceId,
             [DurableClient] DurableTaskClient client)
         {
@@ -99,7 +99,7 @@ namespace DurableFunctionsSaga.Functions
 
         [Function("TerminateOrder")]
         public async Task<HttpResponseData> TerminateOrder(
-            [HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = "orders/{instanceId}/terminate")] HttpRequestData req,
+            [HttpTrigger(AuthorizationLevel.Function, "post", Route = "orders/{instanceId}/terminate")] HttpRequestData req,
             string instanceId,
             [DurableClient] DurableTaskClient client)
         {

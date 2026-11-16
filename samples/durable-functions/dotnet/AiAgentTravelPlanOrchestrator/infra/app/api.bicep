@@ -25,6 +25,8 @@ module api '../core/host/functions-app.bicep' = {
       {
         AzureWebJobsStorage__clientId : identityClientId
         APPLICATIONINSIGHTS_AUTHENTICATION_STRING: applicationInsightsIdentity
+        AzureMonitorExporter__credential: 'managedidentity'
+        AzureMonitorExporter__clientId: identityClientId
       })
     applicationInsightsName: applicationInsightsName
     appServicePlanId: appServicePlanId

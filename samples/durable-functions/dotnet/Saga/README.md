@@ -1,6 +1,6 @@
-# Order Processing with Saga Pattern in .NET 8 Durable Functions
+# Order Processing with Saga Pattern in .NET 10 Durable Functions
 
-This project demonstrates an implementation of the Saga pattern using .NET 8 and Azure Durable Functions. The Saga pattern is a failure management pattern that helps maintain data consistency across distributed business processes by defining compensating actions for each step in the workflow.
+This project demonstrates an implementation of the Saga pattern using .NET 10 and Azure Durable Functions. The Saga pattern is a failure management pattern that helps maintain data consistency across distributed business processes by defining compensating actions for each step in the workflow.
 
 ## Overview
 
@@ -65,7 +65,7 @@ For each business operation, we define a corresponding compensation:
 
 ### Prerequisites
 
-1. [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
+1. [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0)
 2. [Azure Functions Core Tools](https://docs.microsoft.com/azure/azure-functions/functions-run-local) (v4.x)
 3. [Docker](https://www.docker.com/products/docker-desktop/) for running the DTS emulator
 
@@ -166,6 +166,10 @@ The emulator simulates a scheduler and taskhub in a Docker container, making it 
    - The approval step also fails 25% of the time (by design)
    - When it fails, you'll see the compensation actions run in reverse order
 
+## Telemetry
+
+The Functions host uses OpenTelemetry. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports to Azure Monitor. For user-assigned managed identity authentication, set `AzureMonitorExporter__credential` to `managedidentity` and `AzureMonitorExporter__clientId` to the identity's client ID, and grant that identity the Monitoring Metrics Publisher role on Application Insights. Without the connection string, the worker does not export.
+
 ## Project Structure
 
 - **Saga/Compensations.cs** - Core compensation management logic
@@ -175,6 +179,20 @@ The emulator simulates a scheduler and taskhub in a Docker container, making it 
 - **Functions/HttpTriggers.cs** - API endpoints to interact with the workflow
 
 ## API Reference
+
+All three endpoints require a function or host key in Azure. Core Tools skips key enforcement locally by default, so the local examples and `test.http` work without a key. Use `func start --enableAuth` to exercise enforcement locally.
+
+Use a non-admin host (function) key across the starter, status, and termination endpoints; a function-specific starter key does not authorize the other functions:
+
+```bash
+FUNCTION_KEY=$(az functionapp keys list \
+  --resource-group "$AZURE_RESOURCE_GROUP" \
+  --name "$AZURE_FUNCTION_NAME" --query functionKeys.default --output tsv)
+curl -H "x-functions-key: ${FUNCTION_KEY}" \
+  "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/orders/${INSTANCE_ID}"
+```
+
+Keep the key out of source control, logs, shared output, and browser code. Do not use the master key. Keys grant application access, not order ownership or per-user authorization. The relative status URL returned by the starter does not embed a key: send the header on every status or termination request. Managed identity for DTS and telemetry is unchanged.
 
 - **POST /api/orders** - Start a new order processing workflow
   - Body: Order details (customerId, productId, quantity, amount)

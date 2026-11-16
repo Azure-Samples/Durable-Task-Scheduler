@@ -25,9 +25,16 @@ If you want the smallest possible example, start with the sibling [LargePayload]
 The flow is intentionally parallel:
 
 1. An HTTP trigger starts an orchestration with a small request specifying the activity count and payload size.
-2. The orchestrator fans out to multiple activities.
-3. Each activity generates a payload larger than 1 MB and returns it to the orchestrator.
-4. The orchestrator fans in and returns a small summary proving every activity payload survived the round-trip.
+2. The orchestrator fans out to child orchestrations, each of which calls one activity.
+3. Each activity generates a payload larger than 1 MB and returns it to its child orchestrator.
+4. Each child validates every character against the deterministic sequence for its activity number, without allocating a second expected payload, and returns only a small summary.
+5. The parent fans in the summaries, never collecting the large activity results in its own history or a `string[]`.
+
+This reduces the parent's retained data to O(activity count) small summaries rather than O(activity count x payload size). It is not streaming blob deserialization: each child still materializes one payload, and concurrent children can consume memory on the same worker. Size worker concurrency and activity counts accordingly.
+
+The tradeoff is one extra child orchestration and its scheduling/history overhead per activity. `TotalPayloadBytes` is a 64-bit total so aggregating more than 2 GiB does not overflow.
+
+The orchestration history shape has changed from direct activity calls to child orchestrations. Before deploying over an older version, drain existing instances or deploy with a new task hub; do not replay in-flight instances against the changed orchestration.
 
 This is exactly why large payload support exists: without blob offload, payloads this size would be too large to flow through DTS messages directly.
 
@@ -76,7 +83,7 @@ The sample uses **three deterministic, low-compressibility 1.5 MiB activity payl
 These two settings are easy to confuse but do completely different things:
 
 | Setting | Where it lives | What it controls |
-|---|---|---|
+| --- | --- | --- |
 | `PAYLOAD_SIZE_BYTES` | app setting / `local.settings.json` | How many bytes of test data **each activity generates** for its demo payload. |
 | `payloadStorageMaxSizeBytes` | `host.json` | The **maximum** size of any single payload the runtime will externalize. Larger payloads fail fast. |
 
@@ -137,7 +144,8 @@ If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxSizeBytes` (for exampl
        "IndividualPayloadBytes": [1572864, 1572864, 1572864],
        "TotalPayloadBytes": 4718592,
        "AllPayloadsExceededOneMiB": true,
-       "AllPayloadsMatchRequestedSize": true
+       "AllPayloadsMatchRequestedSize": true,
+       "AllPayloadsMatchExpectedContent": true
      }
    }
    ```
@@ -153,10 +161,18 @@ If you raise `PAYLOAD_SIZE_BYTES` above `payloadStorageMaxSizeBytes` (for exampl
 
 The extension stores payload blobs with gzip content encoding, so Azure shows the compressed on-disk size. Because this sample uses low-compressibility payload content, the stored blob sizes should stay reasonably close to the logical 1.5 MiB activity payloads instead of collapsing to tiny repetitive-text blobs.
 
+Length alone is not the integrity check: a same-length substitution, reordered payload from another activity, truncation, or unresolved blob token fails validation and fails the orchestration rather than returning a successful summary.
+
+### Blob retention policy
+
+This sample configures no time-based Blob Storage lifecycle rule or scheduled cleanup. Do not treat orchestration completion as a guarantee that payload blobs have been deleted. Keep `durabletask-payloads` available while any referencing parent or child instance can run, retry, replay, or be inspected with inputs/outputs.
+
+For a retained environment, define an operational retention period covering the longest orchestration lifetime, recovery window, and history-access requirements. After all referencing instances are terminal and that period has elapsed, purge their durable histories and verify payload cleanup for the deployed extension version; remove remaining unreferenced blobs with an instance-aware cleanup process. Do not apply a blanket age-based deletion rule to live payloads: deleting a still-referenced blob breaks replay and status retrieval. Soft-deleted blobs and versions may remain billable under the storage account's retention settings. For this disposable sample, deleting the dedicated environment under **Clean up** also removes its storage.
+
 ## Local settings
 
 | Setting | Description | Default |
-|---|---|---|
+| --- | --- | --- |
 | `DTS_CONNECTION_STRING` | DTS emulator or Azure connection string | `Endpoint=http://localhost:8080;Authentication=None` |
 | `TASKHUB_NAME` | Task hub name | `default` |
 | `AzureWebJobsStorage` | Storage for Functions host state and payload blobs | `UseDevelopmentStorage=true` locally |
@@ -197,7 +213,11 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
 4. Start the orchestration in Azure:
 
    ```bash
-   curl -X POST "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/StartLargePayload"
+   FUNCTION_KEY=$(az functionapp keys list \
+     --resource-group "$AZURE_RESOURCE_GROUP" \
+     --name "$AZURE_FUNCTION_NAME" --query functionKeys.default --output tsv)
+   curl -X POST -H "x-functions-key: ${FUNCTION_KEY}" \
+     "https://${AZURE_FUNCTION_NAME}.azurewebsites.net/api/StartLargePayload"
    ```
 
 5. Verify payload blobs in Azure storage. The storage firewall denies public access by default; the deployment script allows the deploying machine's IP so this command can run from there:
@@ -211,6 +231,12 @@ This sample includes `azure.yaml`, `infra/`, and deployment scripts so you can p
    ```
 
 6. Open the DTS dashboard URL in the Azure portal to inspect the orchestration history.
+
+## HTTP authentication
+
+All HTTP triggers, including `Hello`, require a function or host key in Azure. The example uses a non-admin host key; never use the master key for application requests. Keep keys out of source control, logs, shared command output, and browser bundles; rotate them if exposed. Keys grant access, not per-user or per-instance authorization. Managed identity for DTS and Storage is unchanged.
+
+Core Tools normally skips HTTP key enforcement locally, so the local examples need no key. Use `func start --enableAuth` to exercise key enforcement. The returned Durable management URLs carry a system key in their query string: treat the entire URLs as secrets and poll them as returned, without replacing their key with the starter key.
 
 ## Telemetry
 
