@@ -85,7 +85,7 @@ Upon successful booking, the user receives a final confirmation with all travel 
   - Azure Functions resource
   - Azure Storage Account
   - Azure Durable Task resource
-  - Azure AI Projects with configured agents
+  - Microsoft Foundry project with configured agents
 
 ## Setting Up Locally
 
@@ -110,9 +110,9 @@ Create a `local.settings.json` file in the root directory with the following con
     "TASKHUB_NAME": "default",
     "AZURE_TENANT_ID": "<your tenant id>",
     "AZURE_CLIENT_ID": "<your client id>",
-    "DESTINATION_RECOMMENDER_CONNECTION": "<PROJECT_CONNECTION_STRING>",
-    "ITINERARY_PLANNER_CONNECTION": "<PROJECT_CONNECTION_STRING>",
-    "LOCAL_RECOMMENDATIONS_CONNECTION": "<PROJECT_CONNECTION_STRING>",
+    "DESTINATION_RECOMMENDER_CONNECTION": "<PROJECT_ENDPOINT>",
+    "ITINERARY_PLANNER_CONNECTION": "<PROJECT_ENDPOINT>",
+    "LOCAL_RECOMMENDATIONS_CONNECTION": "<PROJECT_ENDPOINT>",
     "DESTINATION_RECOMMENDER_AGENT_ID": "<DESTINATION_RECOMMENDER_AGENT_ID>",
     "ITINERARY_PLANNER_AGENT_ID": "<ITINERARY_PLANNER_AGENT_ID>",
     "LOCAL_RECOMMENDATIONS_AGENT_ID": "<LOCAL_RECOMMENDATIONS_AGENT_ID>"
@@ -125,7 +125,7 @@ Create a `local.settings.json` file in the root directory with the following con
 }
 ```
 
-Replace the placeholder values with your actual connection strings and agent IDs.
+Replace the placeholder values with your Microsoft Foundry project endpoint and agent IDs. The `*_CONNECTION` settings must be the project endpoint URL, for example `https://<foundry-resource>.services.ai.azure.com/api/projects/<project>`. Hub-based project connection strings (`<region>.api.azureml.ms;...`) aren't supported by the `Azure.AI.Projects` 2.x SDK used by this sample.
 
 ### 3. Set Up Azure Storage Emulator
 
@@ -216,14 +216,22 @@ azd up
 
 This command will:
 
-- Create all required Azure resources as defined in your infrastructure files
+- Create all required Azure resources as defined in your infrastructure files, including a Microsoft Foundry resource, a Foundry project, and a `gpt-5-mini` model deployment
 - Build the backend Azure Functions
 - Build and deploy the frontend Vite React application
-- Configure all connections between components
+- Configure the function app with the Foundry project endpoint and grant its managed identity the **Foundry User** role (formerly **Azure AI User**) on the Foundry resource
 
+> [!NOTE]
+> Choose `eastus2` or `swedencentral` as the location. Both regions support Durable Task Scheduler and the `gpt-5-mini` `GlobalStandard` deployment. To use a different model, set the `modelName`, `modelVersion`, `modelSkuName`, and `modelCapacity` parameters in `infra/main.bicep`.
+
+> [!IMPORTANT]
+> By default, the Foundry resource allows public network access so that the function app can reach it. The template doesn't create a private endpoint for Foundry. To block public access, run `azd env set AI_PUBLIC_NETWORK_ACCESS Disabled` before `azd up`, and provide your own private endpoint and virtual network integration so the function app can still reach the Foundry project.
+>
 ### 4. Configure AI Agents
 
-After deployment, you'll need to set up the three AI agents in Azure AI Projects:
+After deployment, create the three agents in the Foundry project. You can create them in the [Foundry portal](https://ai.azure.com) or by calling the Agent Service REST API with the deployed model. The deploying user is granted the **Foundry User** role on the Foundry resource, which is required to create agents. Role assignments can take a few minutes to take effect.
+
+Use the following instructions for each agent:
 
 #### Destination Recommender Agent
 
@@ -256,17 +264,31 @@ Focus on both popular and hidden gem attractions, dining options across differen
 price ranges, and practical local tips that tourists wouldn't typically know.
 ```
 
+For example, the following PowerShell script creates the destination recommender agent and returns its ID. Repeat it for the other two agents with their names and instructions.
+
+```PowerShell
+$projectEndpoint = azd env get-value PROJECT_ENDPOINT
+$model = azd env get-value AI_MODEL_DEPLOYMENT_NAME
+$token = az account get-access-token --resource https://ai.azure.com --query accessToken -o tsv
+$body = @{
+  name         = "destination-recommender"
+  model        = $model
+  instructions = "You are a destination recommendation expert that helps travelers find ideal vacation spots based on their preferences, budget, and travel dates."
+} | ConvertTo-Json
+
+$agent = Invoke-RestMethod -Method Post -Uri "$projectEndpoint/assistants?api-version=2025-05-01" `
+  -Headers @{ Authorization = "Bearer $token" } -ContentType "application/json" -Body $body
+$agent.id
+```
+
 ### 5. Update Configuration
 
-Update your application settings with the proper agent connection strings and IDs:
+Set the agent IDs (they start with `asst_`) and reprovision to update the function app settings. The `*_CONNECTION` settings are already set to the Foundry project endpoint by the template.
 
 ```bash
 azd env set DESTINATION_RECOMMENDER_AGENT_ID "your-agent-id"
 azd env set ITINERARY_PLANNER_AGENT_ID "your-agent-id"
 azd env set LOCAL_RECOMMENDATIONS_AGENT_ID "your-agent-id"
-azd env set DESTINATION_RECOMMENDER_CONNECTION "your-connection-string"
-azd env set ITINERARY_PLANNER_CONNECTION "your-connection-string"
-azd env set LOCAL_RECOMMENDATIONS_CONNECTION "your-connection-string"
 
 # Apply these changes to your Azure resources
 azd provision
@@ -310,7 +332,7 @@ azd down --purge
 
 - [Azure Durable Task Scheduler](https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-task-scheduler/quickstart-durable-task-scheduler?pivots=csharp)
 - [Azure Durable Functions Documentation](https://docs.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-overview)
-- [Azure AI Projects Documentation](https://learn.microsoft.com/en-us/azure/ai-studio/how-to/projects-sdk-overview)
+- [Microsoft Foundry Agent Service Documentation](https://learn.microsoft.com/azure/ai-foundry/agents/overview)
 - [Azure Functions Isolated Process Model](https://docs.microsoft.com/en-us/azure/azure-functions/dotnet-isolated-process-guide)
 - [Azure Developer CLI Documentation](https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/)
 - [Azurite Emulator](https://learn.microsoft.com/en-us/azure/storage/common/storage-use-azurite?tabs=visual-studio%2Cblob-storage)
