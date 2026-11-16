@@ -168,7 +168,7 @@ The emulator simulates a scheduler and taskhub in a Docker container, making it 
 
 ## Telemetry
 
-The Functions host uses OpenTelemetry. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports to Azure Monitor. For user-assigned managed identity authentication, set `AzureMonitorExporter__credential` to `managedidentity` and `AzureMonitorExporter__clientId` to the identity's client ID, and grant that identity the Monitoring Metrics Publisher role on Application Insights. Without the connection string, the worker does not export.
+The Functions host uses OpenTelemetry. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports to Azure Monitor. For user-assigned managed identity authentication, set `AzureMonitorExporter__credential` to `managedidentity` and `AzureMonitorExporter__clientId` to the identity's client ID, and grant that identity the Monitoring Metrics Publisher role on Application Insights. Unless `AzureMonitorExporter__credential` is explicitly set, the exporter uses connection-string authentication. Without the connection string, the worker does not export.
 
 ## Project Structure
 

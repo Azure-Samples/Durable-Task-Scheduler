@@ -242,7 +242,7 @@ Core Tools normally skips HTTP key enforcement locally, so the local examples ne
 
 The Functions host uses OpenTelemetry (`telemetryMode` in `host.json`).
 
-When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker registers OpenTelemetry and exports to Azure Monitor. The exporter authenticates with the app's managed identity through the dedicated `AzureMonitorExporter` settings (`AzureMonitorExporter__credential` and `AzureMonitorExporter__clientId`), so Application Insights local authentication can stay disabled. Without that connection string, as in local emulator runs, the worker does not export.
+When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker registers OpenTelemetry and exports to Azure Monitor. The exporter authenticates with the app's managed identity through the dedicated `AzureMonitorExporter` settings (`AzureMonitorExporter__credential` and `AzureMonitorExporter__clientId`), so Application Insights local authentication can stay disabled. Unless `AzureMonitorExporter__credential` is explicitly set, the exporter uses connection-string authentication. Without that connection string, as in local emulator runs, the worker does not export.
 
 In Application Insights, inspect `requests`, `dependencies`, and `traces` for exported telemetry. Payload contents are not logged.
 

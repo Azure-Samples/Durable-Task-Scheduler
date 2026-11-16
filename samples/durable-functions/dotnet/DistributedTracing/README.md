@@ -77,7 +77,7 @@ Distributed tracing is enabled in `host.json`:
 
 When deployed to Azure with Application Insights configured:
 
-The Functions host uses OpenTelemetry and the Durable Task distributed tracing configuration above. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports telemetry to Azure Monitor and captures the `Microsoft.DurableTask` activity source to connect the starter to the orchestration trace. For user-assigned managed identity authentication, set `AzureMonitorExporter__credential` to `managedidentity` and `AzureMonitorExporter__clientId` to the identity's client ID, and grant that identity the Monitoring Metrics Publisher role on Application Insights.
+The Functions host uses OpenTelemetry and the Durable Task distributed tracing configuration above. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports telemetry to Azure Monitor and captures the `Microsoft.DurableTask` activity source to connect the starter to the orchestration trace. For user-assigned managed identity authentication, set `AzureMonitorExporter__credential` to `managedidentity` and `AzureMonitorExporter__clientId` to the identity's client ID, and grant that identity the Monitoring Metrics Publisher role on Application Insights. If `AzureMonitorExporter__credential` is not set, the exporter uses connection-string authentication.
 
 1. Navigate to your Application Insights resource
 2. Go to **Transaction Search**
