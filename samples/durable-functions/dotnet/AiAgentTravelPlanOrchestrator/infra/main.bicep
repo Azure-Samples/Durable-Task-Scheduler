@@ -6,7 +6,7 @@ param environmentName string
 
 @minLength(1)
 @description('Primary location for all resources. Must support both Durable Task Scheduler and the agent model deployment.')
-@allowed(['eastus2', 'swedencentral'])
+@allowed(['eastus2'])
 @metadata({
   azd: {
     type: 'location'

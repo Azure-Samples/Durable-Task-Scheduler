@@ -125,7 +125,9 @@ public class TravelPlannerOrchestrator
             documentUrl = documentUrl
         });
         var approvalRequest = new ApprovalRequest(context.InstanceId, travelPlan, travelRequest.UserName);
-        await context.CallActivityAsync(nameof(TravelPlannerActivities.RequestApproval), approvalRequest);
+        await context.CallActivityAsync<ApprovalRequest>(
+            nameof(TravelPlannerActivities.RequestApproval),
+            approvalRequest);
         
         // Step 6: Wait for approval
         logger.LogInformation("Step 6: Waiting for approval from user {UserName}", travelRequest.UserName);

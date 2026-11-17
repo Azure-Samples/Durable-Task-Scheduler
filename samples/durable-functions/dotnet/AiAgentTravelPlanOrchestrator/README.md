@@ -95,7 +95,7 @@ Upon successful booking, the user receives a final confirmation with all travel 
 
 ## Telemetry
 
-The Functions host uses OpenTelemetry. Set `APPLICATIONINSIGHTS_CONNECTION_STRING` to export worker telemetry to Azure Monitor. Without the connection string, the worker does not export. When `AzureMonitorExporter__credential` is not set, the worker uses the connection string without Microsoft Entra authentication, which requires local authentication to be enabled on the Application Insights resource.
+The Functions host uses OpenTelemetry. Set `APPLICATIONINSIGHTS_CONNECTION_STRING` to export worker telemetry, including outbound HTTP dependency traces, to Azure Monitor. Without the connection string, the worker does not export. When `AzureMonitorExporter__credential` is not set, the worker uses the connection string without Microsoft Entra authentication, which requires local authentication to be enabled on the Application Insights resource.
 
 To opt in to Microsoft Entra authentication for worker telemetry, set `AzureMonitorExporter__credential` to `managedidentity` and grant the identity the Monitoring Metrics Publisher role on the Application Insights resource. For a user-assigned identity, also set `AzureMonitorExporter__clientId` to its client ID. Configure host telemetry separately with `APPLICATIONINSIGHTS_AUTHENTICATION_STRING` (for example, `Authorization=AAD;ClientId=<client-id>` for a user-assigned identity). The supplied Bicep template configures both host and worker to use its managed identity and disables local authentication by default.
 
@@ -236,7 +236,7 @@ This command will:
 - Configure the function app with the Foundry project endpoint and grant its managed identity the **Foundry User** role (formerly **Azure AI User**) on the Foundry resource
 
 > [!NOTE]
-> Choose `eastus2` or `swedencentral` as the location. Both regions support Durable Task Scheduler and the `gpt-5-mini` `GlobalStandard` deployment. To use a different model, set the `modelName`, `modelVersion`, `modelSkuName`, and `modelCapacity` parameters in `infra/main.bicep`.
+> Choose `eastus2` as the location. It supports Durable Task Scheduler, Azure Static Web Apps, and `gpt-5-mini` `GlobalStandard` for Foundry Agent Service. To use a different model, set the `modelName`, `modelVersion`, `modelSkuName`, and `modelCapacity` parameters in `infra/main.bicep`.
 
 > [!IMPORTANT]
 > By default, the Foundry resource allows public network access so that the function app can reach it. The template doesn't create a private endpoint for Foundry. To block public access, run `azd env set AI_PUBLIC_NETWORK_ACCESS Disabled` before `azd up`, and provide your own private endpoint and virtual network integration so the function app can still reach the Foundry project.

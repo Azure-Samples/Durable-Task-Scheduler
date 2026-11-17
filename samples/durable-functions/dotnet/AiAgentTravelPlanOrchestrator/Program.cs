@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Azure;
 using Microsoft.Extensions.Logging;
 using Azure.Identity;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
 using TravelPlannerFunctions.Services;
 
 var host = new HostBuilder()
@@ -28,6 +30,7 @@ var host = new HostBuilder()
                 });
             services.AddOpenTelemetry()
                 .UseFunctionsWorkerDefaults()
+                .WithTracing(tracing => tracing.AddHttpClientInstrumentation())
                 .UseAzureMonitorExporter();
         }
         services.AddLogging();
