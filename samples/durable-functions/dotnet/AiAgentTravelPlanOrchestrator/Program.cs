@@ -20,8 +20,11 @@ var host = new HostBuilder()
                 .Configure<AzureComponentFactory>((options, factory) =>
                 {
                     options.ConnectionString = connectionString;
-                    options.Credential = factory.CreateTokenCredential(
-                        context.Configuration.GetSection("AzureMonitorExporter"));
+                    var exporterConfiguration = context.Configuration.GetSection("AzureMonitorExporter");
+                    if (!string.IsNullOrWhiteSpace(exporterConfiguration["credential"]))
+                    {
+                        options.Credential = factory.CreateTokenCredential(exporterConfiguration);
+                    }
                 });
             services.AddOpenTelemetry()
                 .UseFunctionsWorkerDefaults()

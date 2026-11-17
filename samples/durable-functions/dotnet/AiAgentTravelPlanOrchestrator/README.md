@@ -95,7 +95,11 @@ Upon successful booking, the user receives a final confirmation with all travel 
 
 ## Telemetry
 
-The Functions host uses OpenTelemetry. When `APPLICATIONINSIGHTS_CONNECTION_STRING` is set, the worker exports to Azure Monitor using the app's managed identity through `AzureMonitorExporter__credential` and `AzureMonitorExporter__clientId`. Without that connection string, the worker does not export. `AZURE_CLIENT_ID` is still required by the agent and storage clients.
+The Functions host uses OpenTelemetry. Set `APPLICATIONINSIGHTS_CONNECTION_STRING` to export worker telemetry to Azure Monitor. Without the connection string, the worker does not export. When `AzureMonitorExporter__credential` is not set, the worker uses the connection string without Microsoft Entra authentication, which requires local authentication to be enabled on the Application Insights resource.
+
+To opt in to Microsoft Entra authentication for worker telemetry, set `AzureMonitorExporter__credential` to `managedidentity` and grant the identity the Monitoring Metrics Publisher role on the Application Insights resource. For a user-assigned identity, also set `AzureMonitorExporter__clientId` to its client ID. Configure host telemetry separately with `APPLICATIONINSIGHTS_AUTHENTICATION_STRING` (for example, `Authorization=AAD;ClientId=<client-id>` for a user-assigned identity). The supplied Bicep template configures both host and worker to use its managed identity and disables local authentication by default.
+
+`AZURE_TENANT_ID` and `AZURE_CLIENT_ID` are still required by the agent and storage setup, regardless of the telemetry authentication method.
 
 ## Setting Up Locally
 
