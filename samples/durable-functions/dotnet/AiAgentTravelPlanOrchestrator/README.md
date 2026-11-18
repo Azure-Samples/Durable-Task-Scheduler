@@ -132,7 +132,7 @@ Create a `local.settings.json` file in the root directory with the following con
     "LOCAL_RECOMMENDATIONS_AGENT_ID": "<LOCAL_RECOMMENDATIONS_AGENT_ID>"
   },
   "Host": {
-    "LocalHttpPort": 7252,
+    "LocalHttpPort": 7071,
     "CORS": "*",
     "CORSCredentials": false
   }
@@ -175,7 +175,7 @@ npm install
 npm start
 ```
 
-The application will be accessible at `http://localhost:3000`
+The application will be accessible at `http://localhost:3000`. In development, the frontend calls `http://localhost:7071/api` by default. If you run the Functions host on a different port, create `Frontend/.env` with `VITE_API_URL=http://localhost:<port>/api`.
 
 ## Deploying to Azure
 
@@ -222,9 +222,19 @@ Follow the prompts to configure your environment settings.
 
 ### 3. Provision Resources and Deploy
 
-Use the Azure Developer CLI to provision all necessary resources and deploy your application:
+Use the Azure Developer CLI to provision all necessary resources and deploy your application. Set `SWA_CLI_DEPLOY_ENV=production` first so the frontend deploys to the Static Web App production environment, where the linked backend is available (see the note in [step 6](#6-deploy-react-web-app)).
+
+#### Bash
 
 ```bash
+export SWA_CLI_DEPLOY_ENV=production
+azd up
+```
+
+#### PowerShell
+
+```PowerShell
+$env:SWA_CLI_DEPLOY_ENV = "production"
 azd up
 ```
 
@@ -312,28 +322,23 @@ azd provision
 
 ### 6. Deploy React Web App
 
-Update your `.env.production` file in `Frontend` directory so that it points to the correct API endpoint.
+The deployed frontend uses the Static Web App's linked Function App backend at `/api` by default. To override this, set `VITE_API_URL` in `Frontend/.env.production` to the desired API endpoint.
+
+> [!IMPORTANT]
+> With azd 1.33 and Static Web Apps CLI 2.1, `azd deploy web` deployed the frontend to a preview environment that doesn't have the linked backend, so `/api` calls failed. Setting `SWA_CLI_DEPLOY_ENV=production` before deploying sent the frontend to the production environment, where the linked backend is available. This workaround was tested with `azd deploy --all`; it hasn't been verified as part of a complete `azd up` run. If the variable isn't set in your current shell, set it again before deploying.
 
 #### Bash
 
 ```bash
-STATIC_WEB_APP_URI=$(azd env get-value STATIC_WEB_APP_URI)
-echo "REACT_APP_API_URL=$STATIC_WEB_APP_URI/api" > ./Frontend/.env.production
-
-# Redeploy the build bundle. 
-azd package web
-azd deploy web
+export SWA_CLI_DEPLOY_ENV=production
+azd deploy --all
 ```
 
 #### PowerShell
 
 ```PowerShell
-$staticWebAppUri = azd env get-value STATIC_WEB_APP_URI
-"REACT_APP_API_URL=$staticWebAppUri/api" | Out-File -FilePath "./Frontend/.env.production" -Encoding utf8
-
-# Redeploy the build bundle. 
-azd package web
-azd deploy web
+$env:SWA_CLI_DEPLOY_ENV = "production"
+azd deploy --all
 ```
 
 ## Clean up
