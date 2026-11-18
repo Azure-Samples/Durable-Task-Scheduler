@@ -312,15 +312,15 @@ azd provision
 
 ### 6. Deploy React Web App
 
-Update your `.env.production` file in `Frontend` directory so that it points to the correct API endpoint.
+The deployed frontend uses the Static Web App's linked Function App backend at `/api` by default. To override this, set `VITE_API_URL` in `Frontend/.env.production` to the desired API endpoint.
 
 #### Bash
 
 ```bash
 STATIC_WEB_APP_URI=$(azd env get-value STATIC_WEB_APP_URI)
-echo "REACT_APP_API_URL=$STATIC_WEB_APP_URI/api" > ./Frontend/.env.production
+echo "VITE_API_URL=$STATIC_WEB_APP_URI/api" > ./Frontend/.env.production
 
-# Redeploy the build bundle. 
+# Redeploy the build bundle.
 azd package web
 azd deploy web
 ```
@@ -329,9 +329,9 @@ azd deploy web
 
 ```PowerShell
 $staticWebAppUri = azd env get-value STATIC_WEB_APP_URI
-"REACT_APP_API_URL=$staticWebAppUri/api" | Out-File -FilePath "./Frontend/.env.production" -Encoding utf8
+"VITE_API_URL=$staticWebAppUri/api" | Out-File -FilePath "./Frontend/.env.production" -Encoding utf8
 
-# Redeploy the build bundle. 
+# Redeploy the build bundle.
 azd package web
 azd deploy web
 ```

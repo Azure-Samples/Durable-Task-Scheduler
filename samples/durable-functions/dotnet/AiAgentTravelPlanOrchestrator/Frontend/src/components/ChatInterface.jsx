@@ -6,7 +6,8 @@ import ProgressTracker from './ProgressTracker';
 import './progress-tracker.css';
 
 // Get API URL from environment variables
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:7071/api';
+const API_URL = import.meta.env.VITE_API_URL
+  || (import.meta.env.DEV ? 'http://localhost:7071/api' : '/api');
 
 const ChatInterface = () => {
   // Travel request state

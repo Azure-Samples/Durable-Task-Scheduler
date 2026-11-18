@@ -59,7 +59,7 @@ Locally preview the production build.
 
 ## Environment Variables
 
-Create a `.env` file for local development or `.env.production` for production builds:
+Create a `.env` file for local development or `.env.production` to override the production API endpoint:
 
 ```env
 VITE_API_URL=http://localhost:7071/api
@@ -67,7 +67,7 @@ VITE_API_URL=http://localhost:7071/api
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `VITE_API_URL` | Backend API endpoint URL | `http://localhost:7071/api` |
+| `VITE_API_URL` | Backend API endpoint URL | Local development: `http://localhost:7071/api`; production: `/api` |
 
 ## Local Development
 
@@ -93,7 +93,7 @@ VITE_API_URL=http://localhost:7071/api
 
 4. **Ensure the backend is running**:
 
-   The frontend expects the Azure Functions backend to be running at the configured `VITE_API_URL`.
+   The frontend defaults to the local Azure Functions endpoint. In production, it defaults to `/api`, which the linked Static Web App backend routes to Azure Functions.
 
 ## Deployment
 
