@@ -39,7 +39,8 @@ module functions 'br/public:avm/res/web/site:0.16.0' = {
     tags: tags
     serverFarmResourceId: appServicePlanId
     managedIdentities: {
-      userAssignedResourceIds: [identityId]
+      systemAssigned: identityType == 'SystemAssigned'
+      userAssignedResourceIds: identityType == 'UserAssigned' ? [identityId] : []
     }
     siteConfig: {
       netFrameworkVersion: 'v10.0'
@@ -61,9 +62,11 @@ module functions 'br/public:avm/res/web/site:0.16.0' = {
           FUNCTIONS_WORKER_RUNTIME: 'dotnet-isolated'
           AzureWebJobsStorage__accountName: storageAccount.name
           AzureWebJobsStorage__credential : 'managedidentity'
-          APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsights.properties.ConnectionString
           WEBSITE_USE_PLACEHOLDER_DOTNETISOLATED: '1'
-        })
+        },
+        !empty(applicationInsightsName) ? {
+          APPLICATIONINSIGHTS_CONNECTION_STRING: applicationInsights!.properties.ConnectionString
+        } : {})
       }
     ]
   }
@@ -71,5 +74,6 @@ module functions 'br/public:avm/res/web/site:0.16.0' = {
 
 output name string = functions.outputs.name
 output uri string = 'https://${functions.outputs.defaultHostname}'
-output identityPrincipalId string = identityType == 'SystemAssigned' ? functions.outputs.systemAssignedMIPrincipalId : ''
+// A system-assigned identity is deployed whenever this output is needed.
+output identityPrincipalId string = identityType == 'SystemAssigned' ? functions.outputs.systemAssignedMIPrincipalId! : ''
 output id string = functions.outputs.resourceId

@@ -187,9 +187,9 @@ module api './app/api.bicep' = {
     appSettings: {
       // https://learn.microsoft.com/en-us/azure/azure-functions/durable/durable-functions-configure-managed-identity
       // These would be needed if running outside of cloud
-      AzureWebJobsStorage__blobServiceUri: 'https://${storage.outputs.name}.blob.core.windows.net'
-      AzureWebJobsStorage__queueServiceUri: 'https://${storage.outputs.name}.queue.core.windows.net'
-      AzureWebJobsStorage__tableServiceUri: 'https://${storage.outputs.name}.blob.core.windows.net'
+      AzureWebJobsStorage__blobServiceUri: storage.outputs.primaryEndpoints.blob
+      AzureWebJobsStorage__queueServiceUri: storage.outputs.primaryEndpoints.queue
+      AzureWebJobsStorage__tableServiceUri: storage.outputs.primaryEndpoints.table
       AZURE_TENANT_ID: tenant().tenantId
       AZURE_CLIENT_ID: apiUserAssignedIdentity.outputs.identityClientId
       DURABLE_TASK_SCHEDULER_CONNECTION_STRING: 'Endpoint=${dts.outputs.dts_URL};Authentication=ManagedIdentity;ClientID=${apiUserAssignedIdentity.outputs.identityClientId}'
@@ -201,13 +201,8 @@ module api './app/api.bicep' = {
       ITINERARY_PLANNER_AGENT_ID: itineraryPlannerAgentId
       LOCAL_RECOMMENDATIONS_AGENT_ID: localRecommendationsAgentId
     }
-    virtualNetworkSubnetId: skipVnet ? '' : serviceVirtualNetwork.outputs.appSubnetID
+    virtualNetworkSubnetId: skipVnet ? '' : serviceVirtualNetwork!.outputs.appSubnetID
   }
-  dependsOn: [
-    storage
-    appServicePlan
-    apiUserAssignedIdentity
-  ]
 }
 
 // Microsoft Foundry resource, project, and model deployment used by the agents
@@ -337,7 +332,7 @@ module storagePrivateEndpoint 'app/storage-private-endpoint.bicep' = if (!skipVn
     location: location
     tags: tags
     virtualNetworkName: !empty(vNetName) ? vNetName : '${abbrs.networkVirtualNetworks}${resourceToken}'
-    subnetName: skipVnet ? '' : serviceVirtualNetwork.outputs.peSubnetName
+    subnetName: skipVnet ? '' : serviceVirtualNetwork!.outputs.peSubnetName
     resourceName: storage.outputs.name
   }
 }
@@ -366,9 +361,6 @@ module appInsightsRoleAssignmentApi './core/monitor/appinsights-access.bicep' = 
     roleDefinitionID: monitoringRoleDefinitionId
     principalID: apiUserAssignedIdentity.outputs.identityPrincipalId
   }
-  dependsOn: [
-    apiUserAssignedIdentity
-  ]
 }
 
 var durableTaskDataContributorRoleDefinitionId = '0ad04412-c4d5-4796-b79c-f76d14c8d402'
@@ -385,8 +377,6 @@ module dtsRoleAssignment 'app/dts-Access.bicep' = {
   }
   dependsOn: [
     storage
-    apiUserAssignedIdentity
-    dts
   ]
 }
 
@@ -399,9 +389,6 @@ module dtsDashboardRoleAssignment 'app/dts-Access.bicep' = {
    principalType: 'User'
    dtsName: dts.outputs.dts_NAME
   }
-  dependsOn: [
-    dts
-  ]
 }
 
 module dts './app/dts.bicep' = {
