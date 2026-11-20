@@ -1,0 +1,9 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true",
+    "FUNCTIONS_WORKER_RUNTIME": "java",
+    "TASK_HUB_NAME": "YOUR-HUB",
+    "DURABLE_TASK_SCHEDULER_CONNECTION_STRING": "Endpoint=https://YOUR-SCHEDULER-ENDPOINT;TaskHub=YOUR-HUB;Authentication=DefaultAzure"
+  }
+}
