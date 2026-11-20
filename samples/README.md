@@ -137,6 +137,7 @@ See the [Go samples](./durable-task-sdks/go/) for setup.
 | [Eternal Orchestrations](./durable-task-sdks/java/eternal-orchestrations) | Eternal Orchestrations | Continue-as-new pattern |
 | [Durable Entities](./durable-task-sdks/java/entities) | Durable Entities | Counter entity with state persisted across operations |
 | [OpenTelemetry Tracing](./durable-task-sdks/java/opentelemetry-tracing) | Observability | Distributed tracing with OpenTelemetry and Jaeger |
+| [Task queues](./durable-task-sdks/java/task-queues) | Task queues (preview) | Tagged orchestration starts with inherited activity and child routing |
 
 ### JavaScript / TypeScript (preview)
 
