@@ -54,8 +54,6 @@ public class Functions {
         } else if (state.getRuntimeStatus() == OrchestrationRuntimeStatus.FAILED
                 || state.getRuntimeStatus() == OrchestrationRuntimeStatus.TERMINATED) {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
-            body.put("failure", state.getFailureDetails() == null
-                    ? state.getRuntimeStatus().name() : state.getFailureDetails().toString());
         }
         return request.createResponseBuilder(status)
                 .header("Content-Type", "application/json").body(body).build();

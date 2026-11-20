@@ -20,8 +20,8 @@ The partner activity stays in `orders`; this sample does not use `partner-api`.
   Functions still needs `AzureWebJobsStorage` when orchestration state uses DTS.
 - Bash, curl, and jq for `demo.sh`.
 - Follow [shared task queue setup](../../../../docs/task-queues.md) to provision
-  `orders` at 20 work-item handouts per second and `partner-api` at 5.
-  Wait for provisioning to succeed before running. Only `orders` is used here.
+  `orders` at 20 work-item handouts per second. Wait for provisioning to
+  succeed before running. This sample does not use `partner-api`.
 
 Actual queue throttling requires Azure. The emulator can run the workflow but
 cannot validate Azure task queue limits. Missing or deleted queues fall back to
