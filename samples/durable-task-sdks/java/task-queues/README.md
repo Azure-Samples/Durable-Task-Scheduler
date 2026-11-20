@@ -16,8 +16,8 @@ does not route the partner activity to `partner-api`.
   assigned to the identity running the sample.
 - Azure CLI, signed in with `az login` for `Authentication=DefaultAzure`.
 - Follow [shared task queue setup](../../../../docs/task-queues.md) to provision
-  `orders` at 20 work-item handouts per second and `partner-api` at 5.
-  Wait for provisioning to succeed before running. Only `orders` is used here.
+  `orders` at 20 work-item handouts per second. Wait for provisioning to
+  succeed before running. This sample does not use `partner-api`.
 
 Actual queue throttling requires Azure. The emulator can exercise the workflow,
 but does not validate the Azure queue rate. If the queue is missing or deleted,
