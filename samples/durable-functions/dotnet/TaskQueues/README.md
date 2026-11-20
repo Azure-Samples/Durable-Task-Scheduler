@@ -31,11 +31,18 @@ settings. For a deployed app, use `Authentication=ManagedIdentity` and assign
 the data-plane role to the app identity. The Functions host supplies the hub
 name separately.
 
-Start Azurite in a separate terminal, then:
+Start Azurite in a separate terminal. In this directory, start the Functions
+host in one terminal:
 
 ```bash
 func start
-curl -X POST http://localhost:7071/api/orders/order-001
+```
+
+In another terminal, from this directory, start an order:
+
+```bash
+curl --fail --show-error --max-time 15 \
+  -X POST http://localhost:7071/api/orders/order-001
 ```
 
 The example settings connect to the emulator on `localhost:8080`. Start the
