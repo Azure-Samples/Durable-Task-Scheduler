@@ -131,6 +131,9 @@ jobs:
       - name: Build DTS - function-chaining
         run: cd samples/durable-task-sdks/java/function-chaining && chmod +x gradlew && ./gradlew build
 
+      - name: Build DTS - task-queues
+        run: cd samples/durable-task-sdks/java/task-queues && bash ./gradlew --no-daemon build
+
       - name: Build DTS - fan-out-fan-in
         run: cd samples/durable-task-sdks/java/fan-out-fan-in && chmod +x gradlew && ./gradlew build
 

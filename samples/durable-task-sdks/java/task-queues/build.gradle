@@ -1,0 +1,28 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'io.durabletask'
+version = '0.1.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.microsoft:durabletask-client:1.9.0'
+    implementation 'com.microsoft:durabletask-azuremanaged:1.9.0'
+    implementation 'io.grpc:grpc-protobuf:1.78.0'
+    implementation 'io.grpc:grpc-stub:1.78.0'
+    runtimeOnly 'io.grpc:grpc-netty-shaded:1.78.0'
+}
+
+application {
+    mainClass = 'io.durabletask.samples.TaskQueues'
+}
