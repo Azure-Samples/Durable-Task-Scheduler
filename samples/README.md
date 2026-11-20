@@ -98,6 +98,7 @@ See the [Go samples](./durable-task-sdks/go/) for setup.
 | [Export History](./durable-task-sdks/dotnet/ExportHistoryWebApp) | Export History | REST API for batch and continuous orchestration history export to Azure Blob Storage |
 | [Bounded Coordinator](./durable-task-sdks/dotnet/BoundedCoordinator) | Bounded Coordinator | Process child work in bounded batches and reset history with ContinueAsNew |
 | [Agent-Directed Workflows](./durable-task-sdks/dotnet/Agents/AgentDirectedWorkflows) | AI Agents | Entity-based agent loop with tool calling and Redis-backed response streaming |
+| [Task queues](./durable-task-sdks/dotnet/TaskQueues) | Task queues (preview) | Tagged starts, inherited routing, activity and child queue overrides |
 
 ### Python
 
