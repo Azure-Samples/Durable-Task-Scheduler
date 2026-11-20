@@ -1,6 +1,6 @@
 # Orchestration Patterns
 
-This guide maps each common orchestration pattern to available samples and documentation. Workflows can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler). Task queue rate enforcement requires provisioned Azure queue resources.
+This guide maps each common orchestration pattern to available samples and documentation. All patterns can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler).
 
 The [JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) is available in preview, with JavaScript examples linked below. [Go (beta) samples](../samples/durable-task-sdks/go/) are also linked below.
 
