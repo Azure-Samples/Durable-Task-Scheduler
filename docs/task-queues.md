@@ -14,29 +14,30 @@ for the feature's management and routing behavior.
 
 ## Supported languages and bindings
 
-| SDK or binding | Start tags | Activity override | Child override |
-|----------------|------------|-------------------|----------------|
-| Durable Task .NET | Yes | Yes | Yes |
-| Durable Task JavaScript | Yes | Yes | Yes |
-| Durable Task TypeScript | Yes | Yes | Yes |
-| Durable Task Python | Yes | Yes | No |
-| Durable Task Java (1.6.0+) | Yes | No | No |
-| Durable Task Go (beta) | Yes | Yes | Yes |
-| Durable Functions .NET isolated | Yes | Yes | Yes |
-| Durable Functions Java | Yes | No | No |
+| SDK or binding | Start tags | Activity override | Child override | Sample |
+|----------------|------------|-------------------|----------------|--------|
+| Durable Task .NET | Yes | Yes | Yes | [.NET SDK](../samples/durable-task-sdks/dotnet/TaskQueues) |
+| Durable Task JavaScript | Yes | Yes | Yes | [JavaScript SDK](../samples/durable-task-sdks/javascript/task-queues) |
+| Durable Task TypeScript | Yes | Yes | Yes | [TypeScript SDK](../samples/durable-task-sdks/typescript/task-queues) |
+| Durable Task Python | Yes | Yes | No | [Python SDK](../samples/durable-task-sdks/python/task-queues) |
+| Durable Task Java (1.6.0+) | Yes | No | No | [Java SDK](../samples/durable-task-sdks/java/task-queues) |
+| Durable Task Go (beta) | Yes | Yes | Yes | [Go SDK](../samples/durable-task-sdks/go/task-queues) |
+| Durable Functions .NET isolated | Yes | Yes | Yes | [.NET Functions](../samples/durable-functions/dotnet/TaskQueues) |
+| Durable Functions Java | Yes | No | No | [Java Functions](../samples/durable-functions/java/TaskQueues) |
 
 Durable Functions .NET in-process, JavaScript, TypeScript, Python, and
 PowerShell do not expose the explicit tag options needed by these samples.
 Standalone SDK support does not imply support in that language's Functions
 binding. Java and Python children still inherit their parent's queue.
-Entity work items do not use task queues. Each language's sample is
-listed in the [sample catalog](../samples/README.md).
+Entity work items do not use task queues.
 
 ## Prerequisites
 
 - An existing Azure scheduler and a task hub dedicated to the sample you run.
-- Permission to manage task queue resources, such as Contributor on the
-  resource group or scheduler. Data-plane permissions do not grant this.
+- Management-plane permission to create, read, and update task queue resources.
+  Resource group Contributor is one broad option; use your organization's
+  approved least-privilege role when available. Data-plane permissions alone do
+  not grant resource-management access.
 - Durable Task Data Contributor access for the worker/client identity.
 - Azure CLI with an existing signed-in session and the correct subscription
   selected. The REST examples use Bash and need no task queue CLI extension.
@@ -49,7 +50,16 @@ that throttling occurred.
 
 ## Create the queues
 
-From the repository root, set the existing resource names:
+Sign in if needed, then select the subscription that contains the scheduler:
+
+```bash
+# Run only if you are not already signed in.
+az login
+az account set --subscription "SUBSCRIPTION_ID"
+```
+
+From the repository root, set the resource names for the existing scheduler
+and task hub:
 
 ```bash
 subscriptionId=$(az account show --query id --output tsv)
@@ -60,6 +70,24 @@ apiVersion="2026-07-01-preview"
 taskHubResourceId="/subscriptions/$subscriptionId/resourceGroups/$resourceGroup/providers/Microsoft.DurableTask/schedulers/$schedulerName/taskHubs/$taskHubName"
 queueBaseUrl="https://management.azure.com$taskHubResourceId/taskQueues"
 ```
+
+Before creating queues, list the resources in the hub and inspect any queue
+with a name used below:
+
+```bash
+az rest --method get \
+  --url "$queueBaseUrl?api-version=$apiVersion" \
+  --query "value[].name" --output tsv
+az rest --method get --url "$queueBaseUrl/orders?api-version=$apiVersion"
+az rest --method get --url "$queueBaseUrl/partner-api?api-version=$apiVersion"
+```
+
+The `orders` and `partner-api` names are shared by these samples. Use a task
+hub dedicated to the samples, or choose distinct queue names and update the
+sample tags to match. Do not overwrite an existing queue unless you have
+reviewed its configuration and intend to change it. The PUT commands and
+Bicep deployment below create or update these queues; PUT replaces the queue
+configuration.
 
 Create `orders` and `partner-api` with ARM REST:
 
@@ -72,8 +100,11 @@ az rest --method put \
   --body '{"properties":{"throughput":{"actionsPerSecond":5}}}'
 ```
 
+The Java SDK and Java Functions samples use only `orders`. For those samples,
+run only the first PUT and wait only for `orders`.
+
 Alternatively, deploy the shared Bicep template. It references the existing
-scheduler and hub and creates only the two queues:
+scheduler and hub and creates or updates only these two queues:
 
 ```bash
 az deployment group create \
@@ -92,8 +123,9 @@ independent `location` or Azure resource `tags`.
 ## Wait for provisioning
 
 Run this bounded poll after creating or updating queues. Do not schedule
-tagged work until each required queue reports `Succeeded`. The Java samples
-need only `orders`, but the shared template creates both queues.
+tagged work until each required queue reports `Succeeded`. For samples using
+both queues, wait for both. The Java samples need only `orders`; the shared
+template creates both queues.
 
 ```bash
 waitForQueue() {
@@ -116,6 +148,8 @@ waitForQueue() {
 }
 waitForQueue orders && waitForQueue partner-api
 ```
+
+For Java samples, run `waitForQueue orders` instead.
 
 If polling fails, stop and resolve the resource error before running a sample.
 An accepted PUT or PATCH is not confirmation that provisioning finished.
@@ -190,8 +224,10 @@ one short workflow.
 
 Deleting or misspelling a queue causes tagged work to use ordinary task hub
 routing without that queue's limit. Deletion does not pause or terminate
-existing instances. After all sample work finishes, remove only the queues
-you created:
+existing instances. Do not delete a queue to pause work. Before cleanup, stop
+the sample workers and confirm that no active workload depends on either
+queue. Delete only queues created for these samples, and only from a hub
+dedicated to them:
 
 ```bash
 az rest --method delete --url "$queueBaseUrl/orders?api-version=$apiVersion"
