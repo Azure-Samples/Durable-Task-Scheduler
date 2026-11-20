@@ -36,6 +36,9 @@ jobs:
       - name: Build DTS - FunctionChaining
         run: dotnet build samples/durable-task-sdks/dotnet/FunctionChaining/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/FunctionChaining/Worker/Worker.csproj
 
+      - name: Build DTS - TaskQueues
+        run: dotnet build samples/durable-task-sdks/dotnet/TaskQueues/TaskQueues.csproj
+
       - name: Build DTS - FanOutFanIn
         run: dotnet build samples/durable-task-sdks/dotnet/FanOutFanIn/Client/Client.csproj && dotnet build samples/durable-task-sdks/dotnet/FanOutFanIn/Worker/Worker.csproj
 
