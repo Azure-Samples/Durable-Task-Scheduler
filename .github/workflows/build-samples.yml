@@ -104,6 +104,9 @@ jobs:
       - name: Build DF - WorkItemFiltering
         run: dotnet build samples/durable-functions/dotnet/WorkItemFiltering/WorkItemFiltering.csproj
 
+      - name: Build DF - TaskQueues
+        run: dotnet build samples/durable-functions/dotnet/TaskQueues/TaskQueues.csproj
+
       - name: Build DF - WorkItemFiltering.AppB
         run: dotnet build samples/durable-functions/dotnet/WorkItemFiltering.AppB/AppB.csproj
 

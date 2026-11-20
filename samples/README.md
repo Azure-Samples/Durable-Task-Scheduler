@@ -203,6 +203,7 @@ Run `go build ./...`, `go test ./...`, and `go vet ./...` from the Go module. Th
 | [Agent-Directed Workflows](./durable-functions/dotnet/AgentDirectedWorkflows) | AI Agents | Entity-based agent loop with tool calling and Redis-backed response streaming |
 | [Work Item Filtering](./durable-functions/dotnet/WorkItemFiltering) | Work Item Filtering | Route work between two Function apps sharing a task hub |
 | [Custom Exception Properties](./durable-functions/dotnet/CustomExceptionPropertyProvider) | Error Handling | Propagate structured exception properties to orchestration failure details |
+| [Task queues](./durable-functions/dotnet/TaskQueues) | Task queues (preview) | .NET isolated HTTP starter with inherited routing and queue overrides |
 
 ### Python
 

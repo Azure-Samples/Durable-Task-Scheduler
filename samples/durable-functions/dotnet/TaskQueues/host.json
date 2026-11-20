@@ -1,0 +1,13 @@
+{
+  "version": "2.0",
+  "extensions": {
+    "durableTask": {
+      "hubName": "%TASKHUB_NAME%",
+      "storageProvider": {
+        "type": "azureManaged",
+        "connectionStringName": "DTS_CONNECTION_STRING",
+        "workItemFilteringEnabled": false
+      }
+    }
+  }
+}
