@@ -181,6 +181,7 @@ Replace `function-chaining` with any sample name below. Each sample runs its wor
 | [Orchestration Management](./durable-task-sdks/go/orchestration-management) | Management | Query and manage orchestration lifecycle |
 | [Testing](./durable-task-sdks/go/testing) | Testing | Offline business-logic tests and DTS integration tests |
 | [Work Item Filtering](./durable-task-sdks/go/work-item-filtering) | Worker Routing | Route work to matching worker registrations |
+| [Task queues](./durable-task-sdks/go/task-queues) | Task queues (preview) | Unfiltered worker with tagged starts, activity and child overrides |
 
 Run `go build ./...`, `go test ./...`, and `go vet ./...` from the Go module. These need no scheduler. Integration tests need `DTS_SAMPLES_E2E=1`; see the [contributor guide](../CONTRIBUTING.md#go-samples).
 

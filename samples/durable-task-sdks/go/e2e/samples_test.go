@@ -31,6 +31,7 @@ var samples = []string{
 	"history-export",
 	"opentelemetry-tracing",
 	"testing",
+	"task-queues",
 }
 
 func TestSampleCatalog(t *testing.T) {
