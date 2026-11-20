@@ -123,6 +123,7 @@ See the [Go samples](./durable-task-sdks/go/) for setup.
 | [Work Item Filtering](./durable-task-sdks/python/work-item-filtering) | Work Item Filtering | Route orchestration and activity work to workers that register matching tasks |
 | [In-Memory Testing](./durable-task-sdks/python/testing) | Testing | Test orchestrations and activities without Docker, an emulator, or Azure resources |
 | [Agent-Directed Workflows](./durable-task-sdks/python/agent-directed-workflows) | AI Agents | Entity-based agent loop with tool calling and response streaming |
+| [Task queues](./durable-task-sdks/python/task-queues) | Task queues (preview) | Tagged starts, inherited children, and activity queue overrides |
 
 ### Java
 

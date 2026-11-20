@@ -181,6 +181,12 @@ jobs:
       - name: Install DTS - function-chaining
         run: pip install -r samples/durable-task-sdks/python/function-chaining/requirements.txt
 
+      - name: Test DTS - task-queues
+        run: |
+          pip install -r samples/durable-task-sdks/python/task-queues/requirements.txt
+          cd samples/durable-task-sdks/python/task-queues
+          python -m unittest test_workflows.py
+
       - name: Install DTS - fan-out-fan-in
         run: pip install -r samples/durable-task-sdks/python/fan-out-fan-in/requirements.txt
 
