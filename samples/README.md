@@ -146,6 +146,7 @@ The [JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) is 
 |--------|---------|-------------|
 | [Function Chaining](./durable-task-sdks/javascript/function-chaining) | Function Chaining | Sequential workflow basics with JavaScript SDK |
 | [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Fan-out/Fan-in | Parallel execution and result aggregation with JavaScript SDK |
+| [Task queues](./durable-task-sdks/javascript/task-queues) | Task queues (preview) | Tagged starts, inherited routing, activity and child queue overrides |
 
 ### Go
 
