@@ -219,6 +219,7 @@ Run `go build ./...`, `go test ./...`, and `go vet ./...` from the Go module. Th
 |--------|---------|-------------|
 | [Hello Cities](./durable-functions/java/HelloCities) | Function Chaining, Fan-out/Fan-in | Java quickstart with sequential and parallel orchestration patterns |
 | [Durable Entities](./durable-functions/java/Entities) | Durable Entities | Stateful counter entity |
+| [Task queues](./durable-functions/java/TaskQueues) | Task queues (preview) | HTTP starter with queue tags and inherited activity/child routing |
 
 ### JavaScript
 

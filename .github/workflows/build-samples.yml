@@ -166,6 +166,9 @@ jobs:
       - name: Build DF - Entities
         run: cd samples/durable-functions/java/Entities && mvn compile --batch-mode
 
+      - name: Build DF - TaskQueues
+        run: cd samples/durable-functions/java/TaskQueues && mvn package --batch-mode
+
   python:
     name: Python Samples
     runs-on: ubuntu-latest
