@@ -1,0 +1,15 @@
+{
+  "name": "dts-javascript-task-queues",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.0.0" },
+  "scripts": {
+    "start": "node main.mjs",
+    "test": "node --test workflows.test.mjs"
+  },
+  "dependencies": {
+    "@microsoft/durabletask-js": "0.4.0",
+    "@microsoft/durabletask-js-azuremanaged": "0.4.0"
+  }
+}

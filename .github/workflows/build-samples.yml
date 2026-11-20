@@ -359,6 +359,9 @@ jobs:
       - name: Build DF JS - HelloCities
         run: cd samples/durable-functions/javascript/HelloCities && npm install
 
+      - name: Test DTS JS - task-queues
+        run: cd samples/durable-task-sdks/javascript/task-queues && npm ci && npm test
+
       # Frontend (React app)
       - name: Build DF - AiAgentTravelPlanOrchestrator Frontend
         run: cd samples/durable-functions/dotnet/AiAgentTravelPlanOrchestrator/Frontend && npm install && npm run build
