@@ -377,3 +377,6 @@ jobs:
       # Durable Functions samples
       - name: Build DF TS - HelloCities
         run: cd samples/durable-functions/typescript/HelloCities && npm install && npm run build
+
+      - name: Test DTS TS - task-queues
+        run: cd samples/durable-task-sdks/typescript/task-queues && npm ci && npm test

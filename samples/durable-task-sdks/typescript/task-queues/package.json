@@ -1,0 +1,20 @@
+{
+  "name": "dts-typescript-task-queues",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.0.0" },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/main.js",
+    "test": "npm run build && node --test workflows.test.mjs"
+  },
+  "dependencies": {
+    "@microsoft/durabletask-js": "0.4.0",
+    "@microsoft/durabletask-js-azuremanaged": "0.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.3"
+  }
+}

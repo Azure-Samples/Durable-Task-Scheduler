@@ -147,6 +147,9 @@ The [JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) is 
 | [Function Chaining](./durable-task-sdks/javascript/function-chaining) | Function Chaining | Sequential workflow basics with JavaScript SDK |
 | [Fan-out/Fan-in](./durable-task-sdks/javascript/fan-out-fan-in) | Fan-out/Fan-in | Parallel execution and result aggregation with JavaScript SDK |
 
+For a TypeScript implementation, see the
+[TypeScript task queue sample](./durable-task-sdks/typescript/task-queues).
+
 ### Go
 
 **Requires:** Go **1.25.0+**. All samples share one module in [`durable-task-sdks/go`](./durable-task-sdks/go) that uses `github.com/microsoft/durabletask-go` **v1.0.0-beta3**.
