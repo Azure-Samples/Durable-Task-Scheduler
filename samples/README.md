@@ -304,6 +304,7 @@ The links below open the samples at the pinned submodule revision in the upstrea
 | Feature | Status | Samples |
 |---------|--------|---------|
 | [On-demand Sandboxes](../preview-features/on-demand-sandboxes/) | Private preview; access must be enabled on your scheduler | [.NET and Python samples](../preview-features/on-demand-sandboxes/samples/) |
+| [Task queues](../docs/task-queues.md) | Preview; Azure queue resources and unfiltered workers required | Listed with each language's samples above |
 
 ---
 

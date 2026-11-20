@@ -1,6 +1,6 @@
 # Orchestration Patterns
 
-This guide maps each common orchestration pattern to available samples and documentation. All patterns can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler).
+This guide maps each common orchestration pattern to available samples and documentation. Workflows can be developed locally using the [Durable Task Scheduler emulator](https://learn.microsoft.com/azure/durable-task/scheduler/develop-with-durable-task-scheduler). Task queue rate enforcement requires provisioned Azure queue resources.
 
 The [JavaScript/TypeScript SDK](https://github.com/microsoft/durabletask-js) is available in preview, with JavaScript examples linked below. [Go (beta) samples](../samples/durable-task-sdks/go/) are also linked below.
 
@@ -270,6 +270,23 @@ See each README for prerequisites and usage.
 | OpenTelemetry tracing | [Sample](../samples/durable-task-sdks/python/opentelemetry-tracing) | [Sample](../samples/durable-task-sdks/go/opentelemetry-tracing) |
 
 The Go testing sample tests business logic offline. To test replay, run its integration tests against DTS. For Go tracing, see the [observability guide](./observability.md#go).
+
+## Task queues (preview)
+
+Route orchestration and activity work to named queues in one task hub.
+Queues limit sustained work-item handouts, including orchestration turns and
+redeliveries. Activities and children inherit the parent's queue unless an
+explicit tag overrides it.
+
+The .NET, JavaScript, TypeScript, and Go SDKs and Durable Functions .NET
+isolated support start, activity, and child tags. Python supports start and
+activity tags. Java SDK and Java Functions support start tags only.
+Durable Functions .NET in-process and the Python, JavaScript, TypeScript,
+and PowerShell bindings do not expose explicit queue tags.
+Use unfiltered workers and create queues before scheduling work. See the
+[shared setup and support matrix](./task-queues.md) for provisioning, sample
+routing, and missing-queue behavior, and the
+[sample catalog](../samples/README.md) for samples in each language.
 
 ---
 
