@@ -271,6 +271,23 @@ See each README for prerequisites and usage.
 
 The Go testing sample tests business logic offline. To test replay, run its integration tests against DTS. For Go tracing, see the [observability guide](./observability.md#go).
 
+## Task queues (preview)
+
+Route orchestration and activity work to named queues in one task hub.
+Queues limit sustained work-item handouts, including orchestration turns and
+redeliveries. Activities and children inherit the parent's queue unless an
+explicit tag overrides it.
+
+The .NET, JavaScript, TypeScript, and Go SDKs and Durable Functions .NET
+isolated support start, activity, and child tags. Python supports start and
+activity tags. Java SDK and Java Functions support start tags only.
+Durable Functions .NET in-process and the Python, JavaScript, TypeScript,
+and PowerShell bindings do not expose explicit queue tags.
+Use unfiltered workers and create queues before scheduling work. See the
+[shared setup and support matrix](./task-queues.md) for provisioning, sample
+routing, and missing-queue behavior, and the
+[sample catalog](../samples/README.md) for samples in each language.
+
 ---
 
 ## Next Steps
