@@ -118,7 +118,7 @@ module durableFunction './app/durable-function.bicep' = {
     applicationInsightsName: monitoring.outputs.applicationInsightsName
     appServicePlanId: appServicePlan.outputs.id
     runtimeName: 'dotnet-isolated'
-    runtimeVersion: '8.0'
+    runtimeVersion: '10.0'
     storageAccountName: storage.outputs.name
     deploymentStorageContainerName: deploymentStorageContainerName
     identityId: durableFunctionUserAssignedIdentity.outputs.identityId

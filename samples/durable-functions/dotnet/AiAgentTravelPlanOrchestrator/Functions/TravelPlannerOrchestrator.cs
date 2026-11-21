@@ -9,6 +9,9 @@ namespace TravelPlannerFunctions.Functions;
 
 public class TravelPlannerOrchestrator
 {
+    // Durable custom status limit is 16 KB (UTF-16); keep headroom for serializer differences.
+    private const int MaxCustomStatusBytes = 15 * 1024;
+
     private readonly ILogger _logger;
 
     public TravelPlannerOrchestrator(ILoggerFactory loggerFactory)
@@ -122,7 +125,9 @@ public class TravelPlannerOrchestrator
             documentUrl = documentUrl
         });
         var approvalRequest = new ApprovalRequest(context.InstanceId, travelPlan, travelRequest.UserName);
-        await context.CallActivityAsync(nameof(TravelPlannerActivities.RequestApproval), approvalRequest);
+        await context.CallActivityAsync<ApprovalRequest>(
+            nameof(TravelPlannerActivities.RequestApproval),
+            approvalRequest);
         
         // Step 6: Wait for approval
         logger.LogInformation("Step 6: Waiting for approval from user {UserName}", travelRequest.UserName);
@@ -153,12 +158,33 @@ public class TravelPlannerOrchestrator
                 }
             };
 
-            // The custom status has a max size of 16KB.
+            // The custom status has a max size of 16KB (UTF-16). Detailed agent output can exceed it,
+            // so fall back to a summary; the full plan remains available via documentUrl.
             var waitingStatusSize = Encoding.Unicode.GetByteCount(JsonSerializer.Serialize(waitingStatus));
             
             logger.LogInformation("Waiting status size: {Size} bytes", waitingStatusSize);
             
-            context.SetCustomStatus(waitingStatus);
+            if (waitingStatusSize <= MaxCustomStatusBytes)
+            {
+                context.SetCustomStatus(waitingStatus);
+            }
+            else
+            {
+                logger.LogWarning("Waiting status size {Size} bytes exceeds limit; sending summary status instead", waitingStatusSize);
+                context.SetCustomStatus(new {
+                    waitingStatus.step,
+                    waitingStatus.message,
+                    waitingStatus.progress,
+                    waitingStatus.destination,
+                    waitingStatus.documentUrl,
+                    travelPlan = new {
+                        waitingStatus.travelPlan.destination,
+                        waitingStatus.travelPlan.dates,
+                        waitingStatus.travelPlan.cost,
+                        waitingStatus.travelPlan.days
+                    }
+                });
+            }
             
             approvalResponse = await context.WaitForExternalEvent<ApprovalResponse>(
                 "ApprovalEvent",

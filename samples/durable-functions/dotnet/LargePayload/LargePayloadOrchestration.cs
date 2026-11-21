@@ -15,7 +15,7 @@ public static class LargePayloadOrchestration
 
     [Function("StartLargePayload")]
     public static async Task<HttpResponseData> HttpStart(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post")] HttpRequestData req,
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
         [DurableClient] DurableTaskClient client,
         FunctionContext executionContext)
     {
@@ -41,8 +41,10 @@ public static class LargePayloadOrchestration
         LargePayloadRequest request = context.GetInput<LargePayloadRequest>()
             ?? throw new InvalidOperationException("The orchestration input payload was not provided.");
 
+        ValidatePayload(request.Payload, request.RequestedPayloadBytes);
         string echoedPayload = await context.CallActivityAsync<string>(nameof(EchoLargePayload), request.Payload)
             ?? throw new InvalidOperationException("The activity did not return a payload.");
+        ValidatePayload(echoedPayload, request.RequestedPayloadBytes);
         int orchestrationInputBytes = GetUtf8ByteCount(request.Payload);
         int activityOutputBytes = GetUtf8ByteCount(echoedPayload);
 
@@ -76,7 +78,7 @@ public static class LargePayloadOrchestration
 
     [Function("Hello")]
     public static async Task<HttpResponseData> Hello(
-        [HttpTrigger(AuthorizationLevel.Anonymous, "get")] HttpRequestData req)
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequestData req)
     {
         HttpResponseData response = req.CreateResponse(HttpStatusCode.OK);
         await response.WriteStringAsync("LargePayload sample is running. POST /api/StartLargePayload to start a >1 MB orchestration.");
@@ -97,6 +99,25 @@ public static class LargePayloadOrchestration
                 span[i] = Alphabet[(int)(state >> 26)];
             }
         });
+    }
+
+    private static void ValidatePayload(string payload, int expectedSizeBytes)
+    {
+        if (payload.Length != expectedSizeBytes)
+        {
+            throw new InvalidOperationException("The payload size did not match the requested size.");
+        }
+
+        const string Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+        uint state = 0x00C0FFEEu;
+        for (int i = 0; i < payload.Length; i++)
+        {
+            state = (state * 1664525) + 1013904223;
+            if (payload[i] != Alphabet[(int)(state >> 26)])
+            {
+                throw new InvalidOperationException($"Invalid payload content at offset {i}.");
+            }
+        }
     }
 
     private static int GetPositiveIntSetting(string key, int defaultValue)
